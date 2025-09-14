@@ -1,0 +1,15 @@
+# build / deps
+dist/
+node_modules/
+
+# Vite cache
+.vite/
+
+# env (exemplo vai separado)
+.env
+.env.local
+.env.*.local
+
+# SO / editor
+.DS_Store
+.vscode/
