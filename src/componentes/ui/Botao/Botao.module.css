@@ -1,0 +1,7 @@
+.btn{border:0;border-radius:12px;padding:.75rem 1rem;font-weight:600;cursor:pointer;
+     background:var(--bg-700);color:var(--text-100);transition:.2s}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.primaria{background:var(--primary);color:#fff}
+.primaria:hover{background:var(--primary-700)}
+.fantasma{background:transparent;border:1px solid var(--border);color:var(--text-100)}
+.perigo{background:var(--danger);color:#fff}
