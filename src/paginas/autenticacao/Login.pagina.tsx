@@ -5,6 +5,7 @@ import { useAutenticacao } from "../../contexts/Autenticacao.context";
 import { Cartao } from "../../componentes/ui/Cartao/Cartao";
 import { CampoTexto } from "../../componentes/ui/CampoTexto/CampoTexto";
 import { Botao } from "../../componentes/ui/Botao/Botao";
+import { Container } from "../../componentes/layout";
 
 export default function LoginPagina() {
   const nav = useNavigate();
@@ -44,7 +45,8 @@ export default function LoginPagina() {
   }
 
   return (
-    <Cartao>
+    <Container size="small">
+      <Cartao>
       <h1 className="title">Entrar</h1>
       <p className="subtitle">Acesse sua conta para continuar</p>
 
@@ -53,23 +55,35 @@ export default function LoginPagina() {
 
       <form onSubmit={handleEntrar}>
         <CampoTexto
+          id="email-login"
+          name="email"
           label="E-mail"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
 
         <CampoTexto
+          id="senha-login"
+          name="senha"
           label="Senha"
           type={ver ? "text" : "password"}
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
           acaoTexto={ver ? "OCULTAR" : "EXIBIR"}
           onAcaoClick={() => setVer((v) => !v)}
+          required
         />
 
-        <label className="remember">
-          <input type="checkbox" checked={lembrar} onChange={(e) => setLembrar(e.target.checked)} />
+        <label htmlFor="lembrar-email-login" className="remember">
+          <input
+            type="checkbox"
+            id="lembrar-email-login"
+            name="lembrar"
+            checked={lembrar}
+            onChange={(e) => setLembrar(e.target.checked)}
+          />
           Lembrar e-mail neste dispositivo
         </label>
 
@@ -84,5 +98,6 @@ export default function LoginPagina() {
         <Link to="/registro" className="shortcut">CRIAR CONTA</Link>
       </div>
     </Cartao>
+    </Container>
   );
 }

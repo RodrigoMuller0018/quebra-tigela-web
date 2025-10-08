@@ -22,24 +22,31 @@ export default function EsqueciSenha() {
   }
 
   return (
-    <div>
-      <h1>Esqueci minha senha</h1>
-      <Cartao style={{ maxWidth: 420 }}>
-        <form onSubmit={handleEnviar} className="form-grid" style={{ display: "grid", gap: 12 }}>
-          <CampoTexto label="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <div>
-            <Botao type="submit" disabled={enviando}>
-              {enviando ? "Enviando..." : "Enviar"}
-            </Botao>
-          </div>
-        </form>
+    <Cartao>
+      <h1 className="title">Esqueci minha senha</h1>
+      <p className="subtitle">Digite seu e-mail para receber instruções de redefinição</p>
 
-        <div className="shortcuts">
-          <Link to="/login" className="shortcut">
-            Já lembrou? <strong>ENTRAR</strong>
-          </Link>
-        </div>
-      </Cartao>
-    </div>
+      <form onSubmit={handleEnviar} className="form-grid">
+        <CampoTexto
+          id="email-esqueci-senha"
+          name="email"
+          label="E-mail"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <Botao type="submit" className="btn-primary btn-big" disabled={enviando}>
+          {enviando ? "Enviando..." : "Enviar"}
+        </Botao>
+      </form>
+
+      <div className="shortcuts">
+        <Link to="/login" className="shortcut">
+          Já lembrou? <strong>ENTRAR</strong>
+        </Link>
+      </div>
+    </Cartao>
   );
 }

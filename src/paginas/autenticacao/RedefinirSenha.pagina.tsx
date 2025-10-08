@@ -23,20 +23,44 @@ export default function RedefinirSenha() {
   }
 
   return (
-    <div>
-      <h1>Redefinir senha</h1>
-      <Cartao style={{ maxWidth: 420 }}>
-        <form onSubmit={handleRedefinir} className="form-grid" style={{ display: "grid", gap: 12 }}>
-          <CampoTexto label="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <CampoTexto label="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
-          <CampoTexto label="Nova senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} />
-          <div>
-            <Botao type="submit" disabled={enviando}>
-              {enviando ? "Redefinindo..." : "Redefinir"}
-            </Botao>
-          </div>
-        </form>
-      </Cartao>
-    </div>
+    <Cartao>
+      <h1 className="title">Redefinir senha</h1>
+      <p className="subtitle">Digite o código recebido por e-mail e sua nova senha</p>
+
+      <form onSubmit={handleRedefinir} className="form-grid">
+        <CampoTexto
+          id="email-redefinir"
+          name="email"
+          label="E-mail"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <CampoTexto
+          id="codigo-redefinir"
+          name="codigo"
+          label="Código"
+          type="text"
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value)}
+          required
+        />
+        <CampoTexto
+          id="senha-redefinir"
+          name="senha"
+          label="Nova senha"
+          type="password"
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+          required
+          minLength={6}
+        />
+
+        <Botao type="submit" className="btn-primary btn-big" disabled={enviando}>
+          {enviando ? "Redefinindo..." : "Redefinir"}
+        </Botao>
+      </form>
+    </Cartao>
   );
 }

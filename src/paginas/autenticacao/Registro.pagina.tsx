@@ -6,6 +6,7 @@ import type { NovoUsuario } from "../../tipos/usuarios";
 import type { NovoArtista } from "../../tipos/artistas";
 import { sucesso as avisoSucesso, erro as avisoErro } from "../../utilitarios/avisos";
 import { CampoTexto, ToggleUsuario } from "../../componentes/ui";
+import { SeletorEstadoCidade } from "../../componentes/SeletorEstadoCidade";
 
 interface FormularioCliente {
   name: string;
@@ -133,29 +134,35 @@ export default function RegistroPagina() {
           <>
             <div className="field">
               <input
+                id="nome-completo-cliente"
+                name="nomeCompleto"
                 className="field__input"
                 type="text"
-                placeholder=""
+                placeholder=" "
                 value={formCliente.name}
                 onChange={(e) => setCampoCliente("name", e.target.value)}
                 required
               />
-              <label className="field__label">Nome completo *</label>
+              <label htmlFor="nome-completo-cliente" className="field__label">Nome completo *</label>
             </div>
 
             <div className="field">
               <input
+                id="email-cliente"
+                name="email"
                 className="field__input"
                 type="email"
-                placeholder=""
+                placeholder=" "
                 value={formCliente.email}
                 onChange={(e) => setCampoCliente("email", e.target.value)}
                 required
               />
-              <label className="field__label">E-mail *</label>
+              <label htmlFor="email-cliente" className="field__label">E-mail *</label>
             </div>
 
             <CampoTexto
+              id="senha-cliente"
+              name="senha"
               label="Senha * (mín. 6 chars)"
               type={verSenhaCliente ? "text" : "password"}
               value={formCliente.password}
@@ -166,58 +173,47 @@ export default function RegistroPagina() {
               minLength={6}
             />
 
-            <div className="grid-2">
-              <div className="field">
-                <input
-                  className="field__input"
-                  type="text"
-                  placeholder=""
-                  value={formCliente.city}
-                  onChange={(e) => setCampoCliente("city", e.target.value)}
-                />
-                <label className="field__label">Cidade</label>
-              </div>
-
-              <div className="field">
-                <input
-                  className="field__input"
-                  type="text"
-                  placeholder=""
-                  value={formCliente.state}
-                  onChange={(e) => setCampoCliente("state", e.target.value)}
-                  maxLength={2}
-                />
-                <label className="field__label">Estado (UF)</label>
-              </div>
-            </div>
+            <SeletorEstadoCidade
+              idPrefix="cliente"
+              estadoSelecionado={formCliente.state}
+              cidadeSelecionada={formCliente.city}
+              onEstadoChange={(estado) => setCampoCliente("state", estado)}
+              onCidadeChange={(cidade) => setCampoCliente("city", cidade)}
+            />
           </>
         ) : (
           <>
             <div className="field">
               <input
+                id="nome-completo-artista"
+                name="nomeCompleto"
                 className="field__input"
                 type="text"
-                placeholder=""
+                placeholder=" "
                 value={formArtista.name}
                 onChange={(e) => setCampoArtista("name", e.target.value)}
                 required
               />
-              <label className="field__label">Nome completo *</label>
+              <label htmlFor="nome-completo-artista" className="field__label">Nome completo *</label>
             </div>
 
             <div className="field">
               <input
+                id="email-artista"
+                name="email"
                 className="field__input"
                 type="email"
-                placeholder=""
+                placeholder=" "
                 value={formArtista.email}
                 onChange={(e) => setCampoArtista("email", e.target.value)}
                 required
               />
-              <label className="field__label">E-mail *</label>
+              <label htmlFor="email-artista" className="field__label">E-mail *</label>
             </div>
 
             <CampoTexto
+              id="senha-artista"
+              name="senha"
               label="Senha * (mín. 6 chars)"
               type={verSenhaArtista ? "text" : "password"}
               value={formArtista.password}
@@ -230,51 +226,38 @@ export default function RegistroPagina() {
 
             <div className="field">
               <input
+                id="tipos-arte-artista"
+                name="tiposArte"
                 className="field__input"
                 type="text"
-                placeholder=""
+                placeholder=" "
                 value={formArtista.artTypes}
                 onChange={(e) => setCampoArtista("artTypes", e.target.value)}
                 required
               />
-              <label className="field__label">Tipos de arte * (separados por vírgula)</label>
+              <label htmlFor="tipos-arte-artista" className="field__label">Tipos de arte * (separados por vírgula)</label>
             </div>
 
             <div className="field">
               <input
+                id="bio-artista"
+                name="bio"
                 className="field__input"
                 type="text"
-                placeholder=""
+                placeholder=" "
                 value={formArtista.bio}
                 onChange={(e) => setCampoArtista("bio", e.target.value)}
               />
-              <label className="field__label">Bio</label>
+              <label htmlFor="bio-artista" className="field__label">Bio</label>
             </div>
 
-            <div className="grid-2">
-              <div className="field">
-                <input
-                  className="field__input"
-                  type="text"
-                  placeholder=""
-                  value={formArtista.city}
-                  onChange={(e) => setCampoArtista("city", e.target.value)}
-                />
-                <label className="field__label">Cidade</label>
-              </div>
-
-              <div className="field">
-                <input
-                  className="field__input"
-                  type="text"
-                  placeholder=""
-                  value={formArtista.state}
-                  onChange={(e) => setCampoArtista("state", e.target.value)}
-                  maxLength={2}
-                />
-                <label className="field__label">Estado (UF)</label>
-              </div>
-            </div>
+            <SeletorEstadoCidade
+              idPrefix="artista"
+              estadoSelecionado={formArtista.state}
+              cidadeSelecionada={formArtista.city}
+              onEstadoChange={(estado) => setCampoArtista("state", estado)}
+              onCidadeChange={(cidade) => setCampoArtista("city", cidade)}
+            />
           </>
         )}
 

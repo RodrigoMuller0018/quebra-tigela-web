@@ -41,7 +41,7 @@ export default function DetalheArtistaPagina() {
       };
       await atualizarArtista(id, atual);
       avisoSucesso("Atualizado");
-      navigate("/artistas");
+      navigate("/cliente");
     } catch (e: any) {
       avisoErro(e?.message ?? "Erro ao atualizar");
     } finally {
@@ -55,19 +55,52 @@ export default function DetalheArtistaPagina() {
   return (
     <div>
       <h1>Detalhe — {artista.name}</h1>
-      <Cartao style={{ maxWidth: 520 }}>
-        <div className="form-grid" style={{ display: "grid", gap: 12 }}>
-          <CampoTexto label="Nome" value={artista.name} onChange={(e) => setArtista({ ...artista, name: e.target.value })} />
-          <CampoTexto label="Cidade" value={artista.city} onChange={(e) => setArtista({ ...artista, city: e.target.value })} />
-          <CampoTexto label="Estado" value={artista.state} onChange={(e) => setArtista({ ...artista, state: e.target.value })} />
-          <CampoTexto label="Bio" value={artista.bio || ""} onChange={(e) => setArtista({ ...artista, bio: e.target.value })} />
+      <Cartao>
+        <div className="form-grid">
+          <CampoTexto
+            id="nome-detalhe"
+            name="nome"
+            label="Nome"
+            type="text"
+            value={artista.name}
+            onChange={(e) => setArtista({ ...artista, name: e.target.value })}
+          />
+          <CampoTexto
+            id="cidade-detalhe"
+            name="cidade"
+            label="Cidade"
+            type="text"
+            value={artista.city}
+            onChange={(e) => setArtista({ ...artista, city: e.target.value })}
+          />
+          <CampoTexto
+            id="estado-detalhe"
+            name="estado"
+            label="Estado"
+            type="text"
+            value={artista.state}
+            onChange={(e) => setArtista({ ...artista, state: e.target.value })}
+          />
+          <CampoTexto
+            id="bio-detalhe"
+            name="bio"
+            label="Bio"
+            type="text"
+            value={artista.bio || ""}
+            onChange={(e) => setArtista({ ...artista, bio: e.target.value })}
+          />
           <CaixaSelecao
+            id="verificado-detalhe"
+            name="verificado"
             texto="Verificado"
             checked={artista.verified}
             onChange={(e) => setArtista({ ...artista, verified: e.target.checked })}
           />
           <CampoTexto
+            id="tipos-arte-detalhe"
+            name="tiposArte"
             label="Tipos de arte (vírgula)"
+            type="text"
             value={artista.artTypes.join(", ")}
             onChange={(e) =>
               setArtista({

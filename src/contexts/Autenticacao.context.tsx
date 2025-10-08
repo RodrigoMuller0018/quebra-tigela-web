@@ -7,6 +7,7 @@ type AuthContextType = {
   token: string | null;
   usuario: TokenPayload | null;
   userType: UserType | null;
+  role: "client" | "artist" | "admin" | null;
   login: (token: string, userType: UserType) => void;
   logout: () => void;
 };
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   usuario: null,
   userType: null,
+  role: null,
   login: () => {},
   logout: () => {},
 });
@@ -45,6 +47,16 @@ export function AutenticacaoProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  const [role, setRole] = useState<"client" | "artist" | "admin" | null>(() => {
+    try {
+      const storedToken = localStorage.getItem("token");
+      const payload = storedToken ? decodificarToken(storedToken) : null;
+      return payload?.role || null;
+    } catch {
+      return null;
+    }
+  });
+
   function login(newToken: string, newUserType: UserType) {
     try {
       localStorage.setItem("token", newToken);
@@ -52,9 +64,11 @@ export function AutenticacaoProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore
     }
+    const payload = decodificarToken(newToken);
     setToken(newToken);
     setUserType(newUserType);
-    setUsuario(decodificarToken(newToken));
+    setUsuario(payload);
+    setRole(payload?.role || null);
   }
 
   function logout() {
@@ -67,9 +81,10 @@ export function AutenticacaoProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUserType(null);
     setUsuario(null);
+    setRole(null);
   }
 
-  return <AuthContext.Provider value={{ token, usuario, userType, login, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ token, usuario, userType, role, login, logout }}>{children}</AuthContext.Provider>;
 }
 
 export function useAutenticacao() {

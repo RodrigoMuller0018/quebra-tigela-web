@@ -6,9 +6,9 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
 
 export function CampoTexto({ label, ...rest }: Props) {
   return (
-    <div style={{ marginBottom: 8 }}>
-      {label && <label style={{ display: "block", marginBottom: 4 }}>{label}</label>}
-      <input {...rest} style={{ padding: 8, width: "100%" }} />
+    <div className="campo-texto-simples">
+      {label && <label className="label-simples">{label}</label>}
+      <input {...rest} className="input-simples" />
     </div>
   );
 }

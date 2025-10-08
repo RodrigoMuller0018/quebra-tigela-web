@@ -4,11 +4,13 @@ import { listarArtistas, excluirArtista } from "../../api/artistas.api";
 import type { Artista } from "../../tipos/artistas";
 import { Cartao, CampoTexto, Botao } from "../../componentes/ui";
 import { erro as avisoErro, sucesso as avisoSucesso } from "../../utilitarios/avisos";
+import { useAutenticacao } from "../../contexts/Autenticacao.context";
 
 const TAMANHO_PAGINA = 10;
 
 export default function ListaArtistasPagina() {
   const navigate = useNavigate();
+  const { role, usuario } = useAutenticacao();
   const [artistas, setArtistas] = useState<Artista[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [filtro, setFiltro] = useState("");
@@ -59,81 +61,116 @@ export default function ListaArtistasPagina() {
   const inicio = pagina * TAMANHO_PAGINA;
   const paginaAtualItems = artistasFiltrados.slice(inicio, inicio + TAMANHO_PAGINA);
 
-  return (
-    <div>
-      <h1>Artistas</h1>
+  // Verifica se o usuário pode excluir um artista
+  const podeExcluir = (artistaId: string) => {
+    // Admin pode excluir qualquer um
+    if (role === "admin") return true;
+    // Artista pode excluir apenas a própria conta
+    return usuario?.sub === artistaId;
+  };
 
-      <Cartao style={{ marginBottom: 12 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "end" }}>
-          <CampoTexto
-            placeholder="Buscar por nome ou email..."
-            value={filtro}
-            onChange={(e) => {
-              setFiltro(e.target.value);
-              setPagina(0);
-            }}
-          />
-          <Botao onClick={() => navigate("/registro")}>Cadastrar artista</Botao>
-        </div>
+  return (
+    <div className="lista-artistas-container">
+      <div className="lista-artistas-header">
+        <h1 className="title">Gerenciar Artistas</h1>
+        <p className="subtitle">Visualize e gerencie os artistas cadastrados</p>
+      </div>
+
+      <Cartao className="filtro-card">
+        <CampoTexto
+          placeholder="Buscar por nome ou email..."
+          value={filtro}
+          onChange={(e) => {
+            setFiltro(e.target.value);
+            setPagina(0);
+          }}
+        />
       </Cartao>
 
       {carregando ? (
-        <p>Carregando...</p>
+        <div className="text-center">
+          <p>Carregando artistas...</p>
+        </div>
       ) : (
         <>
-          <Cartao>
-            <table>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Cidade</th>
-                  <th>Tipos</th>
-                  <th style={{ width: 120 }}>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginaAtualItems.map((a) => (
-                  <tr key={a.id}>
-                    <td>
-                      <Link to={`/artistas/${a.id}`}>{a.name}</Link>
-                    </td>
-                    <td>
-                      {a.city} - {a.state}
-                    </td>
-                    <td>{a.artTypes.join(", ")}</td>
-                    <td>
-                      <Botao variante="perigo" onClick={() => handleExcluir(a.id)}>
+          <div className="results-info">
+            <p>{artistasFiltrados.length} artista{artistasFiltrados.length !== 1 ? 's' : ''} encontrado{artistasFiltrados.length !== 1 ? 's' : ''}</p>
+          </div>
+
+          <div className="artistas-grid-admin">
+            {paginaAtualItems.map((artista) => (
+              <div key={artista.id} className="artista-card-admin">
+                <div className="artista-card-admin-content">
+                  <h3 className="artista-nome-admin">{artista.name}</h3>
+
+                  {artista.city && artista.state && (
+                    <p className="artista-localizacao-admin">
+                      📍 {artista.city}, {artista.state}
+                    </p>
+                  )}
+
+                  {artista.artTypes.length > 0 && (
+                    <div className="artista-tags-admin">
+                      {artista.artTypes.map((tipo, index) => (
+                        <span key={index} className="artista-tag-admin">
+                          {tipo}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="artista-acoes-admin">
+                    <Link
+                      to={`/artistas/${artista.id}`}
+                      className="btn btn-primary btn-admin-ver"
+                    >
+                      Ver Perfil
+                    </Link>
+                    {podeExcluir(artista.id) && (
+                      <Botao
+                        variante="perigo"
+                        onClick={() => handleExcluir(artista.id)}
+                        className="btn-admin-excluir"
+                      >
                         Excluir
                       </Botao>
-                    </td>
-                  </tr>
-                ))}
-                {paginaAtualItems.length === 0 && (
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: "center" }}>
-                      Nenhum artista encontrado.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </Cartao>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
 
-          <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12 }}>
-            <Botao onClick={() => setPagina((p) => Math.max(0, p - 1))} disabled={pagina === 0} variante="fantasma">
-              Anterior
-            </Botao>
-            <span>
-              Página {pagina + 1} de {paginasTotais}
-            </span>
-            <Botao
-              onClick={() => setPagina((p) => Math.min(paginasTotais - 1, p + 1))}
-              disabled={pagina >= paginasTotais - 1}
-              variante="fantasma"
-            >
-              Próxima
-            </Botao>
+            {paginaAtualItems.length === 0 && (
+              <div className="empty-state">
+                <p className="empty-titulo">Nenhum artista encontrado</p>
+                <p className="empty-descricao">
+                  Tente ajustar o filtro ou cadastre um novo artista
+                </p>
+              </div>
+            )}
           </div>
+
+          {paginasTotais > 1 && (
+            <div className="paginacao">
+              <Botao
+                onClick={() => setPagina((p) => Math.max(0, p - 1))}
+                disabled={pagina === 0}
+                variante="fantasma"
+              >
+                ← Anterior
+              </Botao>
+              <span className="paginacao-info">
+                Página {pagina + 1} de {paginasTotais}
+              </span>
+              <Botao
+                onClick={() => setPagina((p) => Math.min(paginasTotais - 1, p + 1))}
+                disabled={pagina >= paginasTotais - 1}
+                variante="fantasma"
+              >
+                Próxima →
+              </Botao>
+            </div>
+          )}
         </>
       )}
     </div>

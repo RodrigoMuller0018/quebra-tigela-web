@@ -1,16 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { listarArtistas } from "../../api/artistas.api";
+import { listarEstados, listarCidadesPorEstado, type Estado, type Cidade } from "../../api/ibge.api";
 import type { Artista } from "../../tipos/artistas";
-import { Cartao, CampoTexto, Seletor } from "../../componentes/ui";
+import { Cartao, CampoTexto, Modal, Botao, Seletor, type OpcaoSeletor } from "../../componentes/ui";
+import { Stack, Container } from "../../componentes/layout";
 import { erro as avisoErro } from "../../utilitarios/avisos";
+import { useDebounce } from "../../hooks/useDebounce";
 
 export default function HomeClientePagina() {
   const [artistas, setArtistas] = useState<Artista[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [busca, setBusca] = useState("");
-  const [filtroTipo, setFiltroTipo] = useState("");
-  const [filtroUF, setFiltroUF] = useState("");
+  const buscaDebounced = useDebounce(busca, 300);
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+
+  // Filtros avançados
+  const [cidadeSelecionada, setCidadeSelecionada] = useState("");
+  const [estadoSelecionado, setEstadoSelecionado] = useState("");
+  const [tiposSelecionados, setTiposSelecionados] = useState<string[]>([]);
+
+  // Dados da API do IBGE
+  const [estados, setEstados] = useState<Estado[]>([]);
+  const [cidades, setCidades] = useState<Cidade[]>([]);
+  const [carregandoEstados, setCarregandoEstados] = useState(false);
+  const [carregandoCidades, setCarregandoCidades] = useState(false);
 
   async function carregar() {
     setCarregando(true);
@@ -28,6 +42,44 @@ export default function HomeClientePagina() {
     carregar();
   }, []);
 
+  // Carregar estados ao montar
+  useEffect(() => {
+    async function carregarEstados() {
+      setCarregandoEstados(true);
+      try {
+        const data = await listarEstados();
+        setEstados(data);
+      } catch (e: any) {
+        avisoErro(e?.message ?? "Erro ao carregar estados");
+      } finally {
+        setCarregandoEstados(false);
+      }
+    }
+    carregarEstados();
+  }, []);
+
+  // Carregar cidades quando estado mudar
+  useEffect(() => {
+    if (!estadoSelecionado) {
+      setCidades([]);
+      return;
+    }
+
+    async function carregarCidades() {
+      setCarregandoCidades(true);
+      try {
+        const data = await listarCidadesPorEstado(estadoSelecionado);
+        setCidades(data);
+      } catch (e: any) {
+        avisoErro(e?.message ?? "Erro ao carregar cidades");
+        setCidades([]);
+      } finally {
+        setCarregandoCidades(false);
+      }
+    }
+    carregarCidades();
+  }, [estadoSelecionado]);
+
   const tiposDisponiveis = useMemo(() => {
     const tipos = new Set<string>();
     artistas.forEach(artista =>
@@ -36,156 +88,249 @@ export default function HomeClientePagina() {
     return Array.from(tipos).sort();
   }, [artistas]);
 
-  const ufsDisponiveis = useMemo(() => {
-    const ufs = new Set<string>();
-    artistas.forEach(artista => {
-      if (artista.state) ufs.add(artista.state);
-    });
-    return Array.from(ufs).sort();
-  }, [artistas]);
+  // Preparar opções de estados para o Seletor (formato: "SC - Santa Catarina")
+  const opcoesEstados: OpcaoSeletor[] = useMemo(() => {
+    return estados.map(estado => ({
+      value: estado.sigla,
+      label: `${estado.sigla} - ${estado.nome}`
+    }));
+  }, [estados]);
+
+  // Preparar opções de cidades para o Seletor
+  const opcoesCidades: OpcaoSeletor[] = useMemo(() => {
+    return cidades.map(cidade => ({
+      value: cidade.nome,
+      label: cidade.nome
+    }));
+  }, [cidades]);
 
   const artistasFiltrados = useMemo(() => {
     return artistas.filter(artista => {
-      const buscaLower = busca.toLowerCase();
-      const matchBusca = !busca ||
-        artista.name.toLowerCase().includes(buscaLower) ||
-        artista.artTypes.some(tipo => tipo.toLowerCase().includes(buscaLower)) ||
-        artista.bio?.toLowerCase().includes(buscaLower);
+      const buscaLower = buscaDebounced.toLowerCase();
+      const matchBusca = !buscaDebounced ||
+        artista.name.toLowerCase().includes(buscaLower);
 
-      const matchTipo = !filtroTipo || artista.artTypes.includes(filtroTipo);
-      const matchUF = !filtroUF || artista.state === filtroUF;
+      const matchCidade = !cidadeSelecionada || artista.city === cidadeSelecionada;
+      const matchEstado = !estadoSelecionado || artista.state === estadoSelecionado;
+      const matchTipos = tiposSelecionados.length === 0 ||
+        tiposSelecionados.some(tipo => artista.artTypes.includes(tipo));
 
-      return matchBusca && matchTipo && matchUF;
+      return matchBusca && matchCidade && matchEstado && matchTipos;
     });
-  }, [artistas, busca, filtroTipo, filtroUF]);
+  }, [artistas, buscaDebounced, cidadeSelecionada, estadoSelecionado, tiposSelecionados]);
+
+  const filtrosAtivos = useMemo(() => {
+    let count = 0;
+    if (cidadeSelecionada) count++;
+    if (estadoSelecionado) count++;
+    if (tiposSelecionados.length > 0) count++;
+    return count;
+  }, [cidadeSelecionada, estadoSelecionado, tiposSelecionados]);
+
+  function toggleTipo(tipo: string) {
+    setTiposSelecionados(prev =>
+      prev.includes(tipo)
+        ? prev.filter(t => t !== tipo)
+        : [...prev, tipo]
+    );
+  }
+
+  function limparFiltros() {
+    setCidadeSelecionada("");
+    setEstadoSelecionado("");
+    setTiposSelecionados([]);
+  }
+
+  function handleEstadoChange(uf: string) {
+    setEstadoSelecionado(uf);
+    setCidadeSelecionada(""); // Limpar cidade ao mudar estado
+  }
 
   return (
-    <div className="container">
-      <h1 className="title">Encontre o Artista Perfeito</h1>
-      <p className="subtitle">Descubra talentos incríveis para seu projeto</p>
+    <Container>
+      <Stack spacing="large">
+        <Stack spacing="small" align="center">
+          <h1 className="title">Encontre o Artista Perfeito</h1>
+          <p className="subtitle">Descubra talentos incríveis para seu projeto</p>
+        </Stack>
 
-      <Cartao style={{ marginBottom: 24 }}>
-        <div className="grid-2" style={{ gap: 16 }}>
-          <CampoTexto
-            label="Buscar artistas"
-            placeholder="Nome, especialidade ou palavra-chave..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-
-          <div className="grid-2" style={{ gap: 12 }}>
-            <Seletor
-              label="Tipo de Arte"
-              value={filtroTipo}
-              onChange={(e) => setFiltroTipo(e.target.value)}
-              opcoes={[
-                { valor: "", texto: "Todos os tipos" },
-                ...tiposDisponiveis.map(tipo => ({ valor: tipo, texto: tipo }))
-              ]}
+        {/* Barra de busca moderna */}
+        <div className="barra-busca-moderna">
+          <div className="busca-input-container">
+            <span className="busca-icone">🔍</span>
+            <input
+              type="text"
+              className="busca-input-principal"
+              placeholder="Buscar artistas por nome"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
             />
+          </div>
 
+          <button
+            className="btn-filtros"
+            onClick={() => setFiltrosAbertos(true)}
+          >
+            <span className="filtros-icone">⚙️</span>
+            <span className="filtros-texto">Filtros</span>
+            {filtrosAtivos > 0 && (
+              <span className="filtros-badge">{filtrosAtivos}</span>
+            )}
+          </button>
+        </div>
+
+        {/* Chips de filtros ativos */}
+        {filtrosAtivos > 0 && (
+          <div className="filtros-chips">
+            {estadoSelecionado && (
+              <div className="filter-chip">
+                <span>Estado: {estadoSelecionado}</span>
+                <button onClick={() => setEstadoSelecionado("")}>×</button>
+              </div>
+            )}
+            {cidadeSelecionada && (
+              <div className="filter-chip">
+                <span>Cidade: {cidadeSelecionada}</span>
+                <button onClick={() => setCidadeSelecionada("")}>×</button>
+              </div>
+            )}
+            {tiposSelecionados.map(tipo => (
+              <div key={tipo} className="filter-chip">
+                <span>{tipo}</span>
+                <button onClick={() => toggleTipo(tipo)}>×</button>
+              </div>
+            ))}
+            <button className="limpar-filtros-btn" onClick={limparFiltros}>
+              Limpar todos
+            </button>
+          </div>
+        )}
+
+        {/* Modal de filtros avançados */}
+        <Modal
+          aberto={filtrosAbertos}
+          aoFechar={() => setFiltrosAbertos(false)}
+          titulo="Filtros Avançados"
+          tamanho="medio"
+        >
+          <div className="filtros-modal-content">
+            {/* Estado - SEMPRE habilitado, nunca disabled */}
             <Seletor
+              id="estado-filtro"
+              name="estado"
               label="Estado"
-              value={filtroUF}
-              onChange={(e) => setFiltroUF(e.target.value)}
-              opcoes={[
-                { valor: "", texto: "Todos os estados" },
-                ...ufsDisponiveis.map(uf => ({ valor: uf, texto: uf }))
-              ]}
+              options={opcoesEstados}
+              value={estadoSelecionado}
+              onChange={(e) => handleEstadoChange(e.target.value)}
+              placeholder="Selecione um estado"
+              disabled={false}
             />
+
+            {/* Cidade - SEMPRE disabled até selecionar estado */}
+            <Seletor
+              id="cidade-filtro"
+              name="cidade"
+              label="Cidade"
+              options={opcoesCidades}
+              value={cidadeSelecionada}
+              onChange={(e) => setCidadeSelecionada(e.target.value)}
+              placeholder={
+                !estadoSelecionado
+                  ? "Primeiro selecione um estado"
+                  : "Selecione uma cidade"
+              }
+              disabled={!estadoSelecionado}
+            />
+
+            {/* Tipos de Arte */}
+            <div className="filtro-secao">
+              <label className="filtro-label">Tipos de Arte</label>
+              <div className="filtro-checkboxes">
+                {tiposDisponiveis.map(tipo => {
+                  const checkboxId = `tipo-${tipo.toLowerCase().replace(/\s+/g, '-')}-filtro`;
+                  return (
+                    <label key={tipo} htmlFor={checkboxId} className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        id={checkboxId}
+                        name="tiposArte"
+                        value={tipo}
+                        checked={tiposSelecionados.includes(tipo)}
+                        onChange={() => toggleTipo(tipo)}
+                      />
+                      <span>{tipo}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Botões do modal */}
+            <div className="filtros-modal-acoes">
+              <Botao variante="fantasma" onClick={limparFiltros}>
+                Limpar Filtros
+              </Botao>
+              <Botao onClick={() => setFiltrosAbertos(false)}>
+                Aplicar Filtros
+              </Botao>
+            </div>
           </div>
-        </div>
-      </Cartao>
+        </Modal>
 
-      {carregando ? (
-        <div className="text-center">
-          <p>Carregando artistas...</p>
-        </div>
-      ) : (
-        <>
-          <div className="results-info" style={{ marginBottom: 16 }}>
-            <p>{artistasFiltrados.length} artista{artistasFiltrados.length !== 1 ? 's' : ''} encontrado{artistasFiltrados.length !== 1 ? 's' : ''}</p>
+        {carregando ? (
+          <div className="text-center">
+            <p>Carregando artistas...</p>
           </div>
+        ) : (
+          <>
+            <div className="results-info">
+              <p>{artistasFiltrados.length} artista{artistasFiltrados.length !== 1 ? 's' : ''} encontrado{artistasFiltrados.length !== 1 ? 's' : ''}</p>
+            </div>
 
-          <div className="cards-grid" style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-            gap: 20
-          }}>
-            {artistasFiltrados.map((artista) => (
-              <Cartao key={artista.id} className="artista-card">
-                <div style={{ padding: 20 }}>
-                  <h3 style={{ marginBottom: 8 }}>
-                    <Link to={`/artistas/${artista.id}`} className="link-clean">
-                      {artista.name}
-                    </Link>
-                  </h3>
+            <div className="artistas-lista">
+              {artistasFiltrados.map((artista) => (
+                <div key={artista.id} className="artista-item">
+                  <div className="artista-item-content">
+                    <h3 className="artista-nome">{artista.name}</h3>
 
-                  <div className="artista-info" style={{ marginBottom: 12 }}>
-                    <p className="location" style={{ fontSize: "0.9em", color: "#666", marginBottom: 8 }}>
-                      📍 {artista.city && artista.state ? `${artista.city} - ${artista.state}` : 'Localização não informada'}
-                    </p>
+                    {artista.city && artista.state && (
+                      <p className="artista-localizacao">
+                        {artista.city} - {artista.state}
+                      </p>
+                    )}
 
-                    <div className="art-types" style={{ marginBottom: 12 }}>
+                    <div className="artista-tags">
                       {artista.artTypes.map((tipo, index) => (
-                        <span
-                          key={index}
-                          className="tag"
-                          style={{
-                            display: "inline-block",
-                            backgroundColor: "#f0f0f0",
-                            padding: "4px 8px",
-                            borderRadius: "12px",
-                            fontSize: "0.8em",
-                            marginRight: "6px",
-                            marginBottom: "6px"
-                          }}
-                        >
+                        <span key={index} className="artista-tag">
                           {tipo}
                         </span>
                       ))}
                     </div>
+
+                    <Link
+                      to={`/artistas/${artista.id}`}
+                      className="btn btn-primary artista-btn-perfil"
+                    >
+                      Ver Perfil
+                    </Link>
                   </div>
-
-                  {artista.bio && (
-                    <p className="bio" style={{
-                      fontSize: "0.9em",
-                      color: "#555",
-                      lineHeight: 1.4,
-                      marginBottom: 16,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden"
-                    }}>
-                      {artista.bio}
-                    </p>
-                  )}
-
-                  <Link
-                    to={`/artistas/${artista.id}`}
-                    className="btn btn-primary btn-small"
-                    style={{ textDecoration: "none", display: "inline-block" }}
-                  >
-                    Ver Perfil
-                  </Link>
                 </div>
-              </Cartao>
-            ))}
+              ))}
 
-            {artistasFiltrados.length === 0 && (
-              <div className="empty-state" style={{ gridColumn: "1 / -1", textAlign: "center", padding: 40 }}>
-                <p style={{ fontSize: "1.1em", color: "#666", marginBottom: 8 }}>
-                  Nenhum artista encontrado
-                </p>
-                <p style={{ color: "#888" }}>
-                  Tente ajustar os filtros ou buscar por outros termos
-                </p>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+              {artistasFiltrados.length === 0 && (
+                <div className="empty-state">
+                  <p className="empty-titulo">
+                    Nenhum artista encontrado
+                  </p>
+                  <p className="empty-descricao">
+                    Tente ajustar os filtros ou buscar por outros termos
+                  </p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </Stack>
+    </Container>
   );
 }

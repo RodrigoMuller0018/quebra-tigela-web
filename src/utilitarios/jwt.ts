@@ -1,7 +1,7 @@
 export interface TokenPayload {
   sub: string;
   email: string;
-  role: "client" | "artist";
+  role: "client" | "artist" | "admin";
   iat: number;
   exp: number;
 }
@@ -20,7 +20,7 @@ export function decodificarToken(token: string): TokenPayload | null {
   }
 }
 
-export function obterRoleDoToken(): "client" | "artist" | null {
+export function obterRoleDoToken(): "client" | "artist" | "admin" | null {
   try {
     const token = localStorage.getItem("token");
     if (!token) return null;

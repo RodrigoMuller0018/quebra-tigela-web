@@ -4,6 +4,7 @@ import { useAutenticacao } from "../../contexts/Autenticacao.context";
 import { obterArtistaPorId } from "../../api/artistas.api";
 import type { Artista } from "../../tipos/artistas";
 import { Cartao, Botao } from "../../componentes/ui";
+import { Stack, Cluster, Container } from "../../componentes/layout";
 import { erro as avisoErro } from "../../utilitarios/avisos";
 
 export default function HomeArtistaPagina() {
@@ -41,46 +42,40 @@ export default function HomeArtistaPagina() {
   }, [usuario]);
 
   return (
-    <div className="container">
-      <h1 className="title">Meu Dashboard</h1>
-      <p className="subtitle">Gerencie seu perfil e acompanhe sua atividade</p>
+    <Container>
+      <Stack spacing="large">
+        <Stack spacing="small" align="center">
+          <h1 className="title">Meu Dashboard</h1>
+          <p className="subtitle">Gerencie seu perfil e acompanhe sua atividade</p>
+        </Stack>
 
-      <div className="grid-2" style={{ gap: 24, alignItems: "start" }}>
+        <div className="grid-2 dashboard-grid">
         {/* Perfil do Artista */}
         <Cartao>
-          <h2 style={{ marginBottom: 16 }}>Meu Perfil</h2>
+          <h2 className="perfil-header">Meu Perfil</h2>
 
           {carregando ? (
             <p>Carregando perfil...</p>
           ) : artista ? (
             <div className="perfil-info">
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{ marginBottom: 8 }}>{artista.name}</h3>
-                <p style={{ color: "#666", marginBottom: 8 }}>
+              <div className="perfil-info-item">
+                <h3 className="perfil-subtitle">{artista.name}</h3>
+                <p className="perfil-email">
                   📧 {artista.email}
                 </p>
-                <p style={{ color: "#666", marginBottom: 12 }}>
+                <p className="perfil-location">
                   📍 {artista.city && artista.state ? `${artista.city} - ${artista.state}` : 'Localização não informada'}
                 </p>
               </div>
 
-              <div style={{ marginBottom: 16 }}>
-                <h4 style={{ marginBottom: 8 }}>Especialidades:</h4>
+              <div className="perfil-info-item">
+                <h4 className="especialidades-header">Especialidades:</h4>
                 <div className="art-types">
                   {artista.artTypes.map((tipo, index) => (
                     <span
                       key={index}
                       className="tag"
-                      style={{
-                        display: "inline-block",
-                        backgroundColor: "#e3f2fd",
-                        color: "#1976d2",
-                        padding: "4px 12px",
-                        borderRadius: "16px",
-                        fontSize: "0.9em",
-                        marginRight: "8px",
-                        marginBottom: "8px"
-                      }}
+                      className="tag-art-type"
                     >
                       {tipo}
                     </span>
@@ -89,53 +84,46 @@ export default function HomeArtistaPagina() {
               </div>
 
               {artista.bio && (
-                <div style={{ marginBottom: 16 }}>
-                  <h4 style={{ marginBottom: 8 }}>Biografia:</h4>
-                  <p style={{
-                    color: "#555",
-                    lineHeight: 1.5,
-                    backgroundColor: "#f8f9fa",
-                    padding: "12px",
-                    borderRadius: "8px"
-                  }}>
+                <div className="perfil-info-item">
+                  <h4 className="bio-header">Biografia:</h4>
+                  <p className="bio-content">
                     {artista.bio}
                   </p>
                 </div>
               )}
 
-              <div className="acoes-perfil" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <Cluster spacing="medium" wrap={true}>
                 <Link
                   to={`/artistas/${artista.id}`}
-                  className="btn btn-primary"
-                  style={{ textDecoration: "none" }}
+                  className="btn btn-primary link-sem-decoracao"
                 >
                   Ver Meu Perfil Público
                 </Link>
                 <Botao variante="secundario" disabled>
                   Editar Perfil
                 </Botao>
-              </div>
+              </Cluster>
             </div>
           ) : perfilIncompleto ? (
-            <div className="perfil-incompleto" style={{ textAlign: "center", padding: "20px" }}>
-              <div style={{ fontSize: "3em", marginBottom: 16 }}>🎨</div>
-              <h3 style={{ marginBottom: 12, color: "#333" }}>Complete seu perfil de artista</h3>
-              <p style={{ color: "#666", marginBottom: 20, lineHeight: 1.5 }}>
+            <div className="perfil-incompleto">
+              <div className="perfil-icone">🎨</div>
+              <h3 className="perfil-titulo">Complete seu perfil de artista</h3>
+              <p className="perfil-descricao">
                 Você ainda não completou seu perfil de artista. Complete suas informações
                 para que os clientes possam encontrar e conhecer seu trabalho.
               </p>
-              <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              <Cluster spacing="medium" justify="center" wrap={true}>
                 <Botao variante="primario" disabled>
                   Completar Perfil
                 </Botao>
                 <Botao variante="secundario" onClick={carregarPerfil}>
                   Tentar Novamente
                 </Botao>
-              </div>
+              </Cluster>
             </div>
           ) : (
             <div className="perfil-nao-encontrado">
-              <p style={{ color: "#666", marginBottom: 16 }}>
+              <p className="perfil-erro">
                 Erro ao carregar seu perfil de artista.
               </p>
               <Botao onClick={carregarPerfil}>
@@ -146,72 +134,71 @@ export default function HomeArtistaPagina() {
         </Cartao>
 
         {/* Estatísticas e Ações */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div className="sidebar-column">
           {/* Estatísticas */}
           <Cartao>
-            <h2 style={{ marginBottom: 16 }}>Estatísticas</h2>
+            <h2 className="perfil-header">Estatísticas</h2>
 
-            <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div className="stat-item" style={{ textAlign: "center", padding: "16px", backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
-                <div style={{ fontSize: "2em", fontWeight: "bold", color: "#1976d2", marginBottom: 4 }}>
+            <div className="stats-grid">
+              <div className="stat-item">
+                <div className="stat-number">
                   --
                 </div>
-                <div style={{ fontSize: "0.9em", color: "#666" }}>
+                <div className="stat-label">
                   Visualizações do Perfil
                 </div>
               </div>
 
-              <div className="stat-item" style={{ textAlign: "center", padding: "16px", backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
-                <div style={{ fontSize: "2em", fontWeight: "bold", color: "#1976d2", marginBottom: 4 }}>
+              <div className="stat-item">
+                <div className="stat-number">
                   --
                 </div>
-                <div style={{ fontSize: "0.9em", color: "#666" }}>
+                <div className="stat-label">
                   Contatos Recebidos
                 </div>
               </div>
             </div>
 
-            <p style={{ fontSize: "0.8em", color: "#888", marginTop: 12, textAlign: "center" }}>
+            <p className="stats-disclaimer">
               Dados em breve
             </p>
           </Cartao>
 
           {/* Ações Rápidas */}
           <Cartao>
-            <h2 style={{ marginBottom: 16 }}>Ações Rápidas</h2>
+            <h2 className="perfil-header">Ações Rápidas</h2>
 
-            <div className="acoes-rapidas" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <Botao disabled style={{ justifyContent: "flex-start" }}>
-                📨 Ver Solicitações (Em breve)
+            <Stack spacing="medium">
+              <Botao disabled className="acao-desabilitada">
+                📋 Ver Solicitações (Em breve)
               </Botao>
 
-              <Botao disabled style={{ justifyContent: "flex-start" }}>
+              <Botao disabled className="acao-desabilitada">
                 📊 Relatórios (Em breve)
               </Botao>
 
               <Link
-                to="/artistas"
-                className="btn btn-secondary"
-                style={{ textDecoration: "none", textAlign: "center" }}
+                to="/cliente"
+                className="btn btn-secondary link-sem-decoracao"
               >
                 🎨 Ver Outros Artistas
               </Link>
-            </div>
+            </Stack>
           </Cartao>
 
           {/* Dicas */}
           <Cartao>
-            <h2 style={{ marginBottom: 16 }}>💡 Dicas para Artistas</h2>
+            <h2 className="perfil-header">💡 Dicas para Artistas</h2>
 
-            <div className="dicas" style={{ fontSize: "0.9em", lineHeight: 1.5 }}>
-              <ul style={{ paddingLeft: 20, color: "#555" }}>
-                <li style={{ marginBottom: 8 }}>
+            <div className="dicas-content">
+              <ul className="dicas-lista">
+                <li className="dica-item">
                   Complete seu perfil com uma biografia detalhada
                 </li>
-                <li style={{ marginBottom: 8 }}>
+                <li className="dica-item">
                   Adicione exemplos do seu trabalho
                 </li>
-                <li style={{ marginBottom: 8 }}>
+                <li className="dica-item">
                   Mantenha suas especialidades atualizadas
                 </li>
                 <li>
@@ -221,7 +208,8 @@ export default function HomeArtistaPagina() {
             </div>
           </Cartao>
         </div>
-      </div>
-    </div>
+        </div>
+      </Stack>
+    </Container>
   );
 }
