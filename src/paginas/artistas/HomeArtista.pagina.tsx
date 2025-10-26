@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAutenticacao } from "../../contexts/Autenticacao.context";
-import { obterArtistaPorId } from "../../api/artistas.api";
+import { obterMeuPerfil } from "../../api/artistas.api";
 import type { Artista } from "../../tipos/artistas";
 import { Cartao, Botao } from "../../componentes/ui";
 import { Stack, Cluster, Container } from "../../componentes/layout";
 import { erro as avisoErro } from "../../utilitarios/avisos";
 
 export default function HomeArtistaPagina() {
-  const { usuario } = useAutenticacao();
+  const { usuario, userType } = useAutenticacao();
+  const navigate = useNavigate();
   const [artista, setArtista] = useState<Artista | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [perfilIncompleto, setPerfilIncompleto] = useState(false);
+
+  console.log("🎨 DASHBOARD ARTISTA DEBUG - Componente montado:", {
+    hasUsuario: !!usuario,
+    userType,
+    usuarioSub: usuario?.sub,
+    pathname: window.location.pathname
+  });
 
   async function carregarPerfil() {
     if (!usuario?.sub) return;
@@ -20,8 +28,8 @@ export default function HomeArtistaPagina() {
     setPerfilIncompleto(false);
 
     try {
-      // Usar o ID do token JWT decodificado (usuario.sub)
-      const data = await obterArtistaPorId(usuario.sub);
+      // Usar rota /api/artists/me que não exige verified=true
+      const data = await obterMeuPerfil();
       setArtista(data);
     } catch (e: any) {
       // Se der erro 404, significa que o perfil ainda não foi completado
@@ -74,8 +82,7 @@ export default function HomeArtistaPagina() {
                   {artista.artTypes.map((tipo, index) => (
                     <span
                       key={index}
-                      className="tag"
-                      className="tag-art-type"
+                      className="tag tag-art-type"
                     >
                       {tipo}
                     </span>
@@ -92,17 +99,21 @@ export default function HomeArtistaPagina() {
                 </div>
               )}
 
-              <Cluster spacing="medium" wrap={true}>
+              <Stack spacing="small">
+                <Botao
+                  variante="primaria"
+                  onClick={() => navigate(`/artistas/${artista.id}`)}
+                  grande
+                >
+                  ✏️ Editar Meu Perfil
+                </Botao>
                 <Link
                   to={`/artistas/${artista.id}`}
-                  className="btn btn-primary link-sem-decoracao"
+                  className="btn btn-ghost link-sem-decoracao"
                 >
-                  Ver Meu Perfil Público
+                  👁️ Ver Como Perfil Público
                 </Link>
-                <Botao variante="secundario" disabled>
-                  Editar Perfil
-                </Botao>
-              </Cluster>
+              </Stack>
             </div>
           ) : perfilIncompleto ? (
             <div className="perfil-incompleto">
@@ -113,10 +124,13 @@ export default function HomeArtistaPagina() {
                 para que os clientes possam encontrar e conhecer seu trabalho.
               </p>
               <Cluster spacing="medium" justify="center" wrap={true}>
-                <Botao variante="primario" disabled>
+                <Botao
+                  variante="primaria"
+                  onClick={() => navigate(`/artistas/${usuario?.sub}`)}
+                >
                   Completar Perfil
                 </Botao>
-                <Botao variante="secundario" onClick={carregarPerfil}>
+                <Botao variante="fantasma" onClick={carregarPerfil}>
                   Tentar Novamente
                 </Botao>
               </Cluster>
@@ -169,6 +183,13 @@ export default function HomeArtistaPagina() {
             <h2 className="perfil-header">Ações Rápidas</h2>
 
             <Stack spacing="medium">
+              <Botao
+                variante="primaria"
+                onClick={() => navigate(`/artistas/${usuario?.sub}`)}
+              >
+                ✏️ Editar Meu Perfil
+              </Botao>
+
               <Botao disabled className="acao-desabilitada">
                 📋 Ver Solicitações (Em breve)
               </Botao>

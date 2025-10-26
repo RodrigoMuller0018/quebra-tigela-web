@@ -23,7 +23,7 @@
 
 /* Track/container dos botões - GRID SIMPLES */
 .switch-track {
-  background: #0d1017;
+  background: var(--bg-tertiary);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 6px;
@@ -50,7 +50,11 @@
 
   /* Estado padrão: inativo */
   background: transparent;
-  color: var(--primary);
+  color: var(--text-secondary);
+}
+
+.switch-option:hover {
+  color: var(--text);
 }
 
 /* Estados baseados no checkbox - APENAS background e color */
@@ -58,13 +62,13 @@
 /* Cliente ativo (não checked) */
 .switch-input:not(:checked) + .switch-label .switch-option:first-child {
   background: var(--primary);
-  color: #1b110a;
+  color: var(--text-on-primary);
 }
 
 /* Artista ativo (checked) */
 .switch-input:checked + .switch-label .switch-option:last-child {
   background: var(--primary);
-  color: #1b110a;
+  color: var(--text-on-primary);
 }
 
 /* Estados disabled */
@@ -80,7 +84,7 @@
 /* Focus para acessibilidade */
 .switch-input:focus-visible + .switch-label {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(244, 117, 33, 0.35);
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.35);
   border-radius: 12px;
 }
 

@@ -29,7 +29,12 @@ export default function HomeClientePagina() {
   async function carregar() {
     setCarregando(true);
     try {
-      const data = await listarArtistas();
+      // Montar filtros para API
+      const filtros: any = {};
+      if (estadoSelecionado) filtros.state = estadoSelecionado;
+      if (cidadeSelecionada) filtros.city = cidadeSelecionada;
+
+      const data = await listarArtistas(filtros);
       setArtistas(data);
     } catch (e: any) {
       avisoErro(e?.message ?? "Erro ao carregar artistas");
@@ -38,9 +43,10 @@ export default function HomeClientePagina() {
     }
   }
 
+  // Recarregar quando filtros de estado/cidade mudarem
   useEffect(() => {
     carregar();
-  }, []);
+  }, [estadoSelecionado, cidadeSelecionada]);
 
   // Carregar estados ao montar
   useEffect(() => {
@@ -106,18 +112,18 @@ export default function HomeClientePagina() {
 
   const artistasFiltrados = useMemo(() => {
     return artistas.filter(artista => {
+      // Filtragem client-side apenas para busca por nome e tipos de arte
+      // Estado e cidade já são filtrados pela API
       const buscaLower = buscaDebounced.toLowerCase();
       const matchBusca = !buscaDebounced ||
         artista.name.toLowerCase().includes(buscaLower);
 
-      const matchCidade = !cidadeSelecionada || artista.city === cidadeSelecionada;
-      const matchEstado = !estadoSelecionado || artista.state === estadoSelecionado;
       const matchTipos = tiposSelecionados.length === 0 ||
         tiposSelecionados.some(tipo => artista.artTypes.includes(tipo));
 
-      return matchBusca && matchCidade && matchEstado && matchTipos;
+      return matchBusca && matchTipos;
     });
-  }, [artistas, buscaDebounced, cidadeSelecionada, estadoSelecionado, tiposSelecionados]);
+  }, [artistas, buscaDebounced, tiposSelecionados]);
 
   const filtrosAtivos = useMemo(() => {
     let count = 0;
@@ -149,10 +155,29 @@ export default function HomeClientePagina() {
   return (
     <Container>
       <Stack spacing="large">
-        <Stack spacing="small" align="center">
-          <h1 className="title">Encontre o Artista Perfeito</h1>
-          <p className="subtitle">Descubra talentos incríveis para seu projeto</p>
-        </Stack>
+        {/* Hero Section com contador destacado */}
+        <div className="hero-section">
+          <Stack spacing="small" align="center">
+            <h1 className="title">Encontre o Artista Perfeito</h1>
+            <p className="subtitle">Descubra talentos incríveis para seu projeto</p>
+          </Stack>
+
+          {/* Contador de artistas DESTACADO */}
+          <div className="artistas-contador-destaque">
+            <div className="contador-icone">🎨</div>
+            <div className="contador-info">
+              <div className="contador-numero">{artistasFiltrados.length}</div>
+              <div className="contador-texto">
+                {artistasFiltrados.length === 1 ? 'Artista Disponível' : 'Artistas Disponíveis'}
+              </div>
+            </div>
+            {filtrosAtivos > 0 && (
+              <div className="contador-badge">
+                {filtrosAtivos} filtro{filtrosAtivos > 1 ? 's' : ''} ativo{filtrosAtivos > 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Barra de busca moderna */}
         <div className="barra-busca-moderna">
@@ -185,7 +210,10 @@ export default function HomeClientePagina() {
             {estadoSelecionado && (
               <div className="filter-chip">
                 <span>Estado: {estadoSelecionado}</span>
-                <button onClick={() => setEstadoSelecionado("")}>×</button>
+                <button onClick={() => {
+                  setEstadoSelecionado("");
+                  setCidadeSelecionada(""); // Limpar cidade ao remover estado
+                }}>×</button>
               </div>
             )}
             {cidadeSelecionada && (
@@ -279,14 +307,13 @@ export default function HomeClientePagina() {
 
         {carregando ? (
           <div className="text-center">
-            <p>Carregando artistas...</p>
+            <div className="loading-spinner">
+              <div className="spinner"></div>
+              <p>Carregando artistas...</p>
+            </div>
           </div>
         ) : (
           <>
-            <div className="results-info">
-              <p>{artistasFiltrados.length} artista{artistasFiltrados.length !== 1 ? 's' : ''} encontrado{artistasFiltrados.length !== 1 ? 's' : ''}</p>
-            </div>
-
             <div className="artistas-lista">
               {artistasFiltrados.map((artista) => (
                 <div key={artista.id} className="artista-item">

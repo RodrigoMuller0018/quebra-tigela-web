@@ -12,7 +12,6 @@ export default function LoginPagina() {
   const { login } = useAutenticacao();
   const [email, setEmail] = useState(localStorage.getItem("lembrar_email") || "");
   const [senha, setSenha] = useState("");
-  const [ver, setVer] = useState(false);
   const [lembrar, setLembrar] = useState(true);
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
@@ -21,23 +20,40 @@ export default function LoginPagina() {
     e.preventDefault();
     setBusy(true); setErro("");
     try {
+      console.log("🚀 LOGIN DEBUG - Iniciando autenticação...");
       const { token, userType } = await autenticar(email, senha);
-      login(token, userType);
+      console.log("✅ LOGIN DEBUG - Autenticação bem-sucedida:", {
+        userType,
+        tokenLength: token?.length,
+        tokenStart: token?.substring(0, 20) + "..."
+      });
 
-      if (lembrar) localStorage.setItem("lembrar_email", email);
+      login(token, userType);
+      console.log("✅ LOGIN DEBUG - login() do contexto executado");
+
+      if (lembrar) {
+        localStorage.setItem("lembrar_email", email);
+        console.log("💾 LOGIN DEBUG - Email salvo para lembrar");
+      }
 
       // Redirecionar baseado no userType retornado da tentativa dupla
-      console.log("🔍 LOGIN DEBUG - Redirecionando:", { userType });
+      console.log("🔀 LOGIN DEBUG - Preparando redirecionamento:", { userType });
 
       if (userType === "client") {
+        console.log("➡️ LOGIN DEBUG - Redirecionando para /cliente");
         nav("/cliente");
       } else if (userType === "artist") {
+        console.log("➡️ LOGIN DEBUG - Redirecionando para /artista");
         nav("/artista");
       } else {
-        // Fallback - não deveria acontecer
+        console.warn("⚠️ LOGIN DEBUG - userType desconhecido, usando fallback:", userType);
         nav("/cliente");
       }
     } catch (err: any) {
+      console.error("❌ LOGIN DEBUG - Erro na autenticação:", {
+        message: err?.message,
+        response: err?.response?.data
+      });
       setErro(err?.message ?? "Falha no login");
     } finally {
       setBusy(false);
@@ -68,11 +84,10 @@ export default function LoginPagina() {
           id="senha-login"
           name="senha"
           label="Senha"
-          type={ver ? "text" : "password"}
+          type="password"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
-          acaoTexto={ver ? "OCULTAR" : "EXIBIR"}
-          onAcaoClick={() => setVer((v) => !v)}
+          showPasswordToggle
           required
         />
 

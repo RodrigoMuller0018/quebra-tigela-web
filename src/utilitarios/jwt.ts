@@ -31,3 +31,15 @@ export function obterRoleDoToken(): "client" | "artist" | "admin" | null {
     return null;
   }
 }
+
+export function obterIdDoToken(): string | null {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+
+    const payload = decodificarToken(token);
+    return payload?.sub || null;
+  } catch {
+    return null;
+  }
+}

@@ -65,16 +65,16 @@ export function SeletorEstadoCidade({
     carregar();
   }, [estadoSelecionado]);
 
-  // Limpar cidade quando estado mudar
+  // Limpar cidade quando estado mudar (somente se a cidade não for válida)
   useEffect(() => {
-    if (cidadeSelecionada && estadoSelecionado) {
+    if (cidadeSelecionada && cidades.length > 0) {
       // Verificar se a cidade selecionada ainda é válida para o novo estado
       const cidadeValida = cidades.some(c => c.nome === cidadeSelecionada);
-      if (!cidadeValida && cidades.length > 0) {
+      if (!cidadeValida) {
         onCidadeChange("");
       }
     }
-  }, [estadoSelecionado, cidades]);
+  }, [cidades, cidadeSelecionada, onCidadeChange]);
 
   // Preparar opções de estados (formato: "SC - Santa Catarina")
   const opcoesEstados: OpcaoSeletor[] = useMemo(() => {

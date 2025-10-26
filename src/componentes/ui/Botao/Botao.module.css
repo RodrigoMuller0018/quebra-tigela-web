@@ -1,7 +1,45 @@
-.btn{border:0;border-radius:12px;padding:.75rem 1rem;font-weight:600;cursor:pointer;
-     background:var(--bg-700);color:var(--text-100);transition:.2s}
+.btn{
+  border:0; border-radius:12px; padding:.75rem 1rem; font-weight:600; cursor:pointer;
+  background:var(--bg-tertiary); color:var(--text);
+  border:1px solid var(--border);
+  transition:all 0.3s ease;
+}
+.btn:hover{
+  background:var(--card-hover);
+  border-color:var(--border-hover);
+}
 .btn:disabled{opacity:.6;cursor:not-allowed}
-.primaria{background:var(--primary);color:#fff}
-.primaria:hover{background:var(--primary-700)}
-.fantasma{background:transparent;border:1px solid var(--border);color:var(--text-100)}
-.perigo{background:var(--danger);color:#fff}
+
+.primaria{
+  background:var(--primary); color:var(--text-on-primary);
+  border:1px solid var(--primary);
+}
+.primaria:hover{
+  background:var(--primary-hover);
+  border-color:var(--primary-hover);
+}
+
+.secundaria{
+  background:transparent; color:var(--secondary);
+  border:2px solid var(--secondary);
+}
+.secundaria:hover{
+  background:var(--secondary);
+  color:var(--text-on-primary);
+}
+
+.fantasma{
+  background:transparent; border:1px solid var(--border); color:var(--text);
+}
+.fantasma:hover{
+  background:var(--bg-tertiary);
+  border-color:var(--border-hover);
+}
+
+.perigo{
+  background:var(--danger); color:var(--text-on-primary);
+  border:1px solid var(--danger);
+}
+.perigo:hover{
+  opacity:0.9;
+}

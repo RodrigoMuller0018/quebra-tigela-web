@@ -58,17 +58,32 @@ export function AutenticacaoProvider({ children }: { children: ReactNode }) {
   });
 
   function login(newToken: string, newUserType: UserType) {
+    console.log("🔐 CONTEXT DEBUG - login() chamado:", { userType: newUserType });
+
     try {
       localStorage.setItem("token", newToken);
       localStorage.setItem("userType", newUserType);
-    } catch {
-      // ignore
+      console.log("✅ CONTEXT DEBUG - userType salvo no localStorage:", newUserType);
+    } catch (error) {
+      console.error("❌ CONTEXT DEBUG - Erro ao salvar no localStorage:", error);
     }
+
     const payload = decodificarToken(newToken);
+    console.log("🔐 CONTEXT DEBUG - Token decodificado:", {
+      sub: payload?.sub,
+      email: payload?.email,
+      role: payload?.role
+    });
+
     setToken(newToken);
     setUserType(newUserType);
     setUsuario(payload);
     setRole(payload?.role || null);
+
+    console.log("✅ CONTEXT DEBUG - Estado atualizado:", {
+      userType: newUserType,
+      role: payload?.role
+    });
   }
 
   function logout() {

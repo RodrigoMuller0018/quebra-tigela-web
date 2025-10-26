@@ -1,6 +1,107 @@
-.field{display:flex;flex-direction:column;gap:.4rem}
-.label{color:var(--text-300);font-size:.92rem}
-.input{background:var(--bg-800);border:1px solid var(--border);color:var(--text-100);
-       padding:.7rem .9rem;border-radius:10px;outline:0}
-.input:focus{border-color:var(--focus);box-shadow:0 0 0 3px rgba(138,180,255,.15)}
-.erro{color:var(--danger);font-size:.85rem}
+.field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-md) 0;
+}
+
+.label {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: color var(--transition-fast);
+}
+
+.input {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  color: var(--text);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  outline: 0;
+  font-size: var(--font-size-base);
+  transition: all var(--transition-base);
+  width: 100%;
+}
+
+.input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+}
+
+.input::placeholder {
+  color: var(--text-light);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-tertiary);
+}
+
+/* Input com ícone (para senha) */
+.inputWithIcon {
+  padding-right: calc(var(--spacing-xl) + var(--spacing-lg));
+}
+
+/* Botão de ícone (olho para senha) */
+.iconButton {
+  position: absolute;
+  right: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.iconButton:hover {
+  color: var(--primary);
+  background: var(--bg-tertiary);
+}
+
+.iconButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.iconButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Helper text */
+.helper {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+/* Error message */
+.erro {
+  color: var(--danger-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* Error state */
+.field:has(.erro) .input {
+  border-color: var(--danger);
+}
+
+.field:has(.erro) .label {
+  color: var(--danger-text);
+}
