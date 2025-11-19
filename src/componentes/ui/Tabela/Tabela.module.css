@@ -1,0 +1,132 @@
+/* ========================================
+   TABELA - Componente Genérico
+   Suporta modo Grid e modo Table
+   ======================================== */
+
+/* MODO GRID - CSS Grid responsivo */
+.tabelaGrid {
+  display: grid;
+  gap: 0.625rem;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+/* Variações de colunas */
+.colunas-1 {
+  grid-template-columns: 1fr;
+}
+
+.colunas-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.colunas-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.colunas-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Células no modo grid */
+.celula {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  min-height: 70px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.celula:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* MODO TABLE - HTML Table nativa */
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border-radius: var(--radius-md, 12px);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.tabela td {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.tabela tr:hover {
+  background: var(--bg-secondary);
+}
+
+/* ========================================
+   RESPONSIVIDADE MOBILE
+   ======================================== */
+@media (max-width: 768px) {
+  .tabelaGrid {
+    gap: 0.5rem;
+  }
+
+  /* Grid: 2+ colunas viram 1 coluna no mobile */
+  .colunas-2,
+  .colunas-3,
+  .colunas-4 {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  /* Células horizontais no mobile */
+  .celula {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 0.625rem 0.875rem;
+    min-height: 60px;
+    text-align: left;
+  }
+
+  /* Table: força display block no mobile */
+  .tabela,
+  .tabela tbody,
+  .tabela tr,
+  .tabela td {
+    display: block;
+    width: 100%;
+  }
+
+  .tabela tr {
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .tabela td {
+    border: none;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    padding: 0.75rem 1rem;
+  }
+
+  .tabela td:last-child {
+    border-bottom: none;
+  }
+}
+
+/* Mobile pequeno - ajustes extras */
+@media (max-width: 480px) {
+  .celula {
+    padding: 0.5rem 0.75rem;
+    min-height: 55px;
+  }
+
+  .tabela td {
+    padding: 0.5rem 0.625rem;
+  }
+}

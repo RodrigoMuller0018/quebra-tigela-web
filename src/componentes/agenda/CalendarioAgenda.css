@@ -1,0 +1,216 @@
+.calendario-agenda {
+  background: var(--card, #ffffff);
+  border: 1px solid var(--border, #FFE4E4);
+  border-radius: var(--radius-md, 10px);
+  padding: 0.75rem;
+  box-shadow: var(--shadow, 0 2px 4px -1px rgba(0, 0, 0, 0.08));
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.calendario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.625rem;
+}
+
+.calendario-titulo {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text, #2D3748);
+}
+
+.btn-icon {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border, #FFE4E4);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text, #2D3748);
+  font-size: 0.875rem;
+}
+
+.btn-icon:hover {
+  background: var(--primary, #FF6B6B);
+  border-color: var(--primary, #FF6B6B);
+  color: white;
+}
+
+.calendario-dias-semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #718096);
+  text-align: center;
+}
+
+.calendario-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.2rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.calendario-dia {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  min-height: 38px;
+  background: var(--bg-tertiary, #FAFAFA);
+}
+
+.calendario-dia:not(.vazio):hover {
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFE8E8 100%);
+  border-color: var(--primary, #FF6B6B);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 16px rgba(255, 107, 107, 0.3);
+  z-index: 10;
+}
+
+.calendario-dia.vazio {
+  cursor: default;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.calendario-dia.hoje {
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+  border-color: var(--primary, #FF6B6B);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+.calendario-dia.hoje .calendario-dia-numero {
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.calendario-dia.com-horarios {
+  background: linear-gradient(135deg, #C6F6D5 0%, #A7F3D0 100%);
+  border-color: transparent;
+  position: relative;
+}
+
+.calendario-dia.com-horarios::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background: var(--success, #10B981);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+.calendario-dia.disponivel {
+  background: linear-gradient(135deg, #A7F3D0 0%, #6EE7B7 100%);
+  border-color: var(--success, #10B981);
+}
+
+.calendario-dia.reservado {
+  background: linear-gradient(135deg, #FED7AA 0%, #FDBA74 100%);
+  border-color: var(--warning, #F59E0B);
+}
+
+.calendario-dia-numero {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text, #2D3748);
+  z-index: 1;
+}
+
+.calendario-indicadores {
+  position: absolute;
+  bottom: 2px;
+  display: flex;
+  gap: 2px;
+  z-index: 1;
+}
+
+.calendario-contador {
+  font-size: 0.6rem;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+  color: white;
+  border-radius: 8px;
+  padding: 2px 5px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(255, 107, 107, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Mobile - Ajustes compactos */
+@media (max-width: 768px) {
+  .calendario-agenda {
+    padding: 0.5rem;
+  }
+
+  .calendario-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .calendario-titulo {
+    font-size: 0.8rem;
+  }
+
+  .btn-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.75rem;
+  }
+
+  .calendario-dia {
+    min-height: 32px;
+    border-radius: 5px;
+  }
+
+  .calendario-dias-semana {
+    font-size: 0.65rem;
+    gap: 0.15rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .calendario-grid {
+    gap: 0.15rem;
+  }
+
+  .calendario-dia-numero {
+    font-size: 0.7rem;
+  }
+
+  .calendario-contador {
+    font-size: 0.55rem;
+    padding: 1px 3px;
+  }
+}

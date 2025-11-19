@@ -1,0 +1,257 @@
+/**
+ * 🎯 MODERN RESPONSIVE DESIGN SYSTEM
+ * Baseado em: CSS clamp(), Container Queries, Fluid Typography
+ * Referência: Smashing Magazine, Modern CSS Solutions (2025)
+ */
+
+/* ==========================================
+   FLUID TYPOGRAPHY SCALE
+   Escala suave de 320px (mobile) até 1440px (desktop)
+   ========================================== */
+
+:root {
+  /* Fluid Font Sizes - clamp(min, preferred, max)
+     Base: 4pt/8pt grid system (Material Design / iOS HIG)
+     Mobile-optimized: valores menores para melhor densidade */
+  --fs-xs: clamp(0.75rem, 0.7rem + 0.2vw, 0.813rem);       /* 12px → 13px */
+  --fs-sm: clamp(0.875rem, 0.85rem + 0.125vw, 0.938rem);   /* 14px → 15px */
+  --fs-base: clamp(0.938rem, 0.9rem + 0.2vw, 1rem);        /* 15px → 16px */
+  --fs-lg: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);        /* 16px → 18px */
+  --fs-xl: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);       /* 18px → 20px */
+  --fs-2xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);       /* 20px → 24px */
+  --fs-3xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);             /* 24px → 32px */
+  --fs-4xl: clamp(1.875rem, 1.5rem + 1.875vw, 2.5rem);     /* 30px → 40px */
+
+  /* Fluid Spacing - 8pt base grid (melhor para touch)
+     Mobile: valores compactos, Desktop: breathing room */
+  --space-3xs: clamp(0.25rem, 0.2rem + 0.125vw, 0.313rem); /* 4px → 5px */
+  --space-2xs: clamp(0.5rem, 0.45rem + 0.25vw, 0.625rem);  /* 8px → 10px */
+  --space-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);   /* 12px → 14px */
+  --space-sm: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);        /* 16px → 20px */
+  --space-md: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);     /* 20px → 24px */
+  --space-lg: clamp(1.5rem, 1.3rem + 1vw, 2rem);           /* 24px → 32px */
+  --space-xl: clamp(2rem, 1.7rem + 1.5vw, 3rem);           /* 32px → 48px */
+  --space-2xl: clamp(2.5rem, 2rem + 2.5vw, 4rem);          /* 40px → 64px */
+
+  /* Fluid Border Radius - mais compacto em mobile */
+  --radius-sm: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);  /* 4px → 6px */
+  --radius-md: clamp(0.5rem, 0.45rem + 0.25vw, 0.625rem);  /* 8px → 10px */
+  --radius-lg: clamp(0.625rem, 0.55rem + 0.375vw, 0.75rem);/* 10px → 12px */
+  --radius-xl: clamp(0.75rem, 0.65rem + 0.5vw, 1rem);      /* 12px → 16px */
+
+  /* Fluid Component Sizes - otimizado para mobile */
+  --btn-height: clamp(2.75rem, 2.5rem + 1.25vw, 3rem);     /* 44px → 48px */
+  --input-height: clamp(2.75rem, 2.5rem + 1.25vw, 3rem);   /* 44px → 48px */
+  --card-padding: clamp(0.75rem, 0.65rem + 0.5vw, 1rem);   /* 12px → 16px */
+  --section-padding: clamp(1rem, 0.9rem + 0.5vw, 1.5rem);  /* 16px → 24px */
+
+  /* Touch Target - iOS HIG: mínimo 44x44pt */
+  --touch-target: 2.75rem; /* 44px fixo */
+}
+
+/* ==========================================
+   CONTAINER QUERIES
+   Componentes adaptam ao container, não ao viewport
+   ========================================== */
+
+/* Card container */
+.card-container {
+  container-type: inline-size;
+  container-name: card;
+}
+
+/* Card adaptativo */
+@container card (max-width: 400px) {
+  .artista-item {
+    padding: var(--space-sm);
+  }
+
+  .artista-nome {
+    font-size: var(--fs-base);
+  }
+
+  .btn {
+    font-size: var(--fs-sm);
+    padding: var(--space-2xs) var(--space-xs);
+  }
+}
+
+@container card (min-width: 401px) {
+  .artista-item {
+    padding: var(--space-md);
+  }
+
+  .artista-nome {
+    font-size: var(--fs-lg);
+  }
+}
+
+/* ==========================================
+   FLUID GRID SYSTEM
+   Grid que adapta automaticamente
+   ========================================== */
+
+.grid-auto-fit {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+.grid-auto-fill {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+
+/* ==========================================
+   BREAKPOINTS (apenas quando necessário)
+   Uso: Mudanças de layout estrutural
+   ========================================== */
+
+/* Mobile First - DENSIDADE OTIMIZADA */
+@media (max-width: 47.99em) {
+  :root {
+    /* Reduzir espaçamentos para mobile */
+    --container-padding: var(--space-sm);
+    --section-gap: var(--space-sm);
+  }
+
+  /* Componentes mais compactos em mobile */
+  .card,
+  .artista-item,
+  .perfil-card {
+    padding: var(--space-xs) !important;
+  }
+
+  h1, .title {
+    font-size: var(--fs-2xl) !important;
+    margin-bottom: var(--space-xs) !important;
+  }
+
+  h2, .subtitle {
+    font-size: var(--fs-base) !important;
+    margin-bottom: var(--space-2xs) !important;
+  }
+
+  h3, .artista-nome {
+    font-size: var(--fs-lg) !important;
+    margin-bottom: var(--space-3xs) !important;
+  }
+
+  p, .artista-localizacao {
+    font-size: var(--fs-sm) !important;
+    margin-top: var(--space-3xs) !important;
+  }
+
+  /* Tags menores */
+  .artista-tag,
+  .tag,
+  .badge {
+    font-size: var(--fs-xs) !important;
+    padding: var(--space-3xs) var(--space-2xs) !important;
+  }
+
+  /* Botões compactos */
+  .btn,
+  button {
+    font-size: var(--fs-sm) !important;
+    padding: var(--space-xs) var(--space-sm) !important;
+  }
+
+  /* Inputs compactos */
+  input,
+  textarea,
+  select,
+  .field__input {
+    font-size: var(--fs-base) !important;
+    padding: var(--space-xs) !important;
+  }
+
+  /* Grid mais compacto */
+  .grid-2,
+  .dashboard-grid,
+  .artistas-lista {
+    gap: var(--space-sm) !important;
+  }
+}
+
+/* Tablet (768px+) */
+@media (min-width: 48em) {
+  :root {
+    --container-padding: var(--space-lg);
+  }
+}
+
+/* Desktop (1024px+) */
+@media (min-width: 64em) {
+  :root {
+    --container-padding: var(--space-xl);
+  }
+}
+
+/* ==========================================
+   UTILITY CLASSES RESPONSIVAS
+   ========================================== */
+
+/* Fluid padding/margin helpers */
+.p-fluid { padding: var(--space-md); }
+.px-fluid { padding-inline: var(--space-md); }
+.py-fluid { padding-block: var(--space-md); }
+.m-fluid { margin: var(--space-md); }
+.gap-fluid { gap: var(--space-md); }
+
+/* Responsive visibility */
+@media (max-width: 47.99em) {
+  .hide-mobile { display: none !important; }
+}
+
+@media (min-width: 48em) {
+  .hide-desktop { display: none !important; }
+  .mobile-only { display: none !important; }
+}
+
+/* ==========================================
+   TOUCH-FRIENDLY IMPROVEMENTS
+   ========================================== */
+
+/* Aumentar área de toque em mobile */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  .btn,
+  a[role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: var(--touch-target);
+    min-width: var(--touch-target);
+  }
+
+  /* Espaçamento entre elementos clicáveis */
+  .btn + .btn,
+  button + button {
+    margin-top: var(--space-2xs);
+  }
+}
+
+/* ==========================================
+   PERFORMANCE & ACCESSIBILITY
+   ========================================== */
+
+/* Respeitar preferência de movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Melhor contraste em dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #f8f9fa;
+    --text-secondary: #adb5bd;
+    --background: #212529;
+  }
+}

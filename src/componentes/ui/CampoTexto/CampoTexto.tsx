@@ -1,0 +1,94 @@
+import { useState, type InputHTMLAttributes } from "react";
+import { Eye, EyeOff } from "../Icons";
+
+type Props = InputHTMLAttributes<HTMLInputElement> & {
+  label?: string;
+  acaoTexto?: string; // Deprecated: use showPasswordToggle instead
+  onAcaoClick?: () => void; // Deprecated: handled automatically
+  showPasswordToggle?: boolean; // New: automatically show eye icon for password
+  className?: string;
+};
+
+/**
+ * CampoTexto - Componente de campo de texto
+ *
+ * @deprecated acaoTexto/onAcaoClick - Use showPasswordToggle para senhas com ícone automático
+ *
+ * @example
+ * // Novo padrão (recomendado)
+ * <CampoTexto label="Senha" type="password" showPasswordToggle />
+ *
+ * // Padrão antigo (ainda suportado)
+ * <CampoTexto label="Senha" type={showPassword ? "text" : "password"} acaoTexto={showPassword ? "OCULTAR" : "EXIBIR"} onAcaoClick={() => setShowPassword(!showPassword)} />
+ */
+export function CampoTexto({
+  label,
+  acaoTexto,
+  onAcaoClick,
+  showPasswordToggle,
+  className = "",
+  id,
+  name,
+  type,
+  ...rest
+}: Props) {
+  const [internalShowPassword, setInternalShowPassword] = useState(false);
+
+  // Detectar se é campo de senha e deve mostrar toggle automaticamente
+  const isPasswordField = type === "password" || showPasswordToggle;
+  const shouldShowToggle = showPasswordToggle || (isPasswordField && !acaoTexto);
+
+  // Determinar o tipo do input baseado no estado
+  const inputType = shouldShowToggle
+    ? (internalShowPassword ? "text" : "password")
+    : type;
+
+  const cls = ["field", className].filter(Boolean).join(" ");
+  const inputCls = ["field__input", (isPasswordField ? "pr" : "")].filter(Boolean).join(" ");
+
+  // Gerar ID único se não fornecido
+  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+
+  const handleTogglePassword = () => {
+    if (onAcaoClick) {
+      // Usar callback externo se fornecido (compatibilidade)
+      onAcaoClick();
+    } else {
+      // Usar estado interno
+      setInternalShowPassword(!internalShowPassword);
+    }
+  };
+
+  return (
+    <div className={cls}>
+      <input
+        {...rest}
+        type={inputType}
+        id={inputId}
+        name={name || inputId}
+        placeholder=" "
+        className={inputCls}
+      />
+      {label && <label htmlFor={inputId} className="field__label">{label}</label>}
+
+      {/* Novo padrão: ícone de olho */}
+      {shouldShowToggle && (
+        <button
+          type="button"
+          className="field__action field__action--icon"
+          onClick={handleTogglePassword}
+          aria-label={internalShowPassword ? "Ocultar senha" : "Mostrar senha"}
+        >
+          {internalShowPassword ? <EyeOff /> : <Eye />}
+        </button>
+      )}
+
+      {/* Padrão antigo: texto (deprecated mas ainda suportado) */}
+      {acaoTexto && !shouldShowToggle && (
+        <button type="button" className="field__action" onClick={onAcaoClick}>
+          {acaoTexto}
+        </button>
+      )}
+    </div>
+  );
+}

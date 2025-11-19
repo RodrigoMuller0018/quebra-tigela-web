@@ -1,0 +1,12 @@
+.select{
+  background:var(--bg); border:2px solid var(--border); color:var(--text);
+  padding:.7rem .9rem; border-radius:10px; outline:0;
+  transition:all 0.3s ease;
+}
+.select:focus{
+  border-color:var(--border-focus);
+  box-shadow:0 0 0 3px rgba(78, 205, 196, 0.1);
+}
+.select option{
+  background:var(--bg); color:var(--text);
+}

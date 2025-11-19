@@ -1,0 +1,113 @@
+/* Container principal do switch */
+.switch-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0.25rem 0 1rem;
+}
+
+/* Input checkbox invisível */
+.switch-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Label clicável que atua como o switch */
+.switch-label {
+  display: block;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Track/container dos botões - GRID SIMPLES */
+.switch-track {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  min-width: 240px;
+  max-width: 320px;
+}
+
+/* Opções/botões individuais - SEM position absolute */
+.switch-option {
+  padding: 0.55rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-weight: 800;
+  text-align: center;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Estado padrão: inativo */
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.switch-option:hover {
+  color: var(--text);
+}
+
+/* Estados baseados no checkbox - APENAS background e color */
+
+/* Cliente ativo (não checked) */
+.switch-input:not(:checked) + .switch-label .switch-option:first-child {
+  background: var(--primary);
+  color: var(--text-on-primary);
+}
+
+/* Artista ativo (checked) */
+.switch-input:checked + .switch-label .switch-option:last-child {
+  background: var(--primary);
+  color: var(--text-on-primary);
+}
+
+/* Estados disabled */
+.switch-input:disabled + .switch-label {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.switch-input:disabled + .switch-label .switch-option {
+  cursor: not-allowed;
+}
+
+/* Focus para acessibilidade */
+.switch-input:focus-visible + .switch-label {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.35);
+  border-radius: 12px;
+}
+
+/* Redução de movimento para acessibilidade */
+@media (prefers-reduced-motion: reduce) {
+  .switch-option {
+    transition: none;
+  }
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+  .switch-track {
+    min-width: 200px;
+    max-width: 280px;
+  }
+
+  .switch-option {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.9rem;
+  }
+}
+
+.switch-highlight {
+  display: none;
+}

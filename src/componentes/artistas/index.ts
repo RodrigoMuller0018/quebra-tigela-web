@@ -1,0 +1,1 @@
+export { PerfilPublicoArtista } from "./PerfilPublicoArtista";
