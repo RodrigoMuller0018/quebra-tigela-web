@@ -4,9 +4,10 @@ import type { Artista, NovoArtista, AtualizaArtista } from "../tipos/artistas";
 export async function cadastrarArtista(dados: NovoArtista): Promise<Artista> {
   const res = await http.post("/api/auth/register/artist", dados);
   // Transformar _id para id se necessário e garantir artTypes é array
+  // Força conversão para string para garantir compatibilidade
   return {
     ...res.data,
-    id: res.data.id || res.data._id,
+    id: String(res.data.id || res.data._id),
     artTypes: res.data.artTypes || [],
   };
 }
@@ -29,21 +30,29 @@ export async function listarArtistas(filtros?: FiltrosArtistas): Promise<Artista
 
   const res = await http.get(url);
   // Transformar _id para id se necessário e garantir artTypes é array
+  // Força conversão para string para garantir compatibilidade
   return res.data.map((artista: any) => ({
     ...artista,
-    id: artista.id || artista._id,
+    id: String(artista.id || artista._id),
     artTypes: artista.artTypes || [],
   }));
 }
 
 export async function obterArtistaPorId(id: string): Promise<Artista> {
+  console.log("🔍 API - obterArtistaPorId chamado com ID:", id);
   const res = await http.get(`/api/artists/${id}/profile`);
+  console.log("📥 API - Resposta recebida:", res.data);
+
   // Transformar _id para id se necessário e garantir artTypes é array
-  return {
+  // Força conversão para string para garantir compatibilidade
+  const artistaFinal = {
     ...res.data,
-    id: res.data.id || res.data._id,
+    id: String(res.data.id || res.data._id),
     artTypes: res.data.artTypes || [],
   };
+
+  console.log("✅ API - Artista processado com ID:", artistaFinal.id);
+  return artistaFinal;
 }
 
 export async function obterMeuPerfil(): Promise<Artista> {
@@ -68,10 +77,18 @@ export async function obterMeuPerfil(): Promise<Artista> {
     const res = await http.get(`/api/artists/${meuId}`);
     console.log("obterMeuPerfil - ID extraído do token:", meuId);
     console.log("obterMeuPerfil - dados recebidos:", res.data);
+    console.log("obterMeuPerfil - res.data.id:", res.data.id);
+    console.log("obterMeuPerfil - res.data._id:", res.data._id);
+
+    const idFinal = String(res.data.id || res.data._id);
+    console.log("obterMeuPerfil - ID FINAL usado (string):", idFinal);
+    console.log("obterMeuPerfil - tipo do ID:", typeof idFinal);
+
     // Transformar _id para id se necessário e garantir artTypes é array
+    // Força conversão para string para garantir compatibilidade
     return {
       ...res.data,
-      id: res.data.id || res.data._id,
+      id: idFinal,
       artTypes: res.data.artTypes || [],
     };
   } catch (error) {
@@ -80,15 +97,41 @@ export async function obterMeuPerfil(): Promise<Artista> {
 }
 
 export async function atualizarArtista(id: string, dados: AtualizaArtista): Promise<Artista> {
+  console.log("📝 API - atualizarArtista chamado:", { id, dados });
   const res = await http.patch(`/api/artists/${id}`, dados);
+  console.log("✅ API - Artista atualizado:", res.data);
+
   // Transformar _id para id se necessário e garantir artTypes é array
+  // Força conversão para string para garantir compatibilidade
   return {
     ...res.data,
-    id: res.data.id || res.data._id,
+    id: String(res.data.id || res.data._id),
     artTypes: res.data.artTypes || [],
   };
 }
 
 export async function excluirArtista(id: string): Promise<void> {
   await http.delete(`/api/artists/${id}`);
+}
+
+/**
+ * Verificar identidade do artista com foto e documento
+ * Usa reconhecimento facial para validar identidade
+ */
+export async function verificarIdentidadeArtista(
+  id: string,
+  selfie: File,
+  documento: File
+): Promise<{ verified: boolean; similarity: number; message: string }> {
+  const formData = new FormData();
+  formData.append("selfie", selfie);
+  formData.append("document", documento);
+
+  const res = await http.post(`/api/artists/${id}/verify-identity`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return res.data;
 }

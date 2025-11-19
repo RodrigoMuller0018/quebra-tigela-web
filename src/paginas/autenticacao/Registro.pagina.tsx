@@ -12,6 +12,7 @@ interface FormularioCliente {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;
   city: string;
   state: string;
 }
@@ -20,6 +21,7 @@ interface FormularioArtista {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;
   artTypes: string;
   bio: string;
   city: string;
@@ -29,14 +31,13 @@ interface FormularioArtista {
 export default function RegistroPagina() {
   const [ehArtista, setEhArtista] = useState(false); // true = Artista, false = Cliente
   const [salvando, setSalvando] = useState(false);
-  const [verSenhaCliente, setVerSenhaCliente] = useState(false);
-  const [verSenhaArtista, setVerSenhaArtista] = useState(false);
   const navigate = useNavigate();
 
   const [formCliente, setFormCliente] = useState<FormularioCliente>({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     city: "",
     state: ""
   });
@@ -45,6 +46,7 @@ export default function RegistroPagina() {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     artTypes: "",
     bio: "",
     city: "",
@@ -58,6 +60,7 @@ export default function RegistroPagina() {
     if (!form.email.trim()) return "E-mail é obrigatório";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "E-mail inválido";
     if (form.password.length < 6) return "Senha deve ter pelo menos 6 caracteres";
+    if (form.password !== form.confirmPassword) return "As senhas não conferem";
 
     if (ehArtista) {
       const artTypesArray = formArtista.artTypes.split(",").map(s => s.trim()).filter(Boolean);
@@ -164,11 +167,22 @@ export default function RegistroPagina() {
               id="senha-cliente"
               name="senha"
               label="Senha * (mín. 6 chars)"
-              type={verSenhaCliente ? "text" : "password"}
+              type="password"
               value={formCliente.password}
               onChange={(e) => setCampoCliente("password", e.target.value)}
-              acaoTexto={verSenhaCliente ? "OCULTAR" : "EXIBIR"}
-              onAcaoClick={() => setVerSenhaCliente(v => !v)}
+              showPasswordToggle
+              required
+              minLength={6}
+            />
+
+            <CampoTexto
+              id="confirmar-senha-cliente"
+              name="confirmarSenha"
+              label="Confirmar Senha *"
+              type="password"
+              value={formCliente.confirmPassword}
+              onChange={(e) => setCampoCliente("confirmPassword", e.target.value)}
+              showPasswordToggle
               required
               minLength={6}
             />
@@ -215,11 +229,22 @@ export default function RegistroPagina() {
               id="senha-artista"
               name="senha"
               label="Senha * (mín. 6 chars)"
-              type={verSenhaArtista ? "text" : "password"}
+              type="password"
               value={formArtista.password}
               onChange={(e) => setCampoArtista("password", e.target.value)}
-              acaoTexto={verSenhaArtista ? "OCULTAR" : "EXIBIR"}
-              onAcaoClick={() => setVerSenhaArtista(v => !v)}
+              showPasswordToggle
+              required
+              minLength={6}
+            />
+
+            <CampoTexto
+              id="confirmar-senha-artista"
+              name="confirmarSenha"
+              label="Confirmar Senha *"
+              type="password"
+              value={formArtista.confirmPassword}
+              onChange={(e) => setCampoArtista("confirmPassword", e.target.value)}
+              showPasswordToggle
               required
               minLength={6}
             />

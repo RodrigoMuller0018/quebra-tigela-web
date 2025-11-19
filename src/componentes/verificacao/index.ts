@@ -1,0 +1,1 @@
+export { VerificacaoIdentidade } from "./VerificacaoIdentidade";

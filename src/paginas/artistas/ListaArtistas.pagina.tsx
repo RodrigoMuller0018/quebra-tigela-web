@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { listarArtistas, excluirArtista } from "../../api/artistas.api";
 import type { Artista } from "../../tipos/artistas";
 import { Cartao, CampoTexto, Botao } from "../../componentes/ui";
@@ -9,7 +9,6 @@ import { useAutenticacao } from "../../contexts/Autenticacao.context";
 const TAMANHO_PAGINA = 10;
 
 export default function ListaArtistasPagina() {
-  const navigate = useNavigate();
   const { role, usuario } = useAutenticacao();
   const [artistas, setArtistas] = useState<Artista[]>([]);
   const [carregando, setCarregando] = useState(false);

@@ -6,3 +6,4 @@ export { Cartao } from "./Cartao/Cartao";
 export { Switch } from "./Switch/Switch";
 export { ToggleUsuario } from "./ToggleUsuario/ToggleUsuario";
 export { Modal } from "./Modal/Modal";
+export { Tabela, type TabelaProps, type LinhaTabela, type CelulaTabela } from "./Tabela";

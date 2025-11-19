@@ -50,7 +50,7 @@ export default function HomeArtistaPagina() {
   }, [usuario]);
 
   return (
-    <Container>
+    <Container size="full">
       <Stack spacing="large">
         <Stack spacing="small" align="center">
           <h1 className="title">Meu Dashboard</h1>
@@ -102,17 +102,28 @@ export default function HomeArtistaPagina() {
               <Stack spacing="small">
                 <Botao
                   variante="primaria"
-                  onClick={() => navigate(`/artistas/${artista.id}`)}
+                  onClick={() => {
+                    console.log("🔍 NAVEGANDO PARA EDITAR - artistaID:", artista.id, "| usuarioSub:", usuario?.sub);
+                    navigate(`/artistas/${artista.id || usuario?.sub}`);
+                  }}
                   grande
                 >
                   ✏️ Editar Meu Perfil
                 </Botao>
-                <Link
-                  to={`/artistas/${artista.id}`}
-                  className="btn btn-ghost link-sem-decoracao"
-                >
-                  👁️ Ver Como Perfil Público
-                </Link>
+
+                {/* Botão "Ver Perfil Público" só aparece se o artista estiver verificado */}
+                {artista.verified && (
+                  <Botao
+                    variante="fantasma"
+                    onClick={() => {
+                      const idParaUsar = artista.id || usuario?.sub;
+                      console.log("👁️ VER PERFIL PÚBLICO - ID usado:", idParaUsar);
+                      navigate(`/artistas/${idParaUsar}?preview=true`);
+                    }}
+                  >
+                    👁️ Ver Como Perfil Público
+                  </Botao>
+                )}
               </Stack>
             </div>
           ) : perfilIncompleto ? (
@@ -184,10 +195,15 @@ export default function HomeArtistaPagina() {
 
             <Stack spacing="medium">
               <Botao
-                variante="primaria"
-                onClick={() => navigate(`/artistas/${usuario?.sub}`)}
+                onClick={() => navigate("/artista/agenda")}
               >
-                ✏️ Editar Meu Perfil
+                📅 Gerenciar Agenda
+              </Botao>
+
+              <Botao
+                onClick={() => navigate("/artista/servicos")}
+              >
+                🎭 Gerenciar Serviços
               </Botao>
 
               <Botao disabled className="acao-desabilitada">

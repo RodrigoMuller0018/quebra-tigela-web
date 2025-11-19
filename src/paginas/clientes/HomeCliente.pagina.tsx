@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { listarArtistas } from "../../api/artistas.api";
 import { listarEstados, listarCidadesPorEstado, type Estado, type Cidade } from "../../api/ibge.api";
 import type { Artista } from "../../tipos/artistas";
-import { Cartao, CampoTexto, Modal, Botao, Seletor, type OpcaoSeletor } from "../../componentes/ui";
+import { Modal, Botao, Seletor, type OpcaoSeletor } from "../../componentes/ui";
 import { Stack, Container } from "../../componentes/layout";
 import { erro as avisoErro } from "../../utilitarios/avisos";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -23,8 +23,6 @@ export default function HomeClientePagina() {
   // Dados da API do IBGE
   const [estados, setEstados] = useState<Estado[]>([]);
   const [cidades, setCidades] = useState<Cidade[]>([]);
-  const [carregandoEstados, setCarregandoEstados] = useState(false);
-  const [carregandoCidades, setCarregandoCidades] = useState(false);
 
   async function carregar() {
     setCarregando(true);
@@ -51,14 +49,11 @@ export default function HomeClientePagina() {
   // Carregar estados ao montar
   useEffect(() => {
     async function carregarEstados() {
-      setCarregandoEstados(true);
       try {
         const data = await listarEstados();
         setEstados(data);
       } catch (e: any) {
         avisoErro(e?.message ?? "Erro ao carregar estados");
-      } finally {
-        setCarregandoEstados(false);
       }
     }
     carregarEstados();
@@ -72,15 +67,12 @@ export default function HomeClientePagina() {
     }
 
     async function carregarCidades() {
-      setCarregandoCidades(true);
       try {
         const data = await listarCidadesPorEstado(estadoSelecionado);
         setCidades(data);
       } catch (e: any) {
         avisoErro(e?.message ?? "Erro ao carregar cidades");
         setCidades([]);
-      } finally {
-        setCarregandoCidades(false);
       }
     }
     carregarCidades();
@@ -320,11 +312,10 @@ export default function HomeClientePagina() {
                   <div className="artista-item-content">
                     <h3 className="artista-nome">{artista.name}</h3>
 
-                    {artista.city && artista.state && (
-                      <p className="artista-localizacao">
-                        {artista.city} - {artista.state}
-                      </p>
-                    )}
+                    <p className="artista-localizacao">
+                      📍 {artista.city}
+                      {artista.state && ` - ${artista.state}`}
+                    </p>
 
                     <div className="artista-tags">
                       {artista.artTypes.map((tipo, index) => (

@@ -73,7 +73,7 @@ export default function PerfilCliente() {
   }
 
   return (
-    <Container>
+    <Container size="full">
       <Cartao>
         <h2 className="perfil-header" style={{ textAlign: "center", fontSize: "1.5rem", fontWeight: "700" }}>
           Meu Perfil

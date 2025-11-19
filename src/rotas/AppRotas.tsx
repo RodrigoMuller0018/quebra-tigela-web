@@ -6,8 +6,9 @@ import DetalheArtista from "../paginas/artistas/DetalheArtista.pagina";
 import HomeClientePagina from "../paginas/clientes/HomeCliente.pagina";
 import PerfilCliente from "../paginas/clientes/PerfilCliente.pagina";
 import HomeArtistaPagina from "../paginas/artistas/HomeArtista.pagina";
+import AgendaArtistaPagina from "../paginas/artistas/AgendaArtista.pagina";
+import ServicosArtistaPagina from "../paginas/artistas/ServicosArtista.pagina";
 import EsqueciSenha from "../paginas/autenticacao/EsqueciSenha.pagina";
-import RedefinirSenha from "../paginas/autenticacao/RedefinirSenha.pagina";
 import PopularArtistasDevPagina from "../paginas/dev/PopularArtistas.pagina";
 import Pagina404 from "../paginas/Pagina404";
 import AplicacaoLayout from "../layout/Aplicacao.layout";
@@ -22,7 +23,6 @@ const router = createBrowserRouter([
       { path: "/login", element: <LoginPagina /> },
       { path: "/registro", element: <RegistroPagina /> },
       { path: "/autenticacao/esqueci-senha", element: <EsqueciSenha /> },
-      { path: "/autenticacao/redefinir-senha", element: <RedefinirSenha /> },
 
       // Rota de desenvolvimento - remover em produção
       { path: "/dev/popular-artistas", element: <PopularArtistasDevPagina /> },
@@ -47,12 +47,28 @@ const router = createBrowserRouter([
         )
       },
 
-      // Rota home para artistas
+      // Rotas para artistas
       {
         path: "/artista",
         element: (
           <RotaProtegida>
             <HomeArtistaPagina />
+          </RotaProtegida>
+        )
+      },
+      {
+        path: "/artista/agenda",
+        element: (
+          <RotaProtegida>
+            <AgendaArtistaPagina />
+          </RotaProtegida>
+        )
+      },
+      {
+        path: "/artista/servicos",
+        element: (
+          <RotaProtegida>
+            <ServicosArtistaPagina />
           </RotaProtegida>
         )
       },

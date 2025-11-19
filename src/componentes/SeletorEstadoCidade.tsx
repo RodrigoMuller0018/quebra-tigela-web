@@ -24,20 +24,15 @@ export function SeletorEstadoCidade({
 }: SeletorEstadoCidadeProps) {
   const [estados, setEstados] = useState<Estado[]>([]);
   const [cidades, setCidades] = useState<Cidade[]>([]);
-  const [carregandoEstados, setCarregandoEstados] = useState(false);
-  const [carregandoCidades, setCarregandoCidades] = useState(false);
 
   // Carregar estados ao montar componente
   useEffect(() => {
     async function carregar() {
-      setCarregandoEstados(true);
       try {
         const data = await listarEstados();
         setEstados(data);
       } catch (e: any) {
         avisoErro(e?.message ?? "Erro ao carregar estados");
-      } finally {
-        setCarregandoEstados(false);
       }
     }
     carregar();
@@ -51,15 +46,12 @@ export function SeletorEstadoCidade({
     }
 
     async function carregar() {
-      setCarregandoCidades(true);
       try {
         const data = await listarCidadesPorEstado(estadoSelecionado);
         setCidades(data);
       } catch (e: any) {
         avisoErro(e?.message ?? "Erro ao carregar cidades");
         setCidades([]);
-      } finally {
-        setCarregandoCidades(false);
       }
     }
     carregar();

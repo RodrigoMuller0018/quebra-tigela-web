@@ -28,7 +28,7 @@ const CampoTextoContext = createContext<CampoTextoContextValue | null>(null);
 function useCampoTexto() {
   const context = useContext(CampoTextoContext);
   if (!context) {
-    throw new Error('CampoTexto compound components must be used within CampoTexto');
+    throw new globalThis.Error('CampoTexto compound components must be used within CampoTexto');
   }
   return context;
 }

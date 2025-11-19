@@ -7,7 +7,10 @@ export default function AplicacaoLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [carregandoInicial, setCarregandoInicial] = useState(true);
-  const [sidebarAberta, setSidebarAberta] = useState(true);
+
+  // Sidebar: SEMPRE fechada inicialmente
+  // Só abre quando o usuário clicar no botão
+  const [sidebarAberta, setSidebarAberta] = useState(false);
 
   // Efeito para simular verificação inicial de autenticação
   useEffect(() => {
@@ -18,6 +21,20 @@ export default function AplicacaoLayout() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Fechar sidebar automaticamente quando redimensionar para mobile
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth <= 768;
+      // Apenas fecha no mobile, não abre automaticamente no desktop
+      if (isMobile && sidebarAberta) {
+        setSidebarAberta(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sidebarAberta]);
 
   function handleLogout() {
     logout();
@@ -57,16 +74,18 @@ export default function AplicacaoLayout() {
       {/* Sidebar Lateral */}
       {mostrarSidebar && (
         <>
-          {/* Overlay para mobile */}
-          {sidebarAberta && (
-            <div
-              className="sidebar-overlay"
-              onClick={() => setSidebarAberta(false)}
-            />
-          )}
-
           {/* Sidebar */}
           <aside className={`sidebar ${sidebarAberta ? 'sidebar-aberta' : 'sidebar-fechada'}`}>
+            {/* Botão X para fechar (visível APENAS no mobile) */}
+            <button
+              className="sidebar-close-mobile"
+              onClick={() => setSidebarAberta(false)}
+              aria-label="Fechar menu"
+              title="Fechar menu"
+            >
+              ✕
+            </button>
+
             {/* Header da Sidebar */}
             <div className="sidebar-header">
               <div className="sidebar-brand">
@@ -157,6 +176,20 @@ export default function AplicacaoLayout() {
                     </Link>
                   )}
                   <Link
+                    to="/artista/agenda"
+                    className={`nav-item ${location.pathname === "/artista/agenda" ? "nav-item-ativo" : ""}`}
+                  >
+                    <span className="nav-icon">📅</span>
+                    {sidebarAberta && <span className="nav-texto">Minha Agenda</span>}
+                  </Link>
+                  <Link
+                    to="/artista/servicos"
+                    className={`nav-item ${location.pathname === "/artista/servicos" ? "nav-item-ativo" : ""}`}
+                  >
+                    <span className="nav-icon">🎭</span>
+                    {sidebarAberta && <span className="nav-texto">Meus Serviços</span>}
+                  </Link>
+                  <Link
                     to="/artistas"
                     className={`nav-item ${location.pathname === "/artistas" ? "nav-item-ativo" : ""}`}
                   >
@@ -178,6 +211,14 @@ export default function AplicacaoLayout() {
               </button>
             </div>
           </aside>
+
+          {/* Overlay para mobile - aparece quando sidebar está aberta */}
+          {sidebarAberta && (
+            <div
+              className="sidebar-overlay"
+              onClick={() => setSidebarAberta(false)}
+            />
+          )}
         </>
       )}
 

@@ -1,7 +1,12 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import type { Artista } from "../../tipos/artistas";
+import type { Service } from "../../tipos/servicos";
 import { Cartao, Botao } from "../ui";
 import { Stack } from "../layout";
+import { AgendaCliente } from "../agenda";
+import { ListaServicos } from "../servicos";
+import { listarServicosPorArtista } from "../../api/servicos.api";
 
 interface Props {
   artista: Artista;
@@ -9,6 +14,8 @@ interface Props {
 
 export function PerfilPublicoArtista({ artista }: Props) {
   const navigate = useNavigate();
+  const [servicos, setServicos] = useState<Service[]>([]);
+  const [carregandoServicos, setCarregandoServicos] = useState(false);
 
   // Debug detalhado - verificar TODA a estrutura de dados
   console.log("=== DEBUG PERFIL PÚBLICO ===");
@@ -55,6 +62,27 @@ export function PerfilPublicoArtista({ artista }: Props) {
   const tiposArte = dadosArtista?.artTypes || dadosArtista?.tipos_arte || dadosArtista?.specialties || [];
 
   console.log("13. Valores extraídos:", { nome, email, bio, verificado, cidade, estado, tiposArte });
+
+  // Carregar serviços do artista
+  useEffect(() => {
+    const artistaId = dadosArtista?.id || dadosArtista?._id;
+    if (!artistaId) return;
+
+    setCarregandoServicos(true);
+    listarServicosPorArtista(artistaId)
+      .then((dados) => {
+        // Filtrar apenas serviços ativos para exibição pública
+        const servicosAtivos = dados.filter((s) => s.active);
+        setServicos(servicosAtivos);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar serviços:", err);
+        setServicos([]);
+      })
+      .finally(() => {
+        setCarregandoServicos(false);
+      });
+  }, [dadosArtista?.id, dadosArtista?._id]);
 
   // Formatar localização
   const localizacao = cidade && estado
@@ -147,6 +175,40 @@ export function PerfilPublicoArtista({ artista }: Props) {
                 Nenhuma especialidade cadastrada ainda.
               </p>
             )}
+          </div>
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
+
+          {/* Serviços Oferecidos */}
+          <div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text)' }}>
+              Serviços Oferecidos
+            </h3>
+            {carregandoServicos ? (
+              <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontWeight: '400' }}>
+                Carregando serviços...
+              </p>
+            ) : servicos.length > 0 ? (
+              <ListaServicos servicos={servicos} modo="publico" />
+            ) : (
+              <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontWeight: '400' }}>
+                Este artista ainda não cadastrou serviços.
+              </p>
+            )}
+          </div>
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
+
+          {/* Agenda - Horários Disponíveis */}
+          <div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text)' }}>
+              Agendar Horário
+            </h3>
+            <AgendaCliente
+              artistaId={dadosArtista?.id || dadosArtista?._id}
+              artistaNome={nome}
+              artistaEmail={email}
+            />
           </div>
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />

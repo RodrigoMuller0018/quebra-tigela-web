@@ -1,2 +1,5 @@
 /* Import utilities CSS */
 @import './estilos/utilities.css';
+
+/* Import responsive system */
+@import './estilos/responsive.css';
