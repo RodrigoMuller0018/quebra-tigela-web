@@ -141,15 +141,27 @@ body{
   padding:clamp(16px,5vw,40px) clamp(12px,5vw,24px)}
 .card{
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
-  box-shadow:var(--shadow-md); transition:all 0.3s ease;
+  box-shadow:var(--shadow-md);
+  /* Removido transition e hover para manter cards estáticos */
 }
-.card:hover{
+/* .card:hover{
   box-shadow:var(--shadow-lg);
-}
+} */
 .form-card{width:min(520px,92vw); margin:clamp(8px,4vh,32px) auto; padding:clamp(20px,4.5vw,32px)}
 
-.title{margin:0 0 .25rem; font-size:clamp(1.35rem,5vw,1.6rem); font-weight:900}
-.subtitle{margin:0 0 1rem; color:var(--text-secondary); font-size:clamp(.9rem,3.2vw,1rem)}
+/* MELHORADO - Title e subtitle com melhor contraste */
+.title{
+  margin:0 0 .25rem;
+  font-size:clamp(1.35rem,5vw,1.6rem);
+  font-weight:900;
+  color: #1F2937;  /* Texto mais escuro para excelente legibilidade */
+}
+.subtitle{
+  margin:0 0 1rem;
+  color: #6B7280;  /* Cinza médio com bom contraste */
+  font-size:clamp(.9rem,3.2vw,1rem);
+  font-weight: 600; /* Peso aumentado */
+}
 
 /* segment (Cliente|Artista) */
 .seg{
@@ -186,7 +198,13 @@ body{
 .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
 @media (max-width:520px){ .grid-2{ grid-template-columns:1fr } }
 
-/* ===== Campos com label flutuante ===== */
+/* ===== Campos com label flutuante - ANTIGO (DESABILITADO) ===== */
+/* NOTA: Estes estilos foram substituídos pelo novo sistema em forms-dark.css
+   que usa .form-floating do Bootstrap 5 com estilo Tailwind moderno.
+   Mantidos aqui comentados para referência, mas NÃO devem ser usados.
+   Use os novos componentes em src/componentes/ui/FormInputs/ */
+
+/*
 .field{
   position:relative; margin:1.05rem 0; border-bottom:2px solid var(--underline);
   transition:border-color .15s ease, box-shadow .15s ease;
@@ -209,10 +227,8 @@ body{
   top:-6px; transform:none; font-size:.78rem; color:var(--border-focus);
 }
 
-/* ação (EXIBIR/OCULTAR) */
 .field__input.pr{ padding-right:92px }
 
-/* Remove ícone nativo de mostrar/ocultar senha do navegador */
 .field__input[type="password"]::-ms-reveal,
 .field__input[type="password"]::-ms-clear {
   display: none;
@@ -232,7 +248,6 @@ body{
 }
 .field__action:hover{ color:var(--primary-hover) }
 
-/* Estilo para ícone (novo padrão) */
 .field__action--icon {
   padding: 8px;
   color: var(--text-secondary);
@@ -256,7 +271,6 @@ body{
   height: 20px;
 }
 
-/* SELECT (visibilidade e seta) */
 .field--select .field__input{
   -webkit-appearance:none; -moz-appearance:none; appearance:none;
   height:44px; padding:18px 22px 10px 0; line-height:1.2; color:var(--text);
@@ -269,7 +283,6 @@ body{
   top:-6px; transform:none; font-size:.78rem; color:var(--border-focus);
 }
 
-/* ===== Utilitários globais de alinhamento ===== */
 .text-left  .field__input{ text-align:left }
 .text-right .field__input{ text-align:right }
 .text-center .field__input{ text-align:center }
@@ -287,6 +300,7 @@ body{
 .text-right .field--select[data-filled="true"] .field__label{ left:auto; right:0; transform:none; top:-6px }
 .text-center .field--select:focus-within .field__label,
 .text-center .field--select[data-filled="true"] .field__label{ left:50%; right:auto; transform:translateX(-50%); top:-6px }
+*/
 
 /* foco acessível */
 .btn:focus-visible, .seg-item:focus-visible, .field__action:focus-visible, .shortcut:focus-visible{

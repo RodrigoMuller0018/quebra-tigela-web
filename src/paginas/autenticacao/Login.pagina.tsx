@@ -62,7 +62,7 @@ export default function LoginPagina() {
 
   return (
     <Container size="small">
-      <Cartao>
+      <Cartao className="login-card">
       <h1 className="title">Entrar</h1>
       <p className="subtitle">Acesse sua conta para continuar</p>
 
@@ -91,16 +91,19 @@ export default function LoginPagina() {
           required
         />
 
-        <label htmlFor="lembrar-email-login" className="remember">
+        <div className="form-check remember">
           <input
             type="checkbox"
             id="lembrar-email-login"
             name="lembrar"
+            className="form-check-input"
             checked={lembrar}
             onChange={(e) => setLembrar(e.target.checked)}
           />
-          Lembrar e-mail neste dispositivo
-        </label>
+          <label htmlFor="lembrar-email-login" className="form-check-label">
+            Lembrar e-mail neste dispositivo
+          </label>
+        </div>
 
         <Botao type="submit" className="btn-primary btn-big" disabled={busy}>
           {busy ? "Entrando..." : "Entrar"}
@@ -112,6 +115,62 @@ export default function LoginPagina() {
         <span className="shortcut-sep">|</span>
         <Link to="/registro" className="shortcut">CRIAR CONTA</Link>
       </div>
+
+      <style>{`
+        /* Checkbox padronizado com Bootstrap - ALINHAMENTO VERTICAL CORRIGIDO */
+        .login-card .form-check.remember {
+          margin: 0.55rem 0 1.1rem 0 !important;
+          padding: 0 !important;
+          display: flex !important;
+          align-items: center !important;
+          gap: 0.5rem !important;
+        }
+
+        .login-card .form-check-input[type="checkbox"] {
+          width: 1.125rem !important;
+          height: 1.125rem !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          flex-shrink: 0 !important;
+          float: none !important;
+          vertical-align: middle !important;
+          background-color: #ffffff !important;
+          background-repeat: no-repeat !important;
+          background-position: center !important;
+          background-size: contain !important;
+          border: 1px solid #dee2e6 !important;
+          border-radius: 0.25rem !important;
+          appearance: none !important;
+          -webkit-appearance: none !important;
+          -moz-appearance: none !important;
+          print-color-adjust: exact !important;
+          cursor: pointer !important;
+        }
+
+        .login-card .form-check-input[type="checkbox"]:checked {
+          background-color: #0d6efd !important;
+          border-color: #0d6efd !important;
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e") !important;
+        }
+
+        .login-card .form-check-input[type="checkbox"]:focus {
+          outline: 0 !important;
+          border-color: #86b7fe !important;
+          box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+        }
+
+        .login-card .form-check-label {
+          color: var(--text-secondary) !important;
+          font-size: 0.95rem !important;
+          line-height: 1.125rem !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          cursor: pointer !important;
+          user-select: none !important;
+          display: inline-block !important;
+          vertical-align: middle !important;
+        }
+      `}</style>
     </Cartao>
     </Container>
   );

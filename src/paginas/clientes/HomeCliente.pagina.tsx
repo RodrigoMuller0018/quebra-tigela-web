@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { listarArtistas } from "../../api/artistas.api";
 import { listarEstados, listarCidadesPorEstado, type Estado, type Cidade } from "../../api/ibge.api";
 import type { Artista } from "../../tipos/artistas";
-import { Modal, Botao, Seletor, type OpcaoSeletor } from "../../componentes/ui";
+import { Modal, Botao } from "../../componentes/ui";
 import { Stack, Container } from "../../componentes/layout";
 import { erro as avisoErro } from "../../utilitarios/avisos";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -16,8 +16,8 @@ export default function HomeClientePagina() {
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
   // Filtros avançados
-  const [cidadeSelecionada, setCidadeSelecionada] = useState("");
-  const [estadoSelecionado, setEstadoSelecionado] = useState("");
+  const [cidadesSelecionadas, setCidadesSelecionadas] = useState<string[]>([]);
+  const [estadosSelecionados, setEstadosSelecionados] = useState<string[]>([]);
   const [tiposSelecionados, setTiposSelecionados] = useState<string[]>([]);
 
   // Dados da API do IBGE
@@ -29,8 +29,9 @@ export default function HomeClientePagina() {
     try {
       // Montar filtros para API
       const filtros: any = {};
-      if (estadoSelecionado) filtros.state = estadoSelecionado;
-      if (cidadeSelecionada) filtros.city = cidadeSelecionada;
+      // Se houver apenas 1 estado selecionado, passar para a API
+      if (estadosSelecionados.length === 1) filtros.state = estadosSelecionados[0];
+      if (cidadesSelecionadas.length === 1) filtros.city = cidadesSelecionadas[0];
 
       const data = await listarArtistas(filtros);
       setArtistas(data);
@@ -44,7 +45,7 @@ export default function HomeClientePagina() {
   // Recarregar quando filtros de estado/cidade mudarem
   useEffect(() => {
     carregar();
-  }, [estadoSelecionado, cidadeSelecionada]);
+  }, [estadosSelecionados, cidadesSelecionadas]);
 
   // Carregar estados ao montar
   useEffect(() => {
@@ -59,24 +60,33 @@ export default function HomeClientePagina() {
     carregarEstados();
   }, []);
 
-  // Carregar cidades quando estado mudar
+  // Carregar cidades quando estados mudarem
   useEffect(() => {
-    if (!estadoSelecionado) {
+    if (estadosSelecionados.length === 0) {
       setCidades([]);
+      setCidadesSelecionadas([]);
       return;
     }
 
     async function carregarCidades() {
       try {
-        const data = await listarCidadesPorEstado(estadoSelecionado);
-        setCidades(data);
+        // Carregar cidades de todos os estados selecionados
+        const todasCidades = await Promise.all(
+          estadosSelecionados.map(estado => listarCidadesPorEstado(estado))
+        );
+        const cidadesUnificadas = todasCidades.flat();
+        setCidades(cidadesUnificadas);
+
+        // Filtrar cidades selecionadas para manter apenas as que pertencem aos estados selecionados
+        const cidadesValidas = cidadesUnificadas.map(c => c.nome);
+        setCidadesSelecionadas(prev => prev.filter(cidade => cidadesValidas.includes(cidade)));
       } catch (e: any) {
         avisoErro(e?.message ?? "Erro ao carregar cidades");
         setCidades([]);
       }
     }
     carregarCidades();
-  }, [estadoSelecionado]);
+  }, [estadosSelecionados]);
 
   const tiposDisponiveis = useMemo(() => {
     const tipos = new Set<string>();
@@ -86,26 +96,9 @@ export default function HomeClientePagina() {
     return Array.from(tipos).sort();
   }, [artistas]);
 
-  // Preparar opções de estados para o Seletor (formato: "SC - Santa Catarina")
-  const opcoesEstados: OpcaoSeletor[] = useMemo(() => {
-    return estados.map(estado => ({
-      value: estado.sigla,
-      label: `${estado.sigla} - ${estado.nome}`
-    }));
-  }, [estados]);
-
-  // Preparar opções de cidades para o Seletor
-  const opcoesCidades: OpcaoSeletor[] = useMemo(() => {
-    return cidades.map(cidade => ({
-      value: cidade.nome,
-      label: cidade.nome
-    }));
-  }, [cidades]);
-
   const artistasFiltrados = useMemo(() => {
     return artistas.filter(artista => {
-      // Filtragem client-side apenas para busca por nome e tipos de arte
-      // Estado e cidade já são filtrados pela API
+      // Filtragem client-side para busca, tipos, estados e cidades
       const buscaLower = buscaDebounced.toLowerCase();
       const matchBusca = !buscaDebounced ||
         artista.name.toLowerCase().includes(buscaLower);
@@ -113,17 +106,25 @@ export default function HomeClientePagina() {
       const matchTipos = tiposSelecionados.length === 0 ||
         tiposSelecionados.some(tipo => artista.artTypes.includes(tipo));
 
-      return matchBusca && matchTipos;
+      // Filtrar por múltiplos estados (se houver mais de 1)
+      const matchEstados = estadosSelecionados.length === 0 ||
+        estadosSelecionados.includes(artista.state);
+
+      // Filtrar por múltiplas cidades (se houver mais de 1)
+      const matchCidades = cidadesSelecionadas.length === 0 ||
+        cidadesSelecionadas.includes(artista.city);
+
+      return matchBusca && matchTipos && matchEstados && matchCidades;
     });
-  }, [artistas, buscaDebounced, tiposSelecionados]);
+  }, [artistas, buscaDebounced, tiposSelecionados, estadosSelecionados, cidadesSelecionadas]);
 
   const filtrosAtivos = useMemo(() => {
     let count = 0;
-    if (cidadeSelecionada) count++;
-    if (estadoSelecionado) count++;
+    if (cidadesSelecionadas.length > 0) count++;
+    if (estadosSelecionados.length > 0) count++;
     if (tiposSelecionados.length > 0) count++;
     return count;
-  }, [cidadeSelecionada, estadoSelecionado, tiposSelecionados]);
+  }, [cidadesSelecionadas, estadosSelecionados, tiposSelecionados]);
 
   function toggleTipo(tipo: string) {
     setTiposSelecionados(prev =>
@@ -133,15 +134,26 @@ export default function HomeClientePagina() {
     );
   }
 
-  function limparFiltros() {
-    setCidadeSelecionada("");
-    setEstadoSelecionado("");
-    setTiposSelecionados([]);
+  function toggleEstado(uf: string) {
+    setEstadosSelecionados(prev =>
+      prev.includes(uf)
+        ? prev.filter(e => e !== uf)
+        : [...prev, uf]
+    );
   }
 
-  function handleEstadoChange(uf: string) {
-    setEstadoSelecionado(uf);
-    setCidadeSelecionada(""); // Limpar cidade ao mudar estado
+  function toggleCidade(cidade: string) {
+    setCidadesSelecionadas(prev =>
+      prev.includes(cidade)
+        ? prev.filter(c => c !== cidade)
+        : [...prev, cidade]
+    );
+  }
+
+  function limparFiltros() {
+    setCidadesSelecionadas([]);
+    setEstadosSelecionados([]);
+    setTiposSelecionados([]);
   }
 
   return (
@@ -199,21 +211,18 @@ export default function HomeClientePagina() {
         {/* Chips de filtros ativos */}
         {filtrosAtivos > 0 && (
           <div className="filtros-chips">
-            {estadoSelecionado && (
-              <div className="filter-chip">
-                <span>Estado: {estadoSelecionado}</span>
-                <button onClick={() => {
-                  setEstadoSelecionado("");
-                  setCidadeSelecionada(""); // Limpar cidade ao remover estado
-                }}>×</button>
+            {estadosSelecionados.map(estado => (
+              <div key={estado} className="filter-chip">
+                <span>Estado: {estado}</span>
+                <button onClick={() => toggleEstado(estado)}>×</button>
               </div>
-            )}
-            {cidadeSelecionada && (
-              <div className="filter-chip">
-                <span>Cidade: {cidadeSelecionada}</span>
-                <button onClick={() => setCidadeSelecionada("")}>×</button>
+            ))}
+            {cidadesSelecionadas.map(cidade => (
+              <div key={cidade} className="filter-chip">
+                <span>Cidade: {cidade}</span>
+                <button onClick={() => toggleCidade(cidade)}>×</button>
               </div>
-            )}
+            ))}
             {tiposSelecionados.map(tipo => (
               <div key={tipo} className="filter-chip">
                 <span>{tipo}</span>
@@ -234,55 +243,96 @@ export default function HomeClientePagina() {
           tamanho="medio"
         >
           <div className="filtros-modal-content">
-            {/* Estado - SEMPRE habilitado, nunca disabled */}
-            <Seletor
-              id="estado-filtro"
-              name="estado"
-              label="Estado"
-              options={opcoesEstados}
-              value={estadoSelecionado}
-              onChange={(e) => handleEstadoChange(e.target.value)}
-              placeholder="Selecione um estado"
-              disabled={false}
-            />
+            {/* Estados - Lista de checkboxes */}
+            <div className="mb-4">
+              <h5 className="mb-3">Estados</h5>
+              {estados.length === 0 ? (
+                <p className="text-secondary text-center py-3">Carregando estados...</p>
+              ) : (
+                <div className="list-group filtros-list-scroll">
+                  {estados.map((estado) => {
+                    const checkboxId = `estado-${estado.sigla}-filtro`;
+                    return (
+                      <div key={estado.sigla} className="list-group-item">
+                        <div className="form-check">
+                          <input
+                            id={checkboxId}
+                            type="checkbox"
+                            className="form-check-input"
+                            checked={estadosSelecionados.includes(estado.sigla)}
+                            onChange={() => toggleEstado(estado.sigla)}
+                          />
+                          <label className="form-check-label" htmlFor={checkboxId}>
+                            {estado.sigla} - {estado.nome}
+                          </label>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-            {/* Cidade - SEMPRE disabled até selecionar estado */}
-            <Seletor
-              id="cidade-filtro"
-              name="cidade"
-              label="Cidade"
-              options={opcoesCidades}
-              value={cidadeSelecionada}
-              onChange={(e) => setCidadeSelecionada(e.target.value)}
-              placeholder={
-                !estadoSelecionado
-                  ? "Primeiro selecione um estado"
-                  : "Selecione uma cidade"
-              }
-              disabled={!estadoSelecionado}
-            />
+            {/* Cidades - Lista de checkboxes dependente */}
+            <div className="mb-4">
+              <h5 className="mb-3">Cidades</h5>
+              {estadosSelecionados.length === 0 ? (
+                <p className="text-secondary text-center py-3">Selecione um estado primeiro</p>
+              ) : cidades.length === 0 ? (
+                <p className="text-secondary text-center py-3">Carregando cidades...</p>
+              ) : (
+                <div className="list-group filtros-list-scroll">
+                  {cidades.map((cidade) => {
+                    const checkboxId = `cidade-${cidade.id}-filtro`;
+                    return (
+                      <div key={cidade.id} className="list-group-item">
+                        <div className="form-check">
+                          <input
+                            id={checkboxId}
+                            type="checkbox"
+                            className="form-check-input"
+                            checked={cidadesSelecionadas.includes(cidade.nome)}
+                            onChange={() => toggleCidade(cidade.nome)}
+                          />
+                          <label className="form-check-label" htmlFor={checkboxId}>
+                            {cidade.nome}
+                          </label>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* Tipos de Arte */}
-            <div className="filtro-secao">
-              <label className="filtro-label">Tipos de Arte</label>
-              <div className="filtro-checkboxes">
-                {tiposDisponiveis.map(tipo => {
-                  const checkboxId = `tipo-${tipo.toLowerCase().replace(/\s+/g, '-')}-filtro`;
-                  return (
-                    <label key={tipo} htmlFor={checkboxId} className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        id={checkboxId}
-                        name="tiposArte"
-                        value={tipo}
-                        checked={tiposSelecionados.includes(tipo)}
-                        onChange={() => toggleTipo(tipo)}
-                      />
-                      <span>{tipo}</span>
-                    </label>
-                  );
-                })}
-              </div>
+            <div className="mb-4">
+              <h5 className="mb-3">Tipos de Arte</h5>
+              {tiposDisponiveis.length === 0 ? (
+                <p className="text-secondary text-center py-3">Nenhum tipo disponível</p>
+              ) : (
+                <div className="list-group filtros-list-scroll">
+                  {tiposDisponiveis.map((tipo) => {
+                    const checkboxId = `tipo-${tipo.toLowerCase().replace(/\s+/g, '-')}-filtro`;
+                    return (
+                      <div key={tipo} className="list-group-item">
+                        <div className="form-check">
+                          <input
+                            id={checkboxId}
+                            type="checkbox"
+                            className="form-check-input"
+                            checked={tiposSelecionados.includes(tipo)}
+                            onChange={() => toggleTipo(tipo)}
+                          />
+                          <label className="form-check-label" htmlFor={checkboxId}>
+                            {tipo}
+                          </label>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Botões do modal */}
@@ -349,6 +399,108 @@ export default function HomeClientePagina() {
           </>
         )}
       </Stack>
+
+      <style>{`
+        /* Scroll para lista de filtros */
+        .filtros-list-scroll {
+          max-height: 300px;
+          overflow-y: auto;
+        }
+
+        /* Cursor pointer nos labels */
+        .filtros-list-scroll .list-group-item {
+          cursor: pointer;
+          user-select: none;
+          transition: background-color 0.15s ease;
+        }
+
+        /* Hover apenas no background */
+        .filtros-list-scroll .list-group-item:hover {
+          background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Destaque da linha quando checkbox estiver em focus */
+        .filtros-list-scroll .list-group-item:focus-within {
+          background-color: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Checkbox com aparência padrão melhorada */
+        .filtros-list-scroll .form-check-input {
+          width: 1.125rem;
+          height: 1.125rem;
+          margin-top: 0.125em;
+          vertical-align: top;
+          background-color: #ffffff !important;
+          background-repeat: no-repeat;
+          background-position: center;
+          background-size: contain;
+          border: 1px solid #dee2e6 !important;
+          appearance: none;
+          print-color-adjust: exact;
+        }
+
+        .filtros-list-scroll .form-check-input:checked {
+          background-color: #0d6efd !important;
+          border-color: #0d6efd !important;
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e") !important;
+        }
+
+        /* Garantir que não herde estilos do tema dark */
+        .filtros-list-scroll .form-check-input:checked[type="checkbox"] {
+          background-color: #0d6efd !important;
+          border-color: #0d6efd !important;
+        }
+
+        /* Focus mínimo no checkbox, sem box-shadow */
+        .filtros-list-scroll .form-check-input:focus {
+          outline: 0;
+        }
+
+        /* Scrollbar customizada */
+        .filtros-list-scroll::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .filtros-list-scroll::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.1);
+          border-radius: 4px;
+        }
+
+        .filtros-list-scroll::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.3);
+          border-radius: 4px;
+        }
+
+        .filtros-list-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Estilos dos botões do modal */
+        .filtros-modal-content {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .filtros-modal-acoes {
+          display: flex;
+          gap: 0.75rem;
+          margin-top: 1.5rem;
+          padding-top: 1.5rem;
+          border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsivo */
+        @media (max-width: 640px) {
+          .filtros-modal-acoes {
+            flex-direction: column;
+          }
+
+          .filtros-modal-acoes button {
+            width: 100%;
+          }
+        }
+      `}</style>
     </Container>
   );
 }

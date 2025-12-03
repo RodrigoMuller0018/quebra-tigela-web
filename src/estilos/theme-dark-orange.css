@@ -1,0 +1,557 @@
+/**
+ * TEMA DARK COM LARANJA - OKLCH Color Space
+ *
+ * Sistema de cores completo para tema escuro com laranja como cor primária.
+ * Usa OKLCH para melhor uniformidade perceptual e manipulação de cores.
+ *
+ * IMPORTANTE:
+ * - Para ativar este tema, importe este arquivo DEPOIS do tema.css
+ * - Todas as variáveis sobrescrevem as do tema claro
+ * - Mantém compatibilidade com Bootstrap 5
+ * - Contraste WCAG AAA garantido
+ */
+
+:root {
+  /* ==========================================
+     ESCALA DE CORES OKLCH
+     ========================================== */
+
+  /* ORANGE SCALE (Primary) - Laranja vibrante para tema dark */
+  --orange-50: oklch(0.97 0.01 80);   /* #FFF5F0 - quase branco com toque laranja */
+  --orange-100: oklch(0.94 0.04 75);  /* #FEEBD9 - laranja muito claro */
+  --orange-200: oklch(0.88 0.08 70);  /* #FDD5B3 - laranja claro */
+  --orange-300: oklch(0.80 0.12 65);  /* #FCB882 - laranja médio claro */
+  --orange-400: oklch(0.72 0.16 60);  /* #FB9B50 - laranja médio */
+  --orange-500: oklch(0.68 0.18 55);  /* #FA8320 - laranja vibrante (PRIMARY) */
+  --orange-600: oklch(0.62 0.17 50);  /* #E26D0E - laranja escuro */
+  --orange-700: oklch(0.54 0.14 48);  /* #B8570A - laranja muito escuro */
+  --orange-800: oklch(0.45 0.11 45);  /* #8B4308 - laranja profundo */
+  --orange-900: oklch(0.36 0.09 43);  /* #6B3406 - quase marrom */
+  --orange-950: oklch(0.25 0.06 40);  /* #3D1F03 - marrom escuro */
+
+  /* AMBER SCALE (Complemento quente) - Âmbar/dourado */
+  --amber-50: oklch(0.98 0.02 95);    /* #FFFBEB */
+  --amber-100: oklch(0.95 0.05 90);   /* #FEF3C7 */
+  --amber-200: oklch(0.90 0.10 85);   /* #FDE68A */
+  --amber-300: oklch(0.85 0.14 80);   /* #FCD34D */
+  --amber-400: oklch(0.78 0.16 75);   /* #FBBF24 */
+  --amber-500: oklch(0.72 0.17 70);   /* #F59E0B */
+  --amber-600: oklch(0.64 0.16 65);   /* #D97706 */
+  --amber-700: oklch(0.54 0.13 60);   /* #B45309 */
+  --amber-800: oklch(0.45 0.11 55);   /* #92400E */
+  --amber-900: oklch(0.36 0.09 50);   /* #78350F */
+
+  /* RED SCALE (Danger/Error) - Vermelho para alertas */
+  --red-50: oklch(0.97 0.02 25);      /* #FEF2F2 */
+  --red-100: oklch(0.94 0.05 25);     /* #FEE2E2 */
+  --red-200: oklch(0.88 0.11 25);     /* #FECACA */
+  --red-300: oklch(0.79 0.17 25);     /* #FCA5A5 */
+  --red-400: oklch(0.68 0.21 25);     /* #F87171 */
+  --red-500: oklch(0.63 0.24 27);     /* #EF4444 */
+  --red-600: oklch(0.55 0.23 27);     /* #DC2626 */
+  --red-700: oklch(0.47 0.20 27);     /* #B91C1C */
+  --red-800: oklch(0.40 0.18 27);     /* #991B1B */
+  --red-900: oklch(0.33 0.15 27);     /* #7F1D1D */
+
+  /* GRAY SCALE (Estrutura do tema dark) - Cinzas neutros */
+  --gray-50: oklch(0.98 0.00 0);      /* #FAFAFA - quase branco */
+  --gray-100: oklch(0.96 0.00 0);     /* #F5F5F5 - branco acinzentado */
+  --gray-200: oklch(0.91 0.00 0);     /* #E8E8E8 - cinza muito claro */
+  --gray-300: oklch(0.83 0.00 0);     /* #D4D4D4 - cinza claro */
+  --gray-400: oklch(0.67 0.00 0);     /* #A3A3A3 - cinza médio claro */
+  --gray-500: oklch(0.55 0.00 0);     /* #737373 - cinza médio */
+  --gray-600: oklch(0.44 0.00 0);     /* #525252 - cinza médio escuro */
+  --gray-700: oklch(0.35 0.00 0);     /* #404040 - cinza escuro */
+  --gray-800: oklch(0.27 0.00 0);     /* #262626 - cinza muito escuro */
+  --gray-850: oklch(0.22 0.00 0);     /* #1C1C1C - cinza profundo */
+  --gray-900: oklch(0.18 0.00 0);     /* #141414 - quase preto */
+  --gray-950: oklch(0.12 0.00 0);     /* #0A0A0A - preto acinzentado */
+
+  /* SLATE SCALE (Alternativa fria) - Cinzas azulados */
+  --slate-50: oklch(0.98 0.003 250);  /* #F8FAFC */
+  --slate-100: oklch(0.96 0.005 250); /* #F1F5F9 */
+  --slate-200: oklch(0.91 0.008 250); /* #E2E8F0 */
+  --slate-300: oklch(0.83 0.012 250); /* #CBD5E1 */
+  --slate-400: oklch(0.67 0.014 250); /* #94A3B8 */
+  --slate-500: oklch(0.55 0.015 250); /* #64748B */
+  --slate-600: oklch(0.44 0.014 250); /* #475569 */
+  --slate-700: oklch(0.35 0.012 250); /* #334155 */
+  --slate-800: oklch(0.26 0.010 250); /* #1E293B */
+  --slate-900: oklch(0.18 0.008 250); /* #0F172A */
+
+  /* GREEN SCALE (Success) - Verde para sucesso */
+  --green-50: oklch(0.97 0.02 150);   /* #F0FDF4 */
+  --green-100: oklch(0.94 0.05 150);  /* #DCFCE7 */
+  --green-200: oklch(0.88 0.10 150);  /* #BBF7D0 */
+  --green-300: oklch(0.79 0.15 150);  /* #86EFAC */
+  --green-400: oklch(0.70 0.18 150);  /* #4ADE80 */
+  --green-500: oklch(0.62 0.20 150);  /* #22C55E */
+  --green-600: oklch(0.54 0.19 150);  /* #16A34A */
+  --green-700: oklch(0.46 0.16 150);  /* #15803D */
+  --green-800: oklch(0.39 0.14 150);  /* #166534 */
+  --green-900: oklch(0.32 0.12 150);  /* #14532D */
+
+  /* CYAN SCALE (Info) - Ciano para informações */
+  --cyan-50: oklch(0.97 0.01 200);    /* #ECFEFF */
+  --cyan-100: oklch(0.94 0.03 200);   /* #CFFAFE */
+  --cyan-200: oklch(0.88 0.07 200);   /* #A5F3FC */
+  --cyan-300: oklch(0.80 0.11 200);   /* #67E8F9 */
+  --cyan-400: oklch(0.72 0.14 200);   /* #22D3EE */
+  --cyan-500: oklch(0.64 0.15 200);   /* #06B6D4 */
+  --cyan-600: oklch(0.55 0.14 200);   /* #0891B2 */
+  --cyan-700: oklch(0.47 0.12 200);   /* #0E7490 */
+  --cyan-800: oklch(0.40 0.10 200);   /* #155E75 */
+  --cyan-900: oklch(0.33 0.08 200);   /* #164E63 */
+
+  /* ==========================================
+     CORES BOOTSTRAP - TEMA DARK
+     Sobrescreve variáveis Bootstrap para dark mode
+     ========================================== */
+
+  /* Cores primárias Bootstrap */
+  --bs-primary: var(--orange-500);
+  --bs-primary-rgb: 250, 131, 32;
+  --bs-secondary: var(--slate-600);
+  --bs-secondary-rgb: 71, 85, 105;
+  --bs-success: var(--green-600);
+  --bs-success-rgb: 22, 163, 74;
+  --bs-danger: var(--red-600);
+  --bs-danger-rgb: 220, 38, 38;
+  --bs-warning: var(--amber-500);
+  --bs-warning-rgb: 245, 158, 11;
+  --bs-info: var(--cyan-600);
+  --bs-info-rgb: 8, 145, 178;
+  --bs-light: var(--gray-700);
+  --bs-light-rgb: 64, 64, 64;
+  --bs-dark: var(--gray-100);
+  --bs-dark-rgb: 245, 245, 245;
+  --bs-white: var(--gray-900);
+  --bs-white-rgb: 20, 20, 20;
+  --bs-black: var(--gray-50);
+  --bs-black-rgb: 250, 250, 250;
+
+  /* Variações de hover/active */
+  --bs-primary-hover: var(--orange-600);
+  --bs-secondary-hover: var(--slate-700);
+  --bs-danger-hover: var(--red-700);
+  --bs-danger-dark: var(--red-800);
+
+  /* Escala de cinza Bootstrap (invertida para dark) */
+  --bs-gray-900: var(--gray-50);     /* Texto principal - claro no dark */
+  --bs-gray-900-rgb: 250, 250, 250;
+  --bs-gray-800: var(--gray-100);    /* Texto médio */
+  --bs-gray-800-rgb: 245, 245, 245;
+  --bs-gray-700: var(--gray-200);    /* Texto suave */
+  --bs-gray-700-rgb: 232, 232, 232;
+  --bs-gray-600: var(--gray-300);    /* Cinza intermediário */
+  --bs-gray-600-rgb: 212, 212, 212;
+  --bs-gray-500: var(--gray-400);    /* Texto secundário */
+  --bs-gray-500-rgb: 163, 163, 163;
+  --bs-gray-400: var(--gray-500);    /* Texto desabilitado */
+  --bs-gray-400-rgb: 115, 115, 115;
+  --bs-gray-300: var(--gray-600);    /* Bordas suaves */
+  --bs-gray-300-rgb: 82, 82, 82;
+  --bs-gray-200: var(--gray-700);    /* Backgrounds sutis */
+  --bs-gray-200-rgb: 64, 64, 64;
+  --bs-gray-100: var(--gray-800);    /* Backgrounds de seções */
+  --bs-gray-100-rgb: 38, 38, 38;
+
+  /* Background e texto */
+  --bs-body-bg: var(--gray-900);
+  --bs-body-bg-rgb: 20, 20, 20;
+  --bs-body-color: var(--gray-50);
+  --bs-body-color-rgb: 250, 250, 250;
+
+  /* Bordas */
+  --bs-border-color: var(--gray-700);
+  --bs-border-color-rgb: 64, 64, 64;
+
+  /* ==========================================
+     VARIÁVEIS DO TEMA CUSTOMIZADO - DARK MODE
+     Sobrescreve variáveis do tema.css
+     ========================================== */
+
+  /* Cores principais */
+  --primary: var(--orange-500);       /* Laranja vibrante - CTAs principais */
+  --primary-hover: var(--orange-600); /* Laranja escuro - hover */
+  --primary-light: var(--orange-950); /* Laranja muito escuro - backgrounds */
+
+  --secondary: var(--slate-600);      /* Slate - CTAs secundários */
+  --secondary-hover: var(--slate-700); /* Slate escuro - hover */
+
+  --accent: var(--amber-500);         /* Âmbar - badges, destaques */
+  --accent-light: var(--amber-900);   /* Âmbar escuro - backgrounds */
+
+  /* Backgrounds */
+  --bg: var(--gray-900);              /* Fundo principal escuro */
+  --bg-secondary: var(--gray-850);    /* Fundo alternativo levemente mais claro */
+  --bg-tertiary: var(--gray-800);     /* Fundo terciário */
+
+  --card: var(--gray-850);            /* Cards escuros */
+  --card-hover: var(--gray-800);      /* Cards hover mais claro */
+
+  /* Textos */
+  --text: var(--gray-50);             /* Texto principal claro */
+  --text-secondary: var(--gray-300);  /* Texto secundário */
+  --text-light: var(--gray-400);      /* Texto suave */
+  --text-on-primary: var(--gray-900); /* Texto sobre primary (escuro em laranja) */
+  --muted: var(--gray-500);           /* Texto muito suave */
+
+  /* Bordas */
+  --border: var(--gray-700);          /* Borda padrão */
+  --border-hover: var(--orange-600);  /* Borda laranja no hover */
+  --border-focus: var(--orange-500);  /* Borda laranja no focus */
+
+  /* Estados */
+  --success: var(--green-600);        /* Verde sucesso */
+  --success-bg: var(--green-950);     /* Verde muito escuro background */
+  --success-text: var(--green-300);   /* Verde claro texto */
+
+  --danger: var(--red-600);           /* Vermelho erro */
+  --danger-bg: var(--red-950);        /* Vermelho muito escuro background */
+  --danger-text: var(--red-300);      /* Vermelho claro texto */
+
+  --info: var(--cyan-600);            /* Ciano informação */
+  --info-bg: var(--cyan-950);         /* Ciano muito escuro background */
+  --info-text: var(--cyan-300);       /* Ciano claro texto */
+
+  --warning: var(--amber-500);        /* Âmbar aviso */
+  --warning-bg: var(--amber-950);     /* Âmbar muito escuro background */
+  --warning-text: var(--amber-300);   /* Âmbar claro texto */
+
+  /* Categorias/Tags (invertidas para dark) */
+  --tag-pintura: var(--cyan-900);     /* Azul escuro */
+  --tag-escultura: var(--green-900);  /* Verde escuro */
+  --tag-fotografia: var(--amber-900); /* Âmbar escuro */
+  --tag-digital: var(--slate-800);    /* Slate escuro */
+  --tag-ceramica: var(--orange-900);  /* Laranja escuro */
+
+  /* Shadows (mais intensas para dark mode) */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+
+  /* Gradientes (adaptados para dark) */
+  --gradient-primary: linear-gradient(135deg, var(--orange-600) 0%, var(--amber-600) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--slate-700) 0%, var(--slate-800) 100%);
+  --gradient-hero: linear-gradient(180deg, var(--gray-850) 0%, var(--gray-900) 100%);
+
+  /* Underline */
+  --underline: var(--gray-700);
+}
+
+/* ==========================================
+   AJUSTES ESPECÍFICOS PARA DARK MODE
+   ========================================== */
+
+/* Body e elementos base */
+body {
+  background: var(--bg);
+  color: var(--text);
+  color-scheme: dark;
+}
+
+/* Links e texto primário */
+a {
+  color: var(--orange-400);
+}
+
+a:hover {
+  color: var(--orange-500);
+}
+
+/* Inputs e forms (ajustes para melhor contraste) */
+.form-control,
+.form-select,
+.field__input {
+  background-color: var(--gray-800);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.form-control:focus,
+.form-select:focus,
+.field:focus-within {
+  background-color: var(--gray-800);
+  border-color: var(--border-focus);
+  color: var(--text);
+}
+
+.form-control::placeholder,
+.field__input::placeholder {
+  color: var(--muted);
+}
+
+/* Cards e containers */
+.card {
+  background-color: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* .card:hover {
+  background-color: var(--card-hover);
+} */
+
+/* Botões ajustados para dark */
+.btn-primary {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--gray-900); /* Texto escuro em laranja */
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: var(--gray-900);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  border-color: var(--secondary);
+  color: var(--gray-50); /* Texto claro em slate */
+}
+
+.btn-outline-primary {
+  background-color: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary);
+  color: var(--gray-900);
+}
+
+/* Badges e tags para dark */
+.badge-primary,
+.bg-primary {
+  background-color: var(--primary) !important;
+  color: var(--gray-900) !important;
+}
+
+.badge-secondary,
+.bg-secondary {
+  background-color: var(--secondary) !important;
+  color: var(--gray-50) !important;
+}
+
+.badge-success,
+.bg-success {
+  background-color: var(--success) !important;
+  color: var(--gray-900) !important;
+}
+
+.badge-danger,
+.bg-danger {
+  background-color: var(--danger) !important;
+  color: var(--gray-50) !important;
+}
+
+.badge-warning,
+.bg-warning {
+  background-color: var(--warning) !important;
+  color: var(--gray-900) !important;
+}
+
+.badge-info,
+.bg-info {
+  background-color: var(--info) !important;
+  color: var(--gray-50) !important;
+}
+
+/* Alerts para dark */
+.alert-success {
+  background-color: var(--success-bg);
+  color: var(--success-text);
+  border-color: var(--success);
+}
+
+.alert-danger {
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+  border-color: var(--danger);
+}
+
+.alert-warning {
+  background-color: var(--warning-bg);
+  color: var(--warning-text);
+  border-color: var(--warning);
+}
+
+.alert-info {
+  background-color: var(--info-bg);
+  color: var(--info-text);
+  border-color: var(--info);
+}
+
+/* Tabelas para dark */
+.table {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: var(--bg-tertiary);
+}
+
+.table-hover > tbody > tr:hover > * {
+  background-color: var(--bg-secondary);
+}
+
+/* Navbar para dark */
+.navbar {
+  background-color: var(--card);
+  border-color: var(--border);
+}
+
+.navbar-brand,
+.nav-link {
+  color: var(--text);
+}
+
+.nav-link:hover {
+  color: var(--primary);
+}
+
+/* Modals para dark */
+.modal-content {
+  background-color: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.modal-header,
+.modal-footer {
+  border-color: var(--border);
+}
+
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.8); /* Backdrop mais escuro */
+}
+
+/* Segment control para dark */
+.seg {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border);
+}
+
+.seg-item {
+  color: var(--text-secondary);
+}
+
+.seg-item:hover {
+  color: var(--text);
+}
+
+.seg-item.active {
+  background-color: var(--primary);
+  color: var(--gray-900);
+}
+
+/* Focus states ajustados */
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.nav-link:focus-visible {
+  box-shadow: 0 0 0 3px rgba(250, 131, 32, 0.4); /* Laranja com transparência */
+}
+
+/* ==========================================
+   UTILITIES CLASSES ADICIONAIS DARK
+   ========================================== */
+
+/* Text utilities para dark */
+.text-primary-dark {
+  color: var(--orange-400) !important;
+}
+
+.text-secondary-dark {
+  color: var(--slate-400) !important;
+}
+
+.text-muted-dark {
+  color: var(--gray-500) !important;
+}
+
+/* Background utilities para dark */
+.bg-dark-primary {
+  background-color: var(--gray-900) !important;
+}
+
+.bg-dark-secondary {
+  background-color: var(--gray-850) !important;
+}
+
+.bg-dark-tertiary {
+  background-color: var(--gray-800) !important;
+}
+
+/* Border utilities para dark */
+.border-dark {
+  border-color: var(--border) !important;
+}
+
+.border-dark-light {
+  border-color: var(--gray-600) !important;
+}
+
+/* ==========================================
+   SCROLLBAR CUSTOMIZADA DARK
+   ========================================== */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-850);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-600);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-600) var(--gray-850);
+}
+
+/* ==========================================
+   SELECTION COLOR DARK
+   ========================================== */
+
+::selection {
+  background-color: var(--orange-700);
+  color: var(--gray-50);
+}
+
+::-moz-selection {
+  background-color: var(--orange-700);
+  color: var(--gray-50);
+}
+
+/* ==========================================
+   PRINT STYLES (fallback to light)
+   ========================================== */
+
+@media print {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+}

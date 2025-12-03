@@ -1,8 +1,5 @@
 .card{
   background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.25rem;
   box-shadow:var(--shadow-md);
-  transition:all 0.3s ease;
-}
-.card:hover{
-  box-shadow:var(--shadow-lg);
+  /* Removido transition e hover para manter cards estáticos */
 }

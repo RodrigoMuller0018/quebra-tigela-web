@@ -34,6 +34,10 @@ export function Seletor({
       className={`field field--select ${className}`}
       data-filled={isFilled}
     >
+      {/* Label PRIMEIRO (em cima) */}
+      {label && <label htmlFor={selectId} className="field__label">{label}</label>}
+
+      {/* Select DEPOIS */}
       <select
         {...rest}
         id={selectId}
@@ -49,7 +53,6 @@ export function Seletor({
           </option>
         ))}
       </select>
-      {label && <label htmlFor={selectId} className="field__label">{label}</label>}
     </div>
   );
 }

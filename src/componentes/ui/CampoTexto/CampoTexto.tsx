@@ -1,18 +1,11 @@
 import { useState, type InputHTMLAttributes } from "react";
 import { Eye, EyeOff } from "../Icons";
 
-type Props = InputHTMLAttributes<HTMLInputElement> & {
-  label?: string;
-  acaoTexto?: string; // Deprecated: use showPasswordToggle instead
-  onAcaoClick?: () => void; // Deprecated: handled automatically
-  showPasswordToggle?: boolean; // New: automatically show eye icon for password
-  className?: string;
-};
-
 /**
- * CampoTexto - Componente de campo de texto
+ * CampoTexto - Migrado para Bootstrap 5
  *
- * @deprecated acaoTexto/onAcaoClick - Use showPasswordToggle para senhas com ícone automático
+ * Usa a classe .form-floating do Bootstrap para labels flutuantes.
+ * Mantém compatibilidade com a API existente.
  *
  * @example
  * // Novo padrão (recomendado)
@@ -21,6 +14,15 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
  * // Padrão antigo (ainda suportado)
  * <CampoTexto label="Senha" type={showPassword ? "text" : "password"} acaoTexto={showPassword ? "OCULTAR" : "EXIBIR"} onAcaoClick={() => setShowPassword(!showPassword)} />
  */
+
+type Props = InputHTMLAttributes<HTMLInputElement> & {
+  label?: string;
+  acaoTexto?: string; // Deprecated: use showPasswordToggle instead
+  onAcaoClick?: () => void; // Deprecated: handled automatically
+  showPasswordToggle?: boolean; // New: automatically show eye icon for password
+  className?: string;
+};
+
 export function CampoTexto({
   label,
   acaoTexto,
@@ -43,8 +45,17 @@ export function CampoTexto({
     ? (internalShowPassword ? "text" : "password")
     : type;
 
-  const cls = ["field", className].filter(Boolean).join(" ");
-  const inputCls = ["field__input", (isPasswordField ? "pr" : "")].filter(Boolean).join(" ");
+  // Classes do Bootstrap para floating labels
+  const containerClasses = [
+    "form-floating",  // Bootstrap floating label
+    "mb-3",          // Margin bottom do Bootstrap
+    "position-relative", // Para posicionar o botão de toggle
+    className
+  ].filter(Boolean).join(" ");
+
+  const inputClasses = [
+    "form-control",   // Bootstrap form control
+  ].filter(Boolean).join(" ");
 
   // Gerar ID único se não fornecido
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
@@ -60,18 +71,25 @@ export function CampoTexto({
   };
 
   return (
-    <div className={cls}>
+    <div className={containerClasses}>
+      {/* Label PRIMEIRO (em cima) */}
+      {label && (
+        <label htmlFor={inputId} className="form-label">
+          {label}
+        </label>
+      )}
+
+      {/* Input DEPOIS */}
       <input
         {...rest}
         type={inputType}
         id={inputId}
         name={name || inputId}
-        placeholder=" "
-        className={inputCls}
+        placeholder={label || ""}
+        className={inputClasses}
       />
-      {label && <label htmlFor={inputId} className="field__label">{label}</label>}
 
-      {/* Novo padrão: ícone de olho */}
+      {/* Botão de toggle senha */}
       {shouldShowToggle && (
         <button
           type="button"
@@ -83,9 +101,13 @@ export function CampoTexto({
         </button>
       )}
 
-      {/* Padrão antigo: texto (deprecated mas ainda suportado) */}
+      {/* Padrão antigo: texto (deprecated) */}
       {acaoTexto && !shouldShowToggle && (
-        <button type="button" className="field__action" onClick={onAcaoClick}>
+        <button
+          type="button"
+          className="field__action"
+          onClick={onAcaoClick}
+        >
           {acaoTexto}
         </button>
       )}
