@@ -317,10 +317,10 @@ export function FormularioHorario({ diaInicial, onSubmit, onCancelar }: Props) {
         }
 
         .preview-horarios {
-          background: var(--background-secondary, #f8f9fa);
+          background: var(--gray-850, #1a1d23);
           padding: var(--space-sm, 0.75rem);
           border-radius: var(--radius-sm, 6px);
-          border: 1px solid var(--border, #e5e7eb);
+          border: 1px solid var(--gray-700, #3f4451);
         }
 
         .preview-titulo {
@@ -328,6 +328,7 @@ export function FormularioHorario({ diaInicial, onSubmit, onCancelar }: Props) {
           margin-bottom: var(--space-xs, 0.5rem);
           font-size: var(--fs-sm, 0.875rem);
           margin-top: 0;
+          color: var(--gray-200, #e5e7eb);
         }
 
         .preview-lista {
@@ -337,11 +338,12 @@ export function FormularioHorario({ diaInicial, onSubmit, onCancelar }: Props) {
         }
 
         .preview-item {
-          background: white;
+          background: var(--gray-800, #1f2937);
           padding: 0.25rem 0.5rem;
           border-radius: var(--radius-sm, 6px);
           font-size: var(--fs-xs, 0.75rem);
-          border: 1px solid var(--border, #e5e7eb);
+          border: 1px solid var(--gray-600, #4b5563);
+          color: var(--gray-300, #d1d5db);
         }
 
         @media (max-width: 47.99em) {

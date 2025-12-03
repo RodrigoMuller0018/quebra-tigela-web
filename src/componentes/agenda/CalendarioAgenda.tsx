@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import type { ScheduleEntry } from "../../tipos/schedule";
+import { NOMES_MESES_CAPITALIZADOS, NOMES_DIAS_SEMANA_ABREVIADOS } from "../../constantes/agenda";
+import { ehMesmoDia, dateParaString, extrairData } from "../../utilitarios/dataUtils";
 import "./CalendarioAgenda.css";
 
 interface Props {
@@ -47,15 +49,7 @@ export function CalendarioAgenda({ horarios, mesAno, onDiaClick }: Props) {
     const mapa = new Map<string, ScheduleEntry[]>();
 
     horarios.forEach((horario) => {
-      // Extrair apenas a parte YYYY-MM-DD da data, ignorando timezone
-      let chave: string;
-      if (horario.date.includes('T')) {
-        // Formato ISO: pegar apenas a parte da data (antes do T)
-        chave = horario.date.split('T')[0];
-      } else {
-        // Formato YYYY-MM-DD já está correto
-        chave = horario.date;
-      }
+      const chave = extrairData(horario.date);
 
       if (!mapa.has(chave)) {
         mapa.set(chave, []);
@@ -68,7 +62,7 @@ export function CalendarioAgenda({ horarios, mesAno, onDiaClick }: Props) {
 
   function obterHorariosDoDia(dia: Date | null): ScheduleEntry[] {
     if (!dia) return [];
-    const chave = `${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, "0")}-${String(dia.getDate()).padStart(2, "0")}`;
+    const chave = dateParaString(dia);
     return horariosPorDia.get(chave) || [];
   }
 
@@ -82,18 +76,8 @@ export function CalendarioAgenda({ horarios, mesAno, onDiaClick }: Props) {
 
   function ehHoje(dia: Date | null): boolean {
     if (!dia) return false;
-    const hoje = new Date();
-    return (
-      dia.getDate() === hoje.getDate() &&
-      dia.getMonth() === hoje.getMonth() &&
-      dia.getFullYear() === hoje.getFullYear()
-    );
+    return ehMesmoDia(dia, new Date());
   }
-
-  const meses = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-  ];
 
   return (
     <div className="calendario-agenda">
@@ -102,7 +86,7 @@ export function CalendarioAgenda({ horarios, mesAno, onDiaClick }: Props) {
           ←
         </button>
         <h3 className="calendario-titulo">
-          {meses[dataAtual.getMonth()]} {dataAtual.getFullYear()}
+          {NOMES_MESES_CAPITALIZADOS[dataAtual.getMonth()]} {dataAtual.getFullYear()}
         </h3>
         <button onClick={proximoMes} className="btn btn-ghost btn-icon">
           →
@@ -110,13 +94,9 @@ export function CalendarioAgenda({ horarios, mesAno, onDiaClick }: Props) {
       </div>
 
       <div className="calendario-dias-semana">
-        <div>Dom</div>
-        <div>Seg</div>
-        <div>Ter</div>
-        <div>Qua</div>
-        <div>Qui</div>
-        <div>Sex</div>
-        <div>Sáb</div>
+        {NOMES_DIAS_SEMANA_ABREVIADOS.map((nome, index) => (
+          <div key={index}>{nome}</div>
+        ))}
       </div>
 
       <div className="calendario-grid">
