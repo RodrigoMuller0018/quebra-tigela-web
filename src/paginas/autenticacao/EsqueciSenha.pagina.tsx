@@ -106,6 +106,9 @@ export default function EsqueciSenha() {
           <form onSubmit={handleRedefinirSenha}>
             <Stack spacing="medium">
               <div className="field">
+                <label htmlFor="email-display" className="field__label">
+                  E-mail
+                </label>
                 <input
                   id="email-display"
                   type="email"
@@ -114,9 +117,6 @@ export default function EsqueciSenha() {
                   disabled
                   readOnly
                 />
-                <label htmlFor="email-display" className="field__label">
-                  E-mail
-                </label>
               </div>
 
               <CampoTexto

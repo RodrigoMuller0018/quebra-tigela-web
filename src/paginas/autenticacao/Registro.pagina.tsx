@@ -136,6 +136,7 @@ export default function RegistroPagina() {
         {!ehArtista ? (
           <>
             <div className="field">
+              <label htmlFor="nome-completo-cliente" className="field__label">Nome completo *</label>
               <input
                 id="nome-completo-cliente"
                 name="nomeCompleto"
@@ -146,10 +147,10 @@ export default function RegistroPagina() {
                 onChange={(e) => setCampoCliente("name", e.target.value)}
                 required
               />
-              <label htmlFor="nome-completo-cliente" className="field__label">Nome completo *</label>
             </div>
 
             <div className="field">
+              <label htmlFor="email-cliente" className="field__label">E-mail *</label>
               <input
                 id="email-cliente"
                 name="email"
@@ -160,7 +161,6 @@ export default function RegistroPagina() {
                 onChange={(e) => setCampoCliente("email", e.target.value)}
                 required
               />
-              <label htmlFor="email-cliente" className="field__label">E-mail *</label>
             </div>
 
             <CampoTexto
@@ -198,6 +198,7 @@ export default function RegistroPagina() {
         ) : (
           <>
             <div className="field">
+              <label htmlFor="nome-completo-artista" className="field__label">Nome completo *</label>
               <input
                 id="nome-completo-artista"
                 name="nomeCompleto"
@@ -208,10 +209,10 @@ export default function RegistroPagina() {
                 onChange={(e) => setCampoArtista("name", e.target.value)}
                 required
               />
-              <label htmlFor="nome-completo-artista" className="field__label">Nome completo *</label>
             </div>
 
             <div className="field">
+              <label htmlFor="email-artista" className="field__label">E-mail *</label>
               <input
                 id="email-artista"
                 name="email"
@@ -222,7 +223,6 @@ export default function RegistroPagina() {
                 onChange={(e) => setCampoArtista("email", e.target.value)}
                 required
               />
-              <label htmlFor="email-artista" className="field__label">E-mail *</label>
             </div>
 
             <CampoTexto
@@ -250,6 +250,7 @@ export default function RegistroPagina() {
             />
 
             <div className="field">
+              <label htmlFor="tipos-arte-artista" className="field__label">Tipos de arte * (separados por vírgula)</label>
               <input
                 id="tipos-arte-artista"
                 name="tiposArte"
@@ -260,10 +261,10 @@ export default function RegistroPagina() {
                 onChange={(e) => setCampoArtista("artTypes", e.target.value)}
                 required
               />
-              <label htmlFor="tipos-arte-artista" className="field__label">Tipos de arte * (separados por vírgula)</label>
             </div>
 
             <div className="field">
+              <label htmlFor="bio-artista" className="field__label">Bio</label>
               <input
                 id="bio-artista"
                 name="bio"
@@ -273,7 +274,6 @@ export default function RegistroPagina() {
                 value={formArtista.bio}
                 onChange={(e) => setCampoArtista("bio", e.target.value)}
               />
-              <label htmlFor="bio-artista" className="field__label">Bio</label>
             </div>
 
             <SeletorEstadoCidade

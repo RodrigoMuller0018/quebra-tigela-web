@@ -193,7 +193,7 @@ export default function HomeArtistaPagina() {
           <Cartao>
             <h2 className="perfil-header">Ações Rápidas</h2>
 
-            <Stack spacing="medium">
+            <Stack spacing="medium" className="acoes-rapidas-stack">
               <Botao
                 onClick={() => navigate("/artista/agenda")}
               >
@@ -221,6 +221,27 @@ export default function HomeArtistaPagina() {
                 🎨 Ver Outros Artistas
               </Link>
             </Stack>
+
+            <style>{`
+              /* Padronizar todos os botões de Ações Rápidas para terem o mesmo tamanho */
+              .acoes-rapidas-stack .btn {
+                padding: 0.9rem 1.1rem !important;
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+                display: flex;
+                align-items: center;
+                font-size: 1rem;
+                line-height: 1.5;
+                min-height: 48px;
+              }
+
+              .acoes-rapidas-stack .acao-desabilitada {
+                padding: 0.9rem 1.1rem !important;
+                text-align: center;
+                justify-content: center;
+              }
+            `}</style>
           </Cartao>
 
           {/* Dicas */}

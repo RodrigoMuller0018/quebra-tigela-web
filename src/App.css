@@ -53,15 +53,27 @@ body{
 }
 .card{
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
-  box-shadow:var(--shadow-md); transition:all 0.3s ease;
+  box-shadow:var(--shadow-md);
+  /* Removido transition e hover para manter cards estáticos */
 }
-.card:hover{
+/* .card:hover{
   box-shadow:var(--shadow-lg);
-}
+} */
 .form-card{width:min(520px,92vw); margin:clamp(8px,4vh,32px) auto; padding:clamp(20px,4.5vw,32px)}
 
-.title{margin:0 0 .25rem; font-size:clamp(1.35rem,5vw,1.6rem); font-weight:900}
-.subtitle{margin:0 0 1rem; color:var(--text-secondary); font-size:clamp(.9rem,3.2vw,1rem)}
+/* MELHORADO - Title e subtitle com melhor contraste */
+.title{
+  margin:0 0 .25rem;
+  font-size:clamp(1.35rem,5vw,1.6rem);
+  font-weight:900;
+  color: var(--bs-gray-900);  /* Texto mais escuro para excelente legibilidade */
+}
+.subtitle{
+  margin:0 0 1rem;
+  color: var(--bs-gray-500);  /* Cinza médio com bom contraste */
+  font-size:clamp(.9rem,3.2vw,1rem);
+  font-weight: 600; /* Peso aumentado */
+}
 
 /* segment (Cliente|Artista) */
 .seg{
@@ -115,8 +127,8 @@ body{
   border-color:var(--danger);
 }
 .btn-danger:hover{
-  background:var(--danger-hover, #c53030);
-  border-color:var(--danger-hover, #c53030);
+  background:var(--danger-hover, var(--bs-danger-dark));
+  border-color:var(--danger-hover, var(--bs-danger-dark));
   transform:translateY(-1px);
 }
 
@@ -170,6 +182,11 @@ body{
 }
 
 /* ===== Campos com label flutuante ===== */
+/* ===== Campos antigos com label flutuante - DESABILITADO ===== */
+/* NOTA: Estes estilos foram substituídos pelo novo sistema em forms-dark.css.
+   Use os novos componentes em src/componentes/ui/FormInputs/ */
+
+/*
 .field{
   position:relative; margin:1.05rem 0; border-bottom:2px solid var(--underline);
   transition:border-color .15s ease, box-shadow .15s ease;
@@ -178,7 +195,7 @@ body{
 .field:focus-within{ border-color:var(--border-focus); box-shadow:0 2px 0 0 rgba(78, 205, 196, 0.25) }
 
 .field__input{
-  width:100%; background:transparent; border:0; outline:0; color:var(--text);
+  width:100%; background:transparent; border:0; outline:0; color:var(--bs-gray-900); font-weight:600;
   font-size:1rem; height:38px; padding:28px 0 10px 0;
   line-height:1.5;
 }
@@ -186,18 +203,16 @@ body{
 
 .field__label{
   position:absolute; left:0; top:50%; transform:translateY(-50%);
-  color:var(--text-secondary); pointer-events:none; font-size:1rem;
+  color:var(--bs-gray-500); font-weight:600; pointer-events:none; font-size:1rem;
   transition:transform .15s,color .15s,font-size .15s, top .15s;
 }
 .field__input:focus + .field__label,
 .field__input:not(:placeholder-shown) + .field__label{
-  top:-6px; transform:none; font-size:.78rem; color:var(--border-focus);
+  top:-6px; transform:none; font-size:.78rem; color:var(--bs-gray-900); font-weight:700;
 }
 
-/* ação (EXIBIR/OCULTAR) */
 .field__input.pr{ padding-right:92px }
 
-/* Remove ícone nativo de mostrar/ocultar senha do navegador */
 .field__input[type="password"]::-ms-reveal,
 .field__input[type="password"]::-ms-clear {
   display: none;
@@ -217,7 +232,6 @@ body{
 }
 .field__action:hover{ color:var(--primary-hover) }
 
-/* Estilo específico para ícone de mostrar/ocultar senha */
 .field__action--icon {
   padding: 0.5rem;
   display: flex;
@@ -236,26 +250,30 @@ body{
   height: 20px;
 }
 
-/* SELECT (visibilidade e seta) */
 .field--select .field__input{
   -webkit-appearance:none; -moz-appearance:none; appearance:none;
-  height:54px; padding:24px 26px 12px 0; line-height:normal; color:var(--text);
+  height:54px; padding:24px 26px 12px 0; line-height:normal; color:var(--bs-gray-900); font-weight:600;
   background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzJEMzc0OCI+PHBhdGggZD0iTTcgMTBsNSA1IDUtNUg3eiIvPjwvc3ZnPg==");
   background-repeat:no-repeat; background-position:right .15rem center; background-size:14px 14px;
   overflow: visible;
   box-sizing: border-box;
 }
 .field--select select option{
-  background:var(--bg); color:var(--text); font-size:1rem;
+  background:var(--bg); color:var(--bs-gray-900); font-size:1rem; font-weight:600;
   line-height:normal; padding:10px 12px;
   min-height:28px;
 }
 .field--select:focus-within .field__label,
 .field--select[data-filled="true"] .field__label{
-  top:-6px; transform:none; font-size:.78rem; color:var(--border-focus);
+  top:-6px; transform:none; font-size:.78rem; color:var(--bs-gray-900); font-weight:700;
 }
+*/
 
-/* ===== Utilitários globais de alinhamento ===== */
+/* ===== Utilitários globais de alinhamento - ANTIGO (DESABILITADO) ===== */
+/* NOTA: Estes estilos foram substituídos pelo novo sistema em forms-dark.css.
+   Use os novos componentes em src/componentes/ui/FormInputs/ */
+
+/*
 .text-left  .field__input{ text-align:left }
 .text-right .field__input{ text-align:right }
 .text-center .field__input{ text-align:center }
@@ -265,58 +283,93 @@ body{
 .text-center .field__label{ left:50%; right:auto; transform:translate(-50%,-50%); text-align:center }
 
 .text-right .field__input:focus + .field__label,
-.text-right .field__input:not(:placeholder-shown) + .field__label{ left:auto; right:0; transform:none; top:-6px }
+.text-right .field__input:not(:placeholder-shown) + .field__label{ left:auto; right:0; transform:none; top:-6px; color:var(--bs-gray-900); font-weight:700; }
 .text-center .field__input:focus + .field__label,
-.text-center .field__input:not(:placeholder-shown) + .field__label{ left:50%; right:auto; transform:translateX(-50%); top:-6px }
+.text-center .field__input:not(:placeholder-shown) + .field__label{ left:50%; right:auto; transform:translateX(-50%); top:-6px; color:var(--bs-gray-900); font-weight:700; }
 
 .text-right .field--select:focus-within .field__label,
-.text-right .field--select[data-filled="true"] .field__label{ left:auto; right:0; transform:none; top:-6px }
+.text-right .field--select[data-filled="true"] .field__label{ left:auto; right:0; transform:none; top:-6px; color:var(--bs-gray-900); font-weight:700; }
 .text-center .field--select:focus-within .field__label,
-.text-center .field--select[data-filled="true"] .field__label{ left:50%; right:auto; transform:translateX(-50%); top:-6px }
+.text-center .field--select[data-filled="true"] .field__label{ left:50%; right:auto; transform:translateX(-50%); top:-6px; color:var(--bs-gray-900); font-weight:700; }
+*/
 
 /* ===== Classes para HomeArtista ===== */
 .dashboard-grid { gap: 24px; align-items: start; }
+/* MELHORADO - Headers e textos de perfil com melhor contraste */
 .perfil-header {
   margin-bottom: 20px;
   text-align: center;
   font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--text);
+  font-weight: 900;           /* Peso aumentado para destaque */
+  color: var(--bs-gray-900);            /* Texto mais escuro para melhor contraste */
 }
 .perfil-info-item { margin-bottom: 16px; }
-.perfil-subtitle { margin-bottom: 8px; font-weight: 600; color: var(--text); }
-.perfil-email { color: var(--text); font-weight: 500; margin-bottom: 8px; }
-.perfil-location { color: var(--text); font-weight: 500; margin-bottom: 12px; }
-.especialidades-header { margin-bottom: 8px; font-weight: 600; color: var(--text); }
+.perfil-subtitle {
+  margin-bottom: 8px;
+  font-weight: 700;          /* Peso aumentado */
+  color: var(--bs-gray-900);            /* Texto mais escuro */
+}
+.perfil-email {
+  color: var(--bs-gray-800);            /* Cinza escuro para contraste */
+  font-weight: 600;          /* Peso aumentado */
+  margin-bottom: 8px;
+}
+.perfil-location {
+  color: var(--bs-gray-800);            /* Cinza escuro para contraste */
+  font-weight: 600;          /* Peso aumentado */
+  margin-bottom: 12px;
+}
+.especialidades-header {
+  margin-bottom: 8px;
+  font-weight: 700;          /* Peso aumentado */
+  color: var(--bs-gray-900);            /* Texto mais escuro */
+}
+/* Tag de especialidade - MELHORADO COM MELHOR CONTRASTE */
 .tag-art-type {
   display: inline-block;
-  background-color: var(--info-bg);
-  color: var(--info-text);
+  background-color: var(--info);  /* Fundo azul sólido */
+  color: var(--bs-white);                 /* Texto branco para contraste */
   padding: 4px 12px;
   border-radius: 16px;
   font-size: 0.9em;
-  font-weight: 500;
+  font-weight: 600;              /* Peso aumentado para legibilidade */
   margin-right: 8px;
   margin-bottom: 8px;
   border: 1px solid var(--info);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
-.bio-header { margin-bottom: 8px; font-weight: 600; color: var(--text); }
+/* MELHORADO - Biografia com melhor contraste */
+.bio-header {
+  margin-bottom: 8px;
+  font-weight: 700;          /* Peso aumentado */
+  color: var(--bs-gray-900);            /* Texto mais escuro */
+}
 .bio-content {
-  color: var(--text);
+  color: var(--bs-gray-800);            /* Cinza escuro para legibilidade */
   line-height: 1.6;
   background-color: var(--bg-tertiary);
   padding: 12px;
   border-radius: 8px;
-  font-weight: 400;
+  font-weight: 500;          /* Peso aumentado de 400 para 500 */
 }
 .acoes-perfil { display: flex; gap: 12px; flex-wrap: wrap; }
 .perfil-incompleto {
   text-align: center;
   padding: 20px;
 }
+/* MELHORADO - Textos do perfil incompleto com melhor contraste */
 .perfil-icone { font-size: 3em; margin-bottom: 16px; }
-.perfil-titulo { margin-bottom: 12px; color: var(--text); font-weight: 600; }
-.perfil-descricao { color: var(--text); margin-bottom: 20px; line-height: 1.6; font-weight: 400; }
+.perfil-titulo {
+  margin-bottom: 12px;
+  color: var(--bs-gray-900);            /* Texto mais escuro */
+  font-weight: 700;          /* Peso aumentado */
+}
+.perfil-descricao {
+  color: var(--bs-gray-800);            /* Cinza escuro para legibilidade */
+  margin-bottom: 20px;
+  line-height: 1.6;
+  font-weight: 500;          /* Peso aumentado */
+}
 /* .perfil-acoes agora usa Cluster */
 .perfil-erro { color: var(--danger-text); margin-bottom: 16px; font-weight: 500; }
 .sidebar-column { display: flex; flex-direction: column; gap: 24px; }
@@ -328,19 +381,24 @@ body{
   border-radius: 8px;
   border: 1px solid var(--border);
 }
+/* MELHORADO - Estatísticas com melhor contraste */
 .stat-number {
   font-size: 2em;
-  font-weight: bold;
-  color: var(--info-text);
+  font-weight: 900;          /* Peso aumentado para destaque */
+  color: var(--bs-gray-900);            /* Texto mais escuro */
   margin-bottom: 4px;
 }
-.stat-label { font-size: 0.9em; color: var(--text); font-weight: 500; }
+.stat-label {
+  font-size: 0.9em;
+  color: var(--bs-gray-800);            /* Cinza escuro */
+  font-weight: 600;          /* Peso aumentado */
+}
 .stats-disclaimer {
   font-size: 0.85em;
-  color: var(--text-secondary);
+  color: var(--bs-gray-500);            /* Cinza médio para legibilidade */
   margin-top: 12px;
   text-align: center;
-  font-weight: 400;
+  font-weight: 500;          /* Peso aumentado */
 }
 /* .acoes-rapidas agora usa Stack */
 .acao-desabilitada {
@@ -750,19 +808,20 @@ body{
   height: 100%;
 }
 
-/* Nome do artista */
+/* MELHORADO - Nome do artista com melhor contraste */
 .artista-nome {
   margin: 0;
   font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text);
+  font-weight: 800;          /* Peso aumentado */
+  color: var(--bs-gray-900);            /* Texto mais escuro */
 }
 
-/* Localização */
+/* MELHORADO - Localização com melhor contraste */
 .artista-localizacao {
   margin: 0;
   margin-top: 6px;
-  color: var(--text-secondary);
+  color: var(--bs-gray-500);            /* Cinza médio para legibilidade */
+  font-weight: 600;          /* Peso aumentado */
 }
 
 /* Badge de Estado */
@@ -783,21 +842,24 @@ body{
   margin-bottom: auto;
 }
 
-/* Tag individual */
+/* Tag individual - MELHORADO COM MELHOR CONTRASTE */
 .artista-tag {
   display: inline-block;
-  background: var(--primary-light);
-  color: var(--primary);
+  background: var(--primary);  /* Fundo sólido para melhor contraste */
+  color: var(--bs-white);             /* Texto branco para excelente legibilidade */
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 600;
   border: 1px solid var(--primary);
   transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 .artista-tag:hover {
-  background: var(--primary);
-  color: var(--text-on-primary);
+  background: var(--primary-hover);
+  color: var(--bs-white);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.3);
 }
 
 /* Botão Ver Perfil */
@@ -917,15 +979,17 @@ body{
   margin-bottom: auto;
 }
 
+/* Tag de artista (admin) - MELHORADO COM MELHOR CONTRASTE */
 .artista-tag-admin {
   display: inline-block;
-  background: var(--primary-light);
-  color: var(--primary);
+  background: var(--primary);    /* Fundo sólido para melhor contraste */
+  color: var(--bs-white);               /* Texto branco para excelente legibilidade */
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 600;
   border: 1px solid var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .artista-acoes-admin {
