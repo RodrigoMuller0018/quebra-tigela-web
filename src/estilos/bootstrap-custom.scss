@@ -1,0 +1,282 @@
+/**
+ * BOOTSTRAP 5 CUSTOMIZATION
+ * Customização do Bootstrap 5 para manter a identidade visual do projeto
+ * Referência: https://getbootstrap.com/docs/5.3/customize/sass/
+ */
+
+// ==========================================
+// 1. VARIÁVEIS CUSTOMIZADAS (antes do import)
+// ==========================================
+
+// Cores primárias do projeto (mantendo identidade visual)
+$primary: #FF6B6B;        // Rosa Coral - CTAs principais
+$secondary: #4ECDC4;      // Turquesa - CTAs secundários
+$success: #10B981;        // Verde sucesso
+$danger: #EF4444;         // Vermelho erro
+$warning: #F59E0B;        // Laranja aviso
+$info: #3B82F6;           // Azul informação
+$light: #FAFAFA;          // Cinza claro
+$dark: #2D3748;           // Cinza escuro (texto)
+
+// Cores de background
+$body-bg: #FFF5F5;        // Fundo rosa claro
+$body-color: #2D3748;     // Texto principal
+
+// Fonts
+$font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+$font-size-base: 1rem;
+$line-height-base: 1.5;
+
+// Spacing (sistema 4px - compatível com atual)
+$spacer: 1rem;
+$spacers: (
+  0: 0,
+  1: ($spacer * 0.25),   // 4px
+  2: ($spacer * 0.5),    // 8px
+  3: $spacer,            // 16px
+  4: ($spacer * 1.5),    // 24px
+  5: ($spacer * 2),      // 32px
+  6: ($spacer * 2.5),    // 40px
+  7: ($spacer * 3),      // 48px
+  8: ($spacer * 4),      // 64px
+);
+
+// Border Radius (mantendo estilo arredondado atual)
+$border-radius: 12px;
+$border-radius-sm: 8px;
+$border-radius-lg: 18px;
+$border-radius-xl: 24px;
+$border-radius-pill: 50rem;
+
+// Borders
+$border-color: #FFE4E4;  // Borda rosa muito clara
+$border-width: 1px;
+
+// Shadows (mantendo sistema atual)
+$box-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+$box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+// Cards
+$card-border-color: $border-color;
+$card-border-radius: $border-radius;
+$card-bg: #FFFFFF;
+$card-cap-bg: #FFFFFF;
+
+// Buttons
+$btn-padding-y: 0.9rem;
+$btn-padding-x: 1.1rem;
+$btn-font-weight: 800;
+$btn-border-radius: 14px;
+$btn-border-radius-sm: 10px;
+$btn-border-radius-lg: 16px;
+
+// Forms
+$input-bg: transparent;
+$input-border-color: #FFE4E4;
+$input-border-radius: 0;
+$input-focus-border-color: #4ECDC4;
+$input-focus-box-shadow: 0 2px 0 0 rgba(78, 205, 196, 0.25);
+$input-padding-y: 0.75rem;
+$input-padding-x: 0;
+
+// Grid breakpoints (mantendo padrão Bootstrap)
+$grid-breakpoints: (
+  xs: 0,
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px
+);
+
+// Container max widths
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1140px,
+  xxl: 1320px
+);
+
+// Transitions
+$transition-base: all 0.3s ease;
+$transition-fast: all 0.15s ease;
+$transition-slow: all 0.35s ease;
+
+// Navbar customização
+$navbar-padding-y: 1rem;
+$navbar-padding-x: 1.5rem;
+$navbar-brand-font-size: 1.3rem;
+$navbar-brand-font-weight: 900;
+
+// Modal
+$modal-content-border-radius: $border-radius;
+$modal-backdrop-bg: rgba(0, 0, 0, 0.5);
+$modal-backdrop-opacity: 1;
+
+// ==========================================
+// 2. IMPORTS DO BOOTSTRAP
+// ==========================================
+
+// Importar apenas o que precisamos (tree-shaking para bundle menor)
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/variables-dark";
+@import "~bootstrap/scss/maps";
+@import "~bootstrap/scss/mixins";
+@import "~bootstrap/scss/utilities";
+
+// Layout & components
+@import "~bootstrap/scss/root";
+@import "~bootstrap/scss/reboot";
+@import "~bootstrap/scss/type";
+@import "~bootstrap/scss/images";
+@import "~bootstrap/scss/containers";
+@import "~bootstrap/scss/grid";
+@import "~bootstrap/scss/tables";
+@import "~bootstrap/scss/forms";
+@import "~bootstrap/scss/buttons";
+@import "~bootstrap/scss/transitions";
+@import "~bootstrap/scss/dropdown";
+@import "~bootstrap/scss/button-group";
+@import "~bootstrap/scss/nav";
+@import "~bootstrap/scss/navbar";
+@import "~bootstrap/scss/card";
+@import "~bootstrap/scss/accordion";
+@import "~bootstrap/scss/breadcrumb";
+@import "~bootstrap/scss/pagination";
+@import "~bootstrap/scss/badge";
+@import "~bootstrap/scss/alert";
+@import "~bootstrap/scss/progress";
+@import "~bootstrap/scss/list-group";
+@import "~bootstrap/scss/close";
+@import "~bootstrap/scss/toasts";
+@import "~bootstrap/scss/modal";
+@import "~bootstrap/scss/tooltip";
+@import "~bootstrap/scss/popover";
+@import "~bootstrap/scss/carousel";
+@import "~bootstrap/scss/spinners";
+@import "~bootstrap/scss/offcanvas";
+@import "~bootstrap/scss/placeholders";
+
+// Helpers
+@import "~bootstrap/scss/helpers";
+
+// Utilities
+@import "~bootstrap/scss/utilities/api";
+
+// ==========================================
+// 3. CUSTOMIZAÇÕES ADICIONAIS (depois do import)
+// ==========================================
+
+// Manter hover states customizados
+.btn-primary {
+  &:hover {
+    background-color: #FF5252;
+    border-color: #FF5252;
+    transform: translateY(-1px);
+  }
+}
+
+.btn-secondary {
+  &:hover {
+    background-color: #3DBDB4;
+    border-color: #3DBDB4;
+  }
+}
+
+// Card hover effect (mantendo comportamento atual)
+.card {
+  transition: $transition-base;
+
+  &:hover {
+    box-shadow: $box-shadow-lg;
+  }
+}
+
+// Alert customizado (mantendo estilo atual)
+.alert {
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  font-weight: 500;
+}
+
+// Badge/Tag style (mantendo estilo artista-tag)
+.badge {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+// Form fields com label flutuante (manter comportamento atual)
+.form-floating {
+  > .form-control {
+    border: 0;
+    border-bottom: 2px solid #FFE4E4;
+    border-radius: 0;
+    padding-top: 28px;
+    padding-bottom: 10px;
+
+    &:focus {
+      border-color: #4ECDC4;
+      box-shadow: 0 2px 0 0 rgba(78, 205, 196, 0.25);
+    }
+  }
+
+  > label {
+    color: #718096;
+    font-size: 1rem;
+  }
+
+  > .form-control:focus ~ label,
+  > .form-control:not(:placeholder-shown) ~ label {
+    color: #4ECDC4;
+    font-size: 0.78rem;
+  }
+}
+
+// Navbar brand customizado
+.navbar-brand {
+  font-weight: 900;
+  letter-spacing: 0.3px;
+}
+
+// Accessibility - foco visível
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.35);
+  border-radius: 10px;
+}
+
+// Responsive adjustments (mobile-first)
+@media (max-width: 767.98px) {
+  .card {
+    padding: 0.75rem !important;
+  }
+
+  h1, .h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2, .h2 {
+    font-size: 1.25rem !important;
+  }
+
+  .btn {
+    font-size: 0.875rem !important;
+    padding: 0.75rem 1rem !important;
+  }
+}
+
+// Respeitar preferência de movimento reduzido
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

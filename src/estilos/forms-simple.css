@@ -1,0 +1,343 @@
+/**
+ * SIMPLE FORMS - TAILWIND STYLE
+ * Formulários simples inspirados no Tailwind CSS
+ * Sem floating labels - apenas labels acima dos inputs
+ */
+
+/* ==========================================
+   INPUTS E SELECTS - ESTILO SIMPLES
+   ========================================== */
+
+.form-control,
+.form-select,
+input.form-control,
+select.form-select,
+textarea.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+input[type="search"],
+select,
+textarea {
+  background-color: var(--gray-850) !important;
+  border: 1px solid var(--gray-700) !important;
+  border-radius: 0.5rem !important;
+  color: var(--gray-50) !important;
+  padding: 0.625rem 0.875rem !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.5 !important;
+  font-weight: 400 !important;
+  width: 100% !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  display: block !important;
+  height: auto !important;
+  min-height: 2.75rem !important;
+}
+
+/* Focus */
+.form-control:focus,
+.form-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  background-color: var(--gray-850) !important;
+  border-color: var(--orange-500) !important;
+  color: var(--gray-50) !important;
+  box-shadow: 0 0 0 3px rgba(250, 131, 32, 0.1) !important;
+  outline: none !important;
+}
+
+/* Hover */
+.form-control:hover:not(:focus):not(:disabled),
+.form-select:hover:not(:focus):not(:disabled),
+input:hover:not(:focus):not(:disabled),
+select:hover:not(:focus):not(:disabled),
+textarea:hover:not(:focus):not(:disabled) {
+  border-color: var(--gray-600) !important;
+}
+
+/* Placeholder */
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--gray-500) !important;
+  font-weight: 400 !important;
+  opacity: 0.7 !important;
+}
+
+/* Disabled */
+.form-control:disabled,
+.form-select:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background-color: var(--gray-900) !important;
+  border-color: var(--gray-800) !important;
+  color: var(--gray-600) !important;
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+}
+
+/* ==========================================
+   LABELS
+   ========================================== */
+
+.form-label,
+label {
+  color: var(--gray-50) !important;
+  font-weight: 500 !important;
+  margin-bottom: 0.5rem !important;
+  font-size: 0.875rem !important;
+  display: block !important;
+  position: static !important;
+  transform: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  padding: 0 !important;
+  height: auto !important;
+}
+
+/* ==========================================
+   SELECTS
+   ========================================== */
+
+.form-select,
+select {
+  padding-right: 2.5rem !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23999' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 16px 12px !important;
+  cursor: pointer !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+
+.form-select:focus,
+select:focus {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23FA8320' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+/* Options */
+select option {
+  background-color: var(--gray-850) !important;
+  color: var(--gray-50) !important;
+  padding: 0.5rem !important;
+}
+
+/* ==========================================
+   TEXTAREA
+   ========================================== */
+
+textarea.form-control,
+textarea {
+  min-height: 100px !important;
+  resize: vertical !important;
+  padding: 0.75rem 0.875rem !important;
+}
+
+/* ==========================================
+   FORM GROUPS
+   ========================================== */
+
+.mb-3,
+.form-group {
+  margin-bottom: 1rem !important;
+}
+
+/* Desabilitar floating labels - usar sistema simples */
+.form-floating {
+  position: relative !important;
+  margin-bottom: 1rem !important;
+  display: block !important;
+}
+
+.form-floating > label {
+  position: relative !important;
+  display: block !important;
+  color: var(--gray-50) !important;
+  font-weight: 500 !important;
+  margin-bottom: 0.5rem !important;
+  font-size: 0.875rem !important;
+  transform: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  padding: 0 !important;
+  height: auto !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 1 !important;
+  order: -1 !important;
+}
+
+/* ==========================================
+   SISTEMA ANTIGO .field - CONVERTER PARA SIMPLES
+   ========================================== */
+
+.field {
+  position: relative !important;
+  margin-bottom: 1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: none !important;
+  border-bottom: none !important;
+}
+
+.field__label {
+  position: relative !important;
+  display: block !important;
+  color: var(--gray-50) !important;
+  font-weight: 500 !important;
+  margin-bottom: 0.5rem !important;
+  font-size: 0.875rem !important;
+  transform: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  padding: 0 !important;
+  height: auto !important;
+  top: 0 !important;
+  left: 0 !important;
+  order: -1 !important;
+}
+
+.field__input {
+  background-color: var(--gray-850) !important;
+  border: 1px solid var(--gray-700) !important;
+  border-radius: 0.5rem !important;
+  color: var(--gray-50) !important;
+  padding: 0.625rem 0.875rem !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.5 !important;
+  font-weight: 400 !important;
+  width: 100% !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  display: block !important;
+  height: auto !important;
+  min-height: 2.75rem !important;
+  order: 0 !important;
+}
+
+.field__input:focus {
+  background-color: var(--gray-850) !important;
+  border-color: var(--orange-500) !important;
+  color: var(--gray-50) !important;
+  box-shadow: 0 0 0 3px rgba(250, 131, 32, 0.1) !important;
+  outline: none !important;
+}
+
+.field__input::placeholder {
+  color: var(--gray-500) !important;
+  opacity: 0.7 !important;
+}
+
+.form-floating > input,
+.form-floating > select,
+.form-floating > textarea {
+  padding: 0.625rem 0.875rem !important;
+  height: auto !important;
+  min-height: 2.75rem !important;
+}
+
+/* Garantir que placeholder não interfira */
+.form-floating > input::placeholder,
+.form-floating > select::placeholder,
+.form-floating > textarea::placeholder {
+  opacity: 0.7 !important;
+  color: var(--gray-500) !important;
+}
+
+/* ==========================================
+   VALIDAÇÃO
+   ========================================== */
+
+.is-invalid {
+  border-color: var(--red-500) !important;
+}
+
+.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(214, 61, 46, 0.1) !important;
+}
+
+.is-valid {
+  border-color: var(--green-500) !important;
+}
+
+.is-valid:focus {
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1) !important;
+}
+
+.invalid-feedback {
+  color: var(--red-400) !important;
+  font-size: 0.875rem !important;
+  margin-top: 0.25rem !important;
+}
+
+.valid-feedback {
+  color: var(--green-400) !important;
+  font-size: 0.875rem !important;
+  margin-top: 0.25rem !important;
+}
+
+/* ==========================================
+   BOTÃO DE AÇÃO (TOGGLE SENHA)
+   ========================================== */
+
+/* Container para inputs com ação precisa ter position relative */
+.form-floating {
+  position: relative !important;
+}
+
+.field__action,
+.form-control-action {
+  position: absolute !important;
+  right: 0.75rem !important;
+  bottom: 0.5rem !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  padding: 0.375rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--gray-400) !important;
+  transition: color 0.2s ease !important;
+  border-radius: 0.25rem !important;
+}
+
+.field__action:hover,
+.form-control-action:hover {
+  color: var(--orange-400) !important;
+  background-color: rgba(250, 131, 32, 0.1) !important;
+}
+
+.field__action--icon svg,
+.form-control-action--icon svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Input com botão de ação precisa de padding à direita */
+.form-floating > input[type="password"],
+.form-floating > input.has-action {
+  padding-right: 3rem !important;
+}
+
+/* ==========================================
+   RESPONSIVIDADE
+   ========================================== */
+
+@media (max-width: 576px) {
+  .form-control,
+  .form-select,
+  input,
+  select,
+  textarea {
+    font-size: 1rem !important;
+  }
+}

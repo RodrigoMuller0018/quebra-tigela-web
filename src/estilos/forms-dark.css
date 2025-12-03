@@ -1,0 +1,1119 @@
+/**
+ * MODERN FORMS - DARK THEME
+ *
+ * Sistema de formulários modernos inspirado no Tailwind CSS
+ * Totalmente integrado com tema dark + laranja (OKLCH)
+ *
+ * Features:
+ * - Floating labels
+ * - Input groups com ícones
+ * - Estados de validação
+ * - Hover/Focus suaves
+ * - Acessibilidade WCAG AAA
+ */
+
+/* ==========================================
+   INPUTS BASE - ESTILO TAILWIND BOXED
+   ========================================== */
+
+.form-control,
+.form-select,
+input.form-control,
+select.form-select,
+textarea.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+select {
+  /* IMPORTANTE: Estilo "boxed" completo - NÃO underline */
+  background-color: var(--gray-800) !important;
+  border: 1px solid var(--gray-700) !important;
+  border-radius: 0.375rem !important;
+  color: var(--gray-50) !important;
+  padding: 0.875rem 0.75rem !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  font-weight: 500 !important;
+  height: 3.5rem !important;
+  transition: all 0.2s ease-in-out !important;
+
+  /* Garantir que não haja border-bottom apenas */
+  border-bottom-width: 1px !important;
+  border-top-width: 1px !important;
+  border-left-width: 1px !important;
+  border-right-width: 1px !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+input.form-control:focus,
+select.form-select:focus,
+textarea.form-control:focus {
+  background-color: var(--gray-800) !important;
+  border-color: var(--orange-500) !important;
+  color: var(--text) !important;
+  box-shadow: 0 0 0 0.2rem rgba(250, 131, 32, 0.25) !important;
+  outline: none !important;
+}
+
+.form-control::placeholder,
+input.form-control::placeholder,
+textarea.form-control::placeholder,
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="number"]::placeholder,
+input::placeholder {
+  color: var(--gray-500) !important;
+  font-weight: 400 !important;
+  font-size: 1rem !important;
+}
+
+.form-control:hover:not(:focus):not(:disabled),
+.form-select:hover:not(:focus):not(:disabled),
+input.form-control:hover:not(:focus):not(:disabled),
+select.form-select:hover:not(:focus):not(:disabled),
+textarea.form-control:hover:not(:focus):not(:disabled) {
+  border-color: var(--gray-600) !important;
+}
+
+.form-control:disabled,
+.form-select:disabled,
+input.form-control:disabled,
+select.form-select:disabled,
+textarea.form-control:disabled {
+  background-color: var(--gray-900) !important;
+  border-color: var(--gray-800) !important;
+  color: var(--gray-600) !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+/* ==========================================
+   LABELS
+   ========================================== */
+
+.form-label {
+  color: var(--gray-300);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+}
+
+/* ==========================================
+   INPUT GROUPS
+   ========================================== */
+
+.input-group-text {
+  background-color: var(--gray-800);
+  border-color: var(--gray-700);
+  color: var(--gray-400);
+  transition: all 0.2s ease-in-out;
+  font-weight: 500;
+}
+
+.input-group:focus-within .input-group-text {
+  border-color: var(--orange-500);
+  color: var(--orange-400);
+  background-color: var(--gray-800);
+}
+
+.input-group > .form-control:focus {
+  z-index: 3;
+}
+
+/* Botões em input groups */
+.input-group .btn {
+  z-index: 2;
+}
+
+.input-group .btn-outline-secondary {
+  border-color: var(--gray-700);
+  color: var(--gray-400);
+  background-color: var(--gray-800);
+}
+
+.input-group .btn-outline-secondary:hover {
+  border-color: var(--orange-500);
+  color: var(--orange-400);
+  background-color: var(--gray-750, var(--gray-800));
+}
+
+/* ==========================================
+   FLOATING LABELS
+   ========================================== */
+
+.form-floating {
+  position: relative;
+}
+
+.form-floating > label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  padding: 1rem 0.75rem;
+  pointer-events: none;
+  border: 1px solid transparent;
+  transform-origin: 0 0;
+  transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
+  color: var(--gray-500) !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+}
+
+/* Ajuste de padding para inputs com floating label */
+.form-floating > .form-control,
+.form-floating > input.form-control,
+.form-floating > textarea.form-control,
+.form-floating > .form-select,
+.form-floating > select.form-select,
+.form-floating > input[type="text"],
+.form-floating > input[type="email"],
+.form-floating > input[type="password"],
+.form-floating > input[type="number"],
+.form-floating > select {
+  padding: 1.625rem 0.75rem 0.625rem !important;
+  height: 3.5rem !important;
+}
+
+.form-floating > textarea.form-control {
+  height: auto !important;
+  min-height: 3.5rem !important;
+  padding: 1.625rem 0.75rem 0.625rem !important;
+}
+
+/* Label ativa (quando input tem foco ou conteúdo) */
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > input.form-control:focus ~ label,
+.form-floating > input.form-control:not(:placeholder-shown) ~ label,
+.form-floating > textarea.form-control:focus ~ label,
+.form-floating > textarea.form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label,
+.form-floating > select.form-select ~ label {
+  opacity: 0.85 !important;
+  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem) !important;
+  color: var(--orange-400) !important;
+  font-weight: 600 !important;
+}
+
+/* Ajuste para textarea floating */
+.form-floating > textarea.form-control {
+  height: auto;
+  min-height: 100px;
+}
+
+/* ==========================================
+   PASSWORD TOGGLE / ACTION BUTTONS
+   ========================================== */
+
+/* Botão de ação em inputs (toggle de senha, limpar, etc.) */
+.field__action,
+.form-control-action {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-400);
+  transition: color 0.2s ease, background-color 0.2s ease;
+  border-radius: 0.25rem;
+}
+
+.field__action:hover,
+.form-control-action:hover {
+  color: var(--orange-400);
+  background-color: rgba(250, 131, 32, 0.1);
+}
+
+.field__action:focus,
+.form-control-action:focus {
+  outline: 2px solid var(--orange-500);
+  outline-offset: 2px;
+}
+
+.field__action:active,
+.form-control-action:active {
+  color: var(--orange-500);
+  background-color: rgba(250, 131, 32, 0.15);
+}
+
+/* Botão com ícone (toggle de senha com SVG/ícone) */
+.field__action--icon,
+.form-control-action--icon {
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-400);
+}
+
+.field__action--icon:hover,
+.form-control-action--icon:hover {
+  color: var(--orange-400);
+}
+
+.field__action--icon svg,
+.form-control-action--icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+/* Variante: Botão de texto (EXIBIR/OCULTAR) */
+.field__action--text,
+.form-control-action--text {
+  color: var(--orange-400);
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+}
+
+.field__action--text:hover,
+.form-control-action--text:hover {
+  color: var(--orange-500);
+  background-color: rgba(250, 131, 32, 0.1);
+}
+
+/* Ajuste de padding no input quando tem botão de ação à direita */
+.form-floating > .form-control.has-action,
+.form-control.has-action {
+  padding-right: 3rem !important;
+}
+
+/* ==========================================
+   VALIDAÇÃO
+   ========================================== */
+
+/* Valid state */
+.form-control.is-valid,
+.form-select.is-valid {
+  border-color: var(--green-600);
+  background-color: var(--gray-800);
+}
+
+.form-control.is-valid:focus,
+.form-select.is-valid:focus {
+  border-color: var(--green-600);
+  box-shadow: 0 0 0 0.2rem rgba(22, 163, 74, 0.25);
+}
+
+.valid-feedback {
+  color: var(--green-400);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* Invalid state */
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: var(--red-600);
+  background-color: var(--gray-800);
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+  border-color: var(--red-600);
+  box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.25);
+}
+
+.invalid-feedback {
+  color: var(--red-400);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* ==========================================
+   HOVER STATES
+   ========================================== */
+
+.form-control:hover:not(:focus):not(:disabled),
+.form-select:hover:not(:focus):not(:disabled) {
+  border-color: var(--gray-600);
+}
+
+.input-group:hover:not(:focus-within) .input-group-text {
+  border-color: var(--gray-600);
+}
+
+/* ==========================================
+   FILE INPUT
+   ========================================== */
+
+.form-control[type="file"] {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.form-control[type="file"]::file-selector-button {
+  background-color: var(--gray-700);
+  border: none;
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  margin-right: 1rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s ease;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.form-control[type="file"]::file-selector-button:hover {
+  background-color: var(--gray-600);
+}
+
+.form-control[type="file"]:focus::file-selector-button {
+  background-color: var(--orange-600);
+  color: var(--gray-900);
+}
+
+/* ==========================================
+   SELECT CUSTOMIZATION
+   ========================================== */
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23999' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.form-select:focus {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23FA8320' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+.form-select option {
+  background-color: var(--gray-800);
+  color: var(--text);
+  padding: 0.5rem;
+}
+
+/* ==========================================
+   CHECKBOXES E RADIOS
+   ========================================== */
+
+.form-check-input {
+  background-color: var(--gray-800);
+  border-color: var(--gray-600);
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.form-check-input:checked {
+  background-color: var(--orange-500);
+  border-color: var(--orange-500);
+}
+
+.form-check-input:focus {
+  border-color: var(--orange-500);
+  box-shadow: 0 0 0 0.2rem rgba(250, 131, 32, 0.25);
+  outline: none;
+}
+
+.form-check-input:hover:not(:checked):not(:disabled) {
+  border-color: var(--orange-600);
+}
+
+.form-check-input:disabled {
+  background-color: var(--gray-900);
+  border-color: var(--gray-800);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-check-label {
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  margin-left: 0.5rem;
+}
+
+.form-check-input:disabled ~ .form-check-label {
+  color: var(--gray-600);
+  cursor: not-allowed;
+}
+
+/* Switch customization */
+.form-switch .form-check-input {
+  width: 2.5rem;
+  height: 1.25rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23999'/%3e%3c/svg%3e");
+}
+
+.form-switch .form-check-input:checked {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23141414'/%3e%3c/svg%3e");
+  background-color: var(--orange-500);
+}
+
+/* ==========================================
+   TEXTAREA
+   ========================================== */
+
+textarea.form-control {
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.6;
+}
+
+textarea.form-control:focus {
+  resize: vertical;
+}
+
+/* ==========================================
+   HELPER TEXT
+   ========================================== */
+
+.form-text {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.form-text a {
+  color: var(--orange-400);
+  text-decoration: none;
+}
+
+.form-text a:hover {
+  color: var(--orange-500);
+  text-decoration: underline;
+}
+
+/* ==========================================
+   SEARCH INPUTS
+   ========================================== */
+
+.search-input-wrapper {
+  position: relative;
+}
+
+.search-input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-500);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.search-input-wrapper .form-control {
+  padding-left: 2.5rem;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--gray-500);
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  z-index: 4;
+}
+
+.search-clear-btn:hover {
+  color: var(--orange-400);
+  background-color: var(--gray-700);
+}
+
+/* ==========================================
+   INPUT SIZES
+   ========================================== */
+
+/* Small inputs */
+.form-control-sm,
+.form-select-sm {
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.input-group-sm > .input-group-text {
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
+}
+
+/* Large inputs */
+.form-control-lg,
+.form-select-lg {
+  font-size: 1.125rem;
+  padding: 0.75rem 1rem;
+}
+
+.input-group-lg > .input-group-text {
+  font-size: 1.125rem;
+  padding: 0.75rem 1rem;
+}
+
+/* ==========================================
+   DROPDOWN MENUS (para input groups)
+   ========================================== */
+
+.dropdown-menu {
+  background-color: var(--gray-800);
+  border-color: var(--gray-700);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+.dropdown-item {
+  color: var(--text);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--gray-700);
+  color: var(--orange-400);
+}
+
+.dropdown-item.active {
+  background-color: var(--orange-600);
+  color: var(--gray-900);
+}
+
+.dropdown-divider {
+  border-color: var(--gray-700);
+}
+
+/* ==========================================
+   INPUT COM BADGES/TAGS
+   ========================================== */
+
+.input-tags-wrapper {
+  position: relative;
+}
+
+.input-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--gray-800);
+  border: 1px solid var(--gray-700);
+  border-radius: 0.375rem;
+  min-height: 42px;
+  cursor: text;
+  transition: border-color 0.2s ease;
+}
+
+.input-tags:focus-within {
+  border-color: var(--orange-500);
+  box-shadow: 0 0 0 0.2rem rgba(250, 131, 32, 0.25);
+}
+
+.input-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: var(--orange-600);
+  color: var(--gray-900);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.input-tag-remove {
+  background: transparent;
+  border: none;
+  color: var(--gray-900);
+  cursor: pointer;
+  padding: 0;
+  width: 1rem;
+  height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.input-tag-remove:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.input-tags input {
+  flex: 1;
+  min-width: 120px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  padding: 0.25rem;
+}
+
+/* ==========================================
+   RANGE INPUTS
+   ========================================== */
+
+.form-range {
+  width: 100%;
+  height: 0.5rem;
+  background-color: var(--gray-700);
+  border-radius: 0.25rem;
+  outline: none;
+}
+
+.form-range::-webkit-slider-thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: var(--orange-500);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-range::-webkit-slider-thumb:hover {
+  background-color: var(--orange-600);
+  transform: scale(1.1);
+}
+
+.form-range:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 0.2rem rgba(250, 131, 32, 0.25);
+}
+
+.form-range::-moz-range-thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: var(--orange-500);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-range::-moz-range-thumb:hover {
+  background-color: var(--orange-600);
+  transform: scale(1.1);
+}
+
+/* ==========================================
+   COLOR PICKER
+   ========================================== */
+
+.form-control[type="color"] {
+  height: 3rem;
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+.form-control[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control[type="color"]::-webkit-color-swatch {
+  border: 2px solid var(--gray-700);
+  border-radius: 0.25rem;
+}
+
+/* ==========================================
+   DATE/TIME INPUTS
+   ========================================== */
+
+.form-control[type="date"],
+.form-control[type="time"],
+.form-control[type="datetime-local"] {
+  cursor: pointer;
+}
+
+.form-control[type="date"]::-webkit-calendar-picker-indicator,
+.form-control[type="time"]::-webkit-calendar-picker-indicator,
+.form-control[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+.form-control[type="date"]:hover::-webkit-calendar-picker-indicator,
+.form-control[type="time"]:hover::-webkit-calendar-picker-indicator,
+.form-control[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+  filter: invert(0.9);
+}
+
+/* ==========================================
+   NUMBER INPUTS
+   ========================================== */
+
+.form-control[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.form-control[type="number"]::-webkit-outer-spin-button,
+.form-control[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Opcional: adicionar botões customizados */
+.number-input-wrapper {
+  position: relative;
+  display: flex;
+}
+
+.number-input-btn {
+  background-color: var(--gray-700);
+  border: 1px solid var(--gray-700);
+  color: var(--gray-400);
+  padding: 0 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.number-input-btn:hover {
+  background-color: var(--gray-600);
+  color: var(--orange-400);
+}
+
+.number-input-btn:active {
+  background-color: var(--gray-800);
+}
+
+/* ==========================================
+   LOADING STATE
+   ========================================== */
+
+.form-control.loading,
+.form-select.loading {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23FA8320' d='M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z'%3E%3CanimateTransform attributeName='transform' dur='0.8s' from='0 12 12' repeatCount='indefinite' to='360 12 12' type='rotate'/%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.25rem;
+  padding-right: 3rem;
+}
+
+/* ==========================================
+   UTILITIES
+   ========================================== */
+
+/* Rounded variants */
+.form-control-rounded {
+  border-radius: 1.5rem !important;
+}
+
+.input-group-rounded .form-control:first-child,
+.input-group-rounded .input-group-text:first-child {
+  border-top-left-radius: 1.5rem !important;
+  border-bottom-left-radius: 1.5rem !important;
+}
+
+.input-group-rounded .form-control:last-child,
+.input-group-rounded .input-group-text:last-child,
+.input-group-rounded .btn:last-child {
+  border-top-right-radius: 1.5rem !important;
+  border-bottom-right-radius: 1.5rem !important;
+}
+
+/* Borderless variant */
+.form-control-borderless {
+  border: none !important;
+  border-bottom: 2px solid var(--gray-700) !important;
+  border-radius: 0 !important;
+  padding-left: 0 !important;
+}
+
+.form-control-borderless:focus {
+  border-bottom-color: var(--orange-500) !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================
+   SELECTS MODERNOS - ESTILO TAILWIND
+   ========================================== */
+
+/* Select base - ícone customizado e estilo boxed */
+.form-select,
+select.form-select {
+  /* Garantir estilo boxed completo */
+  background-color: var(--gray-800) !important;
+  border: 1px solid var(--gray-700) !important;
+  border-radius: 0.375rem !important;
+  color: var(--text) !important;
+  padding: 0.625rem 2.5rem 0.625rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+
+  /* Ícone de seta dropdown */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23999' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 16px 12px !important;
+
+  cursor: pointer !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+
+.form-select:focus,
+select.form-select:focus {
+  background-color: var(--gray-800) !important;
+  border-color: var(--orange-500) !important;
+  box-shadow: 0 0 0 0.2rem rgba(250, 131, 32, 0.25) !important;
+
+  /* Ícone laranja quando focado */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23FA8320' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+/* Hover state para selects */
+.form-select:hover:not(:focus):not(:disabled) {
+  border-color: var(--gray-600);
+  cursor: pointer;
+}
+
+/* Select options styling */
+.form-select option {
+  background-color: var(--gray-850);
+  color: var(--gray-50);
+  padding: 0.5rem;
+}
+
+.form-select option:hover {
+  background-color: var(--gray-700);
+  color: var(--orange-400);
+}
+
+.form-select option:checked {
+  background-color: var(--orange-500);
+  color: var(--gray-900);
+  font-weight: 600;
+}
+
+.form-select option:disabled {
+  color: var(--gray-600);
+  opacity: 0.6;
+}
+
+/* Optgroups */
+.form-select optgroup {
+  color: var(--orange-400);
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--gray-900);
+  padding: 0.5rem 0.25rem;
+}
+
+/* Select múltiplo */
+.form-select[multiple] {
+  padding: 0.5rem;
+  background-image: none;
+  height: auto;
+  min-height: 10rem;
+}
+
+.form-select[multiple] option {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.form-select[multiple] option:hover {
+  background-color: var(--gray-700);
+  color: var(--orange-400);
+}
+
+.form-select[multiple] option:checked {
+  background-color: var(--orange-500);
+  color: var(--gray-900);
+  font-weight: 600;
+  position: relative;
+  padding-left: 2rem;
+}
+
+.form-select[multiple] option:checked::before {
+  content: '✓';
+  position: absolute;
+  left: 0.75rem;
+  font-weight: bold;
+}
+
+/* Select com tamanhos */
+.form-select-sm {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  padding-left: 0.5rem;
+  padding-right: 2rem;
+  font-size: 0.8125rem;
+  background-size: 14px 10px;
+  background-position: right 0.5rem center;
+}
+
+.form-select-lg {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+  padding-left: 1rem;
+  padding-right: 3rem;
+  font-size: 1rem;
+  background-size: 18px 14px;
+  background-position: right 1rem center;
+}
+
+/* Select inline com label */
+.row.align-items-center .form-select {
+  width: auto;
+  display: inline-block;
+}
+
+/* Select com validação */
+.form-select.is-valid {
+  border-color: var(--green-500);
+  padding-right: 4rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23999' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"),
+    url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%234CAF50' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center, center right 2.25rem;
+  background-size: 16px 12px, calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+  background-repeat: no-repeat;
+}
+
+.form-select.is-valid:focus {
+  border-color: var(--green-500);
+  box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+}
+
+.form-select.is-invalid {
+  border-color: var(--red-500);
+  padding-right: 4rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23999' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"),
+    url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23D63D2E'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23D63D2E' stroke='none'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center, center right 2.25rem;
+  background-size: 16px 12px, calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+  background-repeat: no-repeat;
+}
+
+.form-select.is-invalid:focus {
+  border-color: var(--red-500);
+  box-shadow: 0 0 0 0.2rem rgba(214, 61, 46, 0.25);
+}
+
+/* Floating label com select */
+.form-floating > .form-select {
+  padding-top: 1.625rem;
+  padding-bottom: 0.625rem;
+}
+
+.form-floating > .form-select ~ label {
+  opacity: 0.65;
+  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+}
+
+.form-floating > .form-select:focus ~ label,
+.form-floating > .form-select:not(:placeholder-shown) ~ label {
+  opacity: 1;
+  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+  color: var(--orange-400);
+}
+
+/* Select com ícone */
+.input-group .form-select:not(:first-child) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.input-group .form-select:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Select disabled */
+.form-select:disabled {
+  background-color: var(--gray-900);
+  border-color: var(--gray-800);
+  color: var(--gray-600);
+  cursor: not-allowed;
+  opacity: 0.6;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23666' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 576px) {
+  .form-floating > label {
+    font-size: 0.875rem;
+  }
+
+  .form-control,
+  .form-select {
+    font-size: 1rem; /* Evita zoom em mobile */
+  }
+
+  .input-group-text {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Select múltiplo em mobile */
+  .form-select[multiple] {
+    min-height: 8rem;
+  }
+}
+
+/* ==========================================
+   ACCESSIBILITY
+   ========================================== */
+
+/* Focus visible para teclado */
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible {
+  outline: 2px solid var(--orange-500);
+  outline-offset: 2px;
+}
+
+/* Prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .form-control,
+  .form-select,
+  .input-group-text,
+  .form-check-input,
+  .form-range::-webkit-slider-thumb,
+  .form-range::-moz-range-thumb {
+    transition: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .form-control,
+  .form-select {
+    border-width: 2px;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-width: 3px;
+  }
+}
