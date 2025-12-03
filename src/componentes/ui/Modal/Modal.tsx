@@ -4,7 +4,7 @@ import "./Modal.css";
 interface ModalProps {
   aberto: boolean;
   aoFechar: () => void;
-  titulo: string;
+  titulo: string | ReactNode;
   children: ReactNode;
   tamanho?: "pequeno" | "medio" | "grande";
 }

@@ -71,6 +71,9 @@ export function FormularioServico({
         />
 
         <div className="field">
+          <label htmlFor="servico-descricao" className="field__label">
+            Descrição
+          </label>
           <textarea
             id="servico-descricao"
             name="descricao"
@@ -81,9 +84,6 @@ export function FormularioServico({
             rows={4}
             style={{ resize: "vertical", minHeight: "100px" }}
           />
-          <label htmlFor="servico-descricao" className="field__label">
-            Descrição
-          </label>
         </div>
 
         <CampoTexto
