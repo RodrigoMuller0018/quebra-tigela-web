@@ -1,32 +1,26 @@
 import { Link } from "react-router-dom";
-import { Botao } from "../componentes/ui";
+import { Button } from "@heroui/react";
+import { ArrowLeft } from "lucide-react";
 
 export default function Pagina404() {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "70vh",
-        textAlign: "center",
-        padding: "2rem",
-      }}
-    >
-      <h1 style={{ fontSize: "6rem", margin: "0", color: "var(--color-primary, #ff6b6b)" }}>
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 py-16 text-center">
+      <h1 className="font-display text-7xl font-black text-gradient-brand">
         404
       </h1>
-      <h2 style={{ fontSize: "2rem", marginTop: "1rem", marginBottom: "0.5rem" }}>
-        Página não encontrada
-      </h2>
-      <p style={{ marginBottom: "2rem", color: "var(--color-text-secondary, #666)", fontSize: "1.1rem" }}>
-        A página que você está procurando não existe.
+      <h2 className="font-display text-2xl font-bold">Página não encontrada</h2>
+      <p className="max-w-md text-[color:var(--muted)]">
+        Parece que esta tela ainda não existe ou foi movida.
       </p>
-      <Link to="/" style={{ textDecoration: "none" }}>
-        <Botao variante="primaria" grande>
-          Voltar ao Início
-        </Botao>
+      <Link to="/">
+        <Button
+          variant="primary"
+          size="lg"
+          className="bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30"
+        >
+          <ArrowLeft size={18} className="mr-2" />
+          Voltar ao início
+        </Button>
       </Link>
     </div>
   );

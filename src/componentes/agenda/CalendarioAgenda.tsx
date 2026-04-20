@@ -1,8 +1,16 @@
 import { useState, useMemo } from "react";
+import { Button } from "@heroui/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ScheduleEntry } from "../../tipos/schedule";
-import { NOMES_MESES_CAPITALIZADOS, NOMES_DIAS_SEMANA_ABREVIADOS } from "../../constantes/agenda";
-import { ehMesmoDia, dateParaString, extrairData } from "../../utilitarios/dataUtils";
-import "./CalendarioAgenda.css";
+import {
+  NOMES_MESES_CAPITALIZADOS,
+  NOMES_DIAS_SEMANA_ABREVIADOS,
+} from "../../constantes/agenda";
+import {
+  ehMesmoDia,
+  dateParaString,
+  extrairData,
+} from "../../utilitarios/dataUtils";
 
 interface Props {
   horarios: ScheduleEntry[];
@@ -17,110 +25,113 @@ export function CalendarioAgenda({ horarios, mesAno, onDiaClick }: Props) {
   const diasDoMes = useMemo(() => {
     const ano = dataAtual.getFullYear();
     const mes = dataAtual.getMonth();
-
-    // Primeiro e último dia do mês
     const primeiroDia = new Date(ano, mes, 1);
     const ultimoDia = new Date(ano, mes + 1, 0);
-
-    // Dia da semana do primeiro dia (0 = domingo)
     const diaSemanaInicio = primeiroDia.getDay();
-
-    // Total de dias no mês
     const totalDias = ultimoDia.getDate();
-
-    // Criar array de dias (incluindo espaços vazios do início)
     const dias: (Date | null)[] = [];
-
-    // Adicionar espaços vazios antes do primeiro dia
-    for (let i = 0; i < diaSemanaInicio; i++) {
-      dias.push(null);
-    }
-
-    // Adicionar todos os dias do mês
-    for (let dia = 1; dia <= totalDias; dia++) {
+    for (let i = 0; i < diaSemanaInicio; i++) dias.push(null);
+    for (let dia = 1; dia <= totalDias; dia++)
       dias.push(new Date(ano, mes, dia));
-    }
-
     return dias;
   }, [dataAtual]);
 
-  // Agrupar horários por dia
   const horariosPorDia = useMemo(() => {
     const mapa = new Map<string, ScheduleEntry[]>();
-
-    horarios.forEach((horario) => {
-      const chave = extrairData(horario.date);
-
-      if (!mapa.has(chave)) {
-        mapa.set(chave, []);
-      }
-      mapa.get(chave)!.push(horario);
+    horarios.forEach((h) => {
+      const chave = extrairData(h.date);
+      if (!mapa.has(chave)) mapa.set(chave, []);
+      mapa.get(chave)!.push(h);
     });
-
     return mapa;
   }, [horarios]);
 
   function obterHorariosDoDia(dia: Date | null): ScheduleEntry[] {
     if (!dia) return [];
-    const chave = dateParaString(dia);
-    return horariosPorDia.get(chave) || [];
-  }
-
-  function mesAnterior() {
-    setDataAtual(new Date(dataAtual.getFullYear(), dataAtual.getMonth() - 1));
-  }
-
-  function proximoMes() {
-    setDataAtual(new Date(dataAtual.getFullYear(), dataAtual.getMonth() + 1));
+    return horariosPorDia.get(dateParaString(dia)) || [];
   }
 
   function ehHoje(dia: Date | null): boolean {
-    if (!dia) return false;
-    return ehMesmoDia(dia, new Date());
+    return dia ? ehMesmoDia(dia, new Date()) : false;
   }
 
+  const mesAnterior = () =>
+    setDataAtual(new Date(dataAtual.getFullYear(), dataAtual.getMonth() - 1));
+  const proximoMes = () =>
+    setDataAtual(new Date(dataAtual.getFullYear(), dataAtual.getMonth() + 1));
+
   return (
-    <div className="calendario-agenda">
-      <div className="calendario-header">
-        <button onClick={mesAnterior} className="btn btn-ghost btn-icon">
-          ←
-        </button>
-        <h3 className="calendario-titulo">
-          {NOMES_MESES_CAPITALIZADOS[dataAtual.getMonth()]} {dataAtual.getFullYear()}
+    <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 sm:p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <Button
+          variant="ghost"
+          isIconOnly
+          onPress={mesAnterior}
+          aria-label="Mês anterior"
+        >
+          <ChevronLeft size={18} />
+        </Button>
+        <h3 className="font-display text-xl font-bold text-gradient-brand">
+          {NOMES_MESES_CAPITALIZADOS[dataAtual.getMonth()]}{" "}
+          {dataAtual.getFullYear()}
         </h3>
-        <button onClick={proximoMes} className="btn btn-ghost btn-icon">
-          →
-        </button>
+        <Button
+          variant="ghost"
+          isIconOnly
+          onPress={proximoMes}
+          aria-label="Próximo mês"
+        >
+          <ChevronRight size={18} />
+        </Button>
       </div>
 
-      <div className="calendario-dias-semana">
-        {NOMES_DIAS_SEMANA_ABREVIADOS.map((nome, index) => (
-          <div key={index}>{nome}</div>
+      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-bold uppercase tracking-wider text-[color:var(--muted)]">
+        {NOMES_DIAS_SEMANA_ABREVIADOS.map((nome) => (
+          <div key={nome}>{nome}</div>
         ))}
       </div>
 
-      <div className="calendario-grid">
+      <div className="grid grid-cols-7 gap-1.5">
         {diasDoMes.map((dia, index) => {
           const horariosNoDia = obterHorariosDoDia(dia);
           const temHorarios = horariosNoDia.length > 0;
-          const disponivel = horariosNoDia.some((h) => h.status === "available");
+          const disponivel = horariosNoDia.some(
+            (h) => h.status === "available"
+          );
           const reservado = horariosNoDia.some((h) => h.status === "booked");
+          const hoje = ehHoje(dia);
+
+          if (!dia) {
+            return <div key={index} className="aspect-square" />;
+          }
+
+          let classes =
+            "relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg text-sm font-medium transition";
+
+          if (hoje) {
+            classes += " bg-gradient-brand text-white shadow-lg";
+          } else if (disponivel) {
+            classes +=
+              " bg-[color:var(--accent)]/15 text-[color:var(--accent)] border border-[color:var(--accent)]/40 hover:bg-[color:var(--accent)]/25";
+          } else if (reservado) {
+            classes +=
+              " bg-[color:var(--secondary)]/15 text-[color:var(--secondary)] border border-[color:var(--secondary)]/40 hover:bg-[color:var(--secondary)]/25";
+          } else {
+            classes +=
+              " text-[color:var(--foreground)] hover:bg-[color:var(--surface-secondary)]";
+          }
 
           return (
             <div
               key={index}
-              className={`calendario-dia ${!dia ? "vazio" : ""} ${ehHoje(dia) ? "hoje" : ""} ${temHorarios ? "com-horarios" : ""} ${disponivel ? "disponivel" : ""} ${reservado ? "reservado" : ""}`}
-              onClick={() => dia && onDiaClick?.(dia)}
+              className={classes}
+              onClick={() => onDiaClick?.(dia)}
             >
-              {dia && (
-                <>
-                  <span className="calendario-dia-numero">{dia.getDate()}</span>
-                  {temHorarios && (
-                    <div className="calendario-indicadores">
-                      <span className="calendario-contador">{horariosNoDia.length}</span>
-                    </div>
-                  )}
-                </>
+              <span>{dia.getDate()}</span>
+              {temHorarios && (
+                <span className="absolute bottom-1 rounded-full bg-current px-1.5 text-[10px] font-bold text-white opacity-80">
+                  {horariosNoDia.length}
+                </span>
               )}
             </div>
           );

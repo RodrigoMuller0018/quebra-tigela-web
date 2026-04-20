@@ -1,14 +1,13 @@
+import { toast } from "@heroui/react";
+
 export function sucesso(msg: string) {
-  // wrapper para futuro sistema de toast
-  alert(msg);
+  toast.success(msg);
 }
 
 export function erro(msg: string) {
-  // wrapper para futuro sistema de toast
-  alert(`Erro: ${msg}`);
+  toast.danger(msg);
 }
 
 export function info(msg: string) {
-  // wrapper para futuro sistema de toast
-  alert(msg);
+  toast.info(msg);
 }

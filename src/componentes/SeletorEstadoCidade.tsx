@@ -1,6 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
-import { listarEstados, listarCidadesPorEstado, type Estado, type Cidade } from "../api/ibge.api";
-import { Seletor, type OpcaoSeletor } from "./ui/Seletor/Seletor";
+import {
+  listarEstados,
+  listarCidadesPorEstado,
+  type Estado,
+  type Cidade,
+} from "../api/ibge.api";
 import { erro as avisoErro } from "../utilitarios/avisos";
 
 interface SeletorEstadoCidadeProps {
@@ -10,8 +14,11 @@ interface SeletorEstadoCidadeProps {
   onCidadeChange: (cidade: string) => void;
   obrigatorio?: boolean;
   className?: string;
-  idPrefix?: string; // Prefixo único para IDs (ex: "cliente", "artista", "filtro")
+  idPrefix?: string;
 }
+
+const SELECT_CLASS =
+  "w-full appearance-none rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-3 pr-10 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30 disabled:cursor-not-allowed disabled:opacity-50";
 
 export function SeletorEstadoCidade({
   estadoSelecionado,
@@ -25,27 +32,23 @@ export function SeletorEstadoCidade({
   const [estados, setEstados] = useState<Estado[]>([]);
   const [cidades, setCidades] = useState<Cidade[]>([]);
 
-  // Carregar estados ao montar componente
   useEffect(() => {
-    async function carregar() {
+    (async () => {
       try {
         const data = await listarEstados();
         setEstados(data);
       } catch (e: any) {
         avisoErro(e?.message ?? "Erro ao carregar estados");
       }
-    }
-    carregar();
+    })();
   }, []);
 
-  // Carregar cidades quando estado mudar
   useEffect(() => {
     if (!estadoSelecionado) {
       setCidades([]);
       return;
     }
-
-    async function carregar() {
+    (async () => {
       try {
         const data = await listarCidadesPorEstado(estadoSelecionado);
         setCidades(data);
@@ -53,71 +56,101 @@ export function SeletorEstadoCidade({
         avisoErro(e?.message ?? "Erro ao carregar cidades");
         setCidades([]);
       }
-    }
-    carregar();
+    })();
   }, [estadoSelecionado]);
 
-  // Limpar cidade quando estado mudar (somente se a cidade não for válida)
   useEffect(() => {
     if (cidadeSelecionada && cidades.length > 0) {
-      // Verificar se a cidade selecionada ainda é válida para o novo estado
-      const cidadeValida = cidades.some(c => c.nome === cidadeSelecionada);
-      if (!cidadeValida) {
-        onCidadeChange("");
-      }
+      const valida = cidades.some((c) => c.nome === cidadeSelecionada);
+      if (!valida) onCidadeChange("");
     }
   }, [cidades, cidadeSelecionada, onCidadeChange]);
 
-  // Preparar opções de estados (formato: "SC - Santa Catarina")
-  const opcoesEstados: OpcaoSeletor[] = useMemo(() => {
-    return estados.map(estado => ({
-      value: estado.sigla,
-      label: `${estado.sigla} - ${estado.nome}`
-    }));
-  }, [estados]);
+  const opcoesEstados = useMemo(
+    () =>
+      estados.map((e) => (
+        <option key={e.sigla} value={e.sigla}>
+          {e.sigla} — {e.nome}
+        </option>
+      )),
+    [estados]
+  );
 
-  // Preparar opções de cidades
-  const opcoesCidades: OpcaoSeletor[] = useMemo(() => {
-    return cidades.map(cidade => ({
-      value: cidade.nome,
-      label: cidade.nome
-    }));
-  }, [cidades]);
+  const opcoesCidades = useMemo(
+    () =>
+      cidades.map((c) => (
+        <option key={c.id} value={c.nome}>
+          {c.nome}
+        </option>
+      )),
+    [cidades]
+  );
 
   return (
-    <div className={className}>
-      {/* ESTADO - sempre habilitado, nunca disabled */}
-      <Seletor
-        id={`estado-${idPrefix}`}
-        name="estado"
-        label={`Estado${obrigatorio ? ' *' : ''}`}
-        options={opcoesEstados}
-        value={estadoSelecionado || ""}
-        onChange={(e) => {
-          onEstadoChange(e.target.value);
-          onCidadeChange(""); // Limpar cidade ao mudar estado
-        }}
-        placeholder="Selecione um estado"
-        required={obrigatorio}
-        disabled={false}
-      />
+    <div className={className || "grid gap-4 sm:grid-cols-2"}>
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor={`estado-${idPrefix}`}
+          className="text-sm font-medium text-[color:var(--foreground)]"
+        >
+          Estado
+          {obrigatorio && (
+            <span className="ml-1 text-[color:var(--accent)]">*</span>
+          )}
+        </label>
+        <div className="relative">
+          <select
+            id={`estado-${idPrefix}`}
+            name="estado"
+            required={obrigatorio}
+            className={SELECT_CLASS}
+            value={estadoSelecionado || ""}
+            onChange={(e) => {
+              onEstadoChange(e.target.value);
+              onCidadeChange("");
+            }}
+          >
+            <option value="">Selecione um estado</option>
+            {opcoesEstados}
+          </select>
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]">
+            ▼
+          </span>
+        </div>
+      </div>
 
-      {/* CIDADE - sempre disabled até selecionar estado */}
-      <Seletor
-        id={`cidade-${idPrefix}`}
-        name="cidade"
-        label={`Cidade${obrigatorio ? ' *' : ''}`}
-        options={opcoesCidades}
-        value={cidadeSelecionada || ""}
-        onChange={(e) => onCidadeChange(e.target.value)}
-        placeholder={
-          !estadoSelecionado
-            ? "Primeiro selecione um estado"
-            : "Selecione uma cidade"
-        }
-        required={obrigatorio}
-        disabled={!estadoSelecionado}
-      />
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor={`cidade-${idPrefix}`}
+          className="text-sm font-medium text-[color:var(--foreground)]"
+        >
+          Cidade
+          {obrigatorio && (
+            <span className="ml-1 text-[color:var(--accent)]">*</span>
+          )}
+        </label>
+        <div className="relative">
+          <select
+            id={`cidade-${idPrefix}`}
+            name="cidade"
+            required={obrigatorio}
+            disabled={!estadoSelecionado}
+            className={SELECT_CLASS}
+            value={cidadeSelecionada || ""}
+            onChange={(e) => onCidadeChange(e.target.value)}
+          >
+            <option value="">
+              {!estadoSelecionado
+                ? "Selecione um estado primeiro"
+                : "Selecione uma cidade"}
+            </option>
+            {opcoesCidades}
+          </select>
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]">
+            ▼
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

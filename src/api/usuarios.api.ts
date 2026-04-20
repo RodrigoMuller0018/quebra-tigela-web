@@ -15,3 +15,18 @@ export async function obterUsuarioPorId(id: string): Promise<Usuario> {
   const res = await http.get(`/api/users/${id}`);
   return res.data;
 }
+
+export async function atualizarUsuario(
+  id: string,
+  dados: Partial<NovoUsuario>
+): Promise<Usuario> {
+  const res = await http.patch(`/api/users/${id}`, dados);
+  return res.data;
+}
+
+export async function excluirUsuario(
+  id: string
+): Promise<{ deleted: boolean }> {
+  const res = await http.delete(`/api/users/${id}`);
+  return res.data;
+}

@@ -1,6 +1,6 @@
+import { Button, Card, CardContent } from "@heroui/react";
+import { Pencil } from "lucide-react";
 import type { Service } from "../../tipos/servicos";
-import { Botao } from "../ui";
-import "./ListaServicos.css";
 
 interface ListaServicosProps {
   servicos: Service[];
@@ -14,59 +14,80 @@ export function ListaServicos({
   servicos,
   modo = "publico",
   onEditar,
-  onDeletar,
-  onAlternarStatus,
 }: ListaServicosProps) {
   if (servicos.length === 0) {
     return (
-      <div className="servicos-vazio">
-        <p>Nenhum serviço cadastrado.</p>
-      </div>
+      <Card className="border-dashed border-[color:var(--border)] bg-[color:var(--surface-secondary)]">
+        <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
+          <p className="text-sm text-[color:var(--muted)]">
+            Nenhum serviço cadastrado
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="lista-servicos">
-      {servicos.map((servico) => {
-        return (
-        <div key={servico._id} className="servico-card">
-          {/* Mídia */}
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {servicos.map((servico) => (
+        <Card
+          key={servico._id}
+          className="overflow-hidden border border-[color:var(--border)] bg-[color:var(--surface)] transition hover:-translate-y-0.5 hover:border-[color:var(--accent)]"
+        >
           {servico.media && servico.media.length > 0 && (
-            <div className="servico-media">
-              {servico.media.map((item, index) => (
-                <div key={index} className="media-item">
-                  {item.type === "image" ? (
-                    <img src={item.url} alt={servico.title} className="servico-imagem" />
-                  ) : (
-                    <video src={item.url} controls className="servico-video" />
-                  )}
-                </div>
-              ))}
+            <div className="relative h-44 overflow-hidden bg-[color:var(--surface-secondary)]">
+              {servico.media[0].type === "image" ? (
+                <img
+                  src={servico.media[0].url}
+                  alt={servico.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <video
+                  src={servico.media[0].url}
+                  controls
+                  className="h-full w-full object-cover"
+                />
+              )}
             </div>
           )}
-
-          {/* Conteúdo */}
-          <div className="servico-conteudo">
-            <h3 className="servico-titulo">{servico.title}</h3>
-
-            {servico.description && (
-              <p className="servico-descricao">{servico.description}</p>
-            )}
-
-            {/* Ações (apenas para artistas) */}
-            {modo === "artista" && onEditar && (
-              <div className="servico-acoes">
-                <Botao
-                  variante="secundaria"
-                  onClick={() => onEditar(servico)}
+          <CardContent className="flex flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-display text-base font-bold leading-tight">
+                {servico.title}
+              </h3>
+              {modo === "artista" && (
+                <span
+                  className={
+                    "rounded-full px-2.5 py-0.5 text-xs font-medium " +
+                    (servico.active
+                      ? "bg-[color:var(--success)]/15 text-[color:var(--success)]"
+                      : "bg-[color:var(--muted)]/15 text-[color:var(--muted)]")
+                  }
                 >
-                  ✏️ Editar
-                </Botao>
-              </div>
+                  {servico.active ? "Ativo" : "Inativo"}
+                </span>
+              )}
+            </div>
+            {servico.description && (
+              <p className="line-clamp-3 text-sm text-[color:var(--muted)]">
+                {servico.description}
+              </p>
             )}
-          </div>
-        </div>
-      )})}
+            {modo === "artista" && onEditar && (
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={() => onEditar(servico)}
+                className="mt-2"
+              >
+                <Pencil size={14} className="mr-1" />
+                Editar
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

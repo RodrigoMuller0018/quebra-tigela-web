@@ -5,9 +5,11 @@ import RegistroPagina from "../paginas/autenticacao/Registro.pagina";
 import DetalheArtista from "../paginas/artistas/DetalheArtista.pagina";
 import HomeClientePagina from "../paginas/clientes/HomeCliente.pagina";
 import PerfilCliente from "../paginas/clientes/PerfilCliente.pagina";
+import SolicitacoesClientePagina from "../paginas/clientes/SolicitacoesCliente.pagina";
 import HomeArtistaPagina from "../paginas/artistas/HomeArtista.pagina";
 import AgendaArtistaPagina from "../paginas/artistas/AgendaArtista.pagina";
 import ServicosArtistaPagina from "../paginas/artistas/ServicosArtista.pagina";
+import SolicitacoesArtistaPagina from "../paginas/artistas/SolicitacoesArtista.pagina";
 import EsqueciSenha from "../paginas/autenticacao/EsqueciSenha.pagina";
 import PopularArtistasDevPagina from "../paginas/dev/PopularArtistas.pagina";
 import Pagina404 from "../paginas/Pagina404";
@@ -46,6 +48,14 @@ const router = createBrowserRouter([
           </RotaProtegida>
         )
       },
+      {
+        path: "/cliente/solicitacoes",
+        element: (
+          <RotaProtegida>
+            <SolicitacoesClientePagina />
+          </RotaProtegida>
+        )
+      },
 
       // Rotas para artistas
       {
@@ -69,6 +79,14 @@ const router = createBrowserRouter([
         element: (
           <RotaProtegida>
             <ServicosArtistaPagina />
+          </RotaProtegida>
+        )
+      },
+      {
+        path: "/artista/solicitacoes",
+        element: (
+          <RotaProtegida>
+            <SolicitacoesArtistaPagina />
           </RotaProtegida>
         )
       },

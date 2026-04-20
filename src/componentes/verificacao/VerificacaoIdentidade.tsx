@@ -1,10 +1,16 @@
 import { useState, useRef } from "react";
+import { Button, Card, CardContent, Spinner } from "@heroui/react";
+import {
+  Camera,
+  Smile,
+  IdCard,
+  CheckCircle2,
+  XCircle,
+  ArrowLeft,
+} from "lucide-react";
 import { verificarIdentidadeArtista } from "../../api/verificacao.api";
 import type { ResultadoVerificacao } from "../../tipos/verificacao";
-import { Botao, Cartao } from "../ui";
-import { Stack } from "../layout";
 import { erro as avisoErro } from "../../utilitarios/avisos";
-import "./VerificacaoIdentidade.css";
 
 interface VerificacaoIdentidadeProps {
   artistId: string;
@@ -12,98 +18,63 @@ interface VerificacaoIdentidadeProps {
   onCancelar: () => void;
 }
 
-type Etapa = 'instrucoes' | 'captura' | 'processando' | 'resultado';
+type Etapa = "instrucoes" | "captura" | "processando" | "resultado";
+
+const FORMATOS_VALIDOS = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const TAMANHO_MAX = 10 * 1024 * 1024;
 
 export function VerificacaoIdentidade({
   artistId,
   onSucesso,
   onCancelar,
 }: VerificacaoIdentidadeProps) {
-  const [etapa, setEtapa] = useState<Etapa>('instrucoes');
+  const [etapa, setEtapa] = useState<Etapa>("instrucoes");
   const [selfie, setSelfie] = useState<File | null>(null);
   const [documento, setDocumento] = useState<File | null>(null);
-  const [previewSelfie, setPreviewSelfie] = useState<string>("");
-  const [previewDocumento, setPreviewDocumento] = useState<string>("");
+  const [previewSelfie, setPreviewSelfie] = useState("");
+  const [previewDocumento, setPreviewDocumento] = useState("");
   const [resultado, setResultado] = useState<ResultadoVerificacao | null>(null);
 
   const inputSelfieRef = useRef<HTMLInputElement>(null);
   const inputDocumentoRef = useRef<HTMLInputElement>(null);
 
-  function handleSelecionarSelfie(e: React.ChangeEvent<HTMLInputElement>) {
+  function lerArquivo(
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: (f: File | null) => void,
+    setPreview: (url: string) => void
+  ) {
     const arquivo = e.target.files?.[0];
     if (!arquivo) return;
-
-    // Validar tamanho (10MB)
-    if (arquivo.size > 10 * 1024 * 1024) {
+    if (arquivo.size > TAMANHO_MAX) {
       avisoErro("Foto muito grande. Máximo 10MB");
       return;
     }
-
-    // Validar formato
-    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(arquivo.type)) {
+    if (!FORMATOS_VALIDOS.includes(arquivo.type)) {
       avisoErro("Formato inválido. Use JPG, PNG ou WEBP");
       return;
     }
-
-    setSelfie(arquivo);
-
-    // Criar preview
+    setFile(arquivo);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewSelfie(reader.result as string);
-    };
+    reader.onloadend = () => setPreview(reader.result as string);
     reader.readAsDataURL(arquivo);
   }
 
-  function handleSelecionarDocumento(e: React.ChangeEvent<HTMLInputElement>) {
-    const arquivo = e.target.files?.[0];
-    if (!arquivo) return;
-
-    // Validar tamanho (10MB)
-    if (arquivo.size > 10 * 1024 * 1024) {
-      avisoErro("Foto muito grande. Máximo 10MB");
-      return;
-    }
-
-    // Validar formato
-    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(arquivo.type)) {
-      avisoErro("Formato inválido. Use JPG, PNG ou WEBP");
-      return;
-    }
-
-    setDocumento(arquivo);
-
-    // Criar preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewDocumento(reader.result as string);
-    };
-    reader.readAsDataURL(arquivo);
-  }
-
-  async function handleEnviarVerificacao() {
+  async function handleEnviar() {
     if (!selfie || !documento) {
       avisoErro("Por favor, envie as duas fotos");
       return;
     }
-
-    setEtapa('processando');
-
+    setEtapa("processando");
     try {
       const res = await verificarIdentidadeArtista(selfie, documento, artistId);
       setResultado(res);
-      setEtapa('resultado');
-
-      // Se foi aprovado, chamar callback de sucesso
-      if (res.verified && res.status === 'APPROVED') {
-        setTimeout(() => {
-          onSucesso();
-        }, 3000); // Aguardar 3s para mostrar mensagem de sucesso
+      setEtapa("resultado");
+      if (res.verified && res.status === "APPROVED") {
+        setTimeout(onSucesso, 3000);
       }
     } catch (err: any) {
-      console.error("Erro na verificação:", err);
-      setEtapa('captura');
-      avisoErro(err?.message ?? "Erro ao verificar identidade. Tente novamente.");
+      setEtapa("captura");
+      avisoErro(err?.message ?? "Erro ao verificar identidade.");
     }
   }
 
@@ -113,259 +84,259 @@ export function VerificacaoIdentidade({
     setPreviewSelfie("");
     setPreviewDocumento("");
     setResultado(null);
-    setEtapa('captura');
+    setEtapa("captura");
   }
 
-  // Renderizar instruções
-  if (etapa === 'instrucoes') {
+  if (etapa === "instrucoes") {
     return (
-      <Cartao>
-        <div className="verificacao-container">
-          <h2 className="verificacao-titulo">📸 Verificação de Identidade</h2>
-          <p className="verificacao-subtitulo">
-            Para receber solicitações de shows, precisamos verificar sua identidade
+      <div className="flex flex-col gap-5">
+        <header className="text-center">
+          <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-brand text-white shadow-lg shadow-[color:var(--accent)]/30">
+            <Camera size={28} />
+          </span>
+          <h2 className="font-display text-2xl font-bold text-gradient-brand">
+            Verificação de identidade
+          </h2>
+          <p className="text-sm text-[color:var(--muted)]">
+            Para receber solicitações, precisamos verificar sua identidade
           </p>
+        </header>
 
-          <div className="verificacao-instrucoes">
-            <h3>📋 Como Funciona:</h3>
-            <ol>
+        <Card className="border border-[color:var(--border)] bg-[color:var(--surface-secondary)]">
+          <CardContent className="flex flex-col gap-3">
+            <h3 className="font-bold">Como funciona</h3>
+            <ol className="flex flex-col gap-2 pl-5 text-sm leading-relaxed">
               <li>
-                <strong>Tire uma selfie</strong> - Use a câmera frontal do celular
+                <strong>Tire uma selfie</strong> — câmera frontal do celular
               </li>
               <li>
-                <strong>Foto do documento</strong> - RG, CNH ou outro documento com foto
+                <strong>Foto do documento</strong> — RG, CNH ou outro com foto
               </li>
               <li>
-                <strong>Aguarde análise</strong> - Verificaremos se as fotos conferem
+                <strong>Aguarde análise</strong> — verificamos se as fotos
+                conferem
               </li>
             </ol>
+          </CardContent>
+        </Card>
 
-            <div className="verificacao-dicas">
-              <h4>💡 Dicas para uma boa foto:</h4>
-              <ul>
-                <li>Use um local bem iluminado</li>
-                <li>Retire óculos, bonés e acessórios</li>
-                <li>Centralize o rosto na câmera</li>
-                <li>Documento deve estar legível e sem reflexos</li>
-                <li>Evite fotos tremidas ou desfocadas</li>
+        <Card className="border-l-4 border-l-[color:var(--accent)] bg-[color:var(--accent)]/5">
+          <CardContent className="flex flex-col gap-2">
+            <h4 className="font-bold">Dicas</h4>
+            <ul className="flex flex-col gap-1 text-sm">
+              <li>• Use um local bem iluminado</li>
+              <li>• Retire óculos e acessórios</li>
+              <li>• Centralize o rosto na câmera</li>
+              <li>• Documento legível, sem reflexos</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="primary"
+            size="lg"
+            onPress={() => setEtapa("captura")}
+            className="bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30"
+          >
+            Começar verificação
+          </Button>
+          <Button variant="ghost" onPress={onCancelar}>
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (etapa === "captura") {
+    return (
+      <div className="flex flex-col gap-5">
+        <h2 className="text-center font-display text-2xl font-bold text-gradient-brand">
+          Enviar fotos
+        </h2>
+
+        <FotoSecao
+          titulo="Passo 1: Selfie"
+          descricao="Foto do seu rosto usando a câmera frontal"
+          Icone={Smile}
+          preview={previewSelfie}
+          onClick={() => inputSelfieRef.current?.click()}
+        />
+        <input
+          ref={inputSelfieRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp"
+          capture="user"
+          className="hidden"
+          onChange={(e) => lerArquivo(e, setSelfie, setPreviewSelfie)}
+        />
+
+        <FotoSecao
+          titulo="Passo 2: Documento"
+          descricao="RG, CNH ou outro documento com foto"
+          Icone={IdCard}
+          preview={previewDocumento}
+          onClick={() => inputDocumentoRef.current?.click()}
+        />
+        <input
+          ref={inputDocumentoRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => lerArquivo(e, setDocumento, setPreviewDocumento)}
+        />
+
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Button
+            variant="primary"
+            size="lg"
+            onPress={handleEnviar}
+            isDisabled={!selfie || !documento}
+            className="bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30"
+          >
+            Enviar para análise
+          </Button>
+          <Button variant="ghost" onPress={onCancelar}>
+            <ArrowLeft size={16} className="mr-2" />
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (etapa === "processando") {
+    return (
+      <div className="flex flex-col items-center gap-4 py-12 text-center">
+        <Spinner size="lg" color="accent" />
+        <h2 className="font-display text-2xl font-bold text-gradient-brand">
+          Analisando suas fotos...
+        </h2>
+        <p className="text-sm text-[color:var(--muted)]">
+          Por favor, aguarde alguns segundos
+        </p>
+      </div>
+    );
+  }
+
+  if (etapa === "resultado" && resultado) {
+    const aprovado = resultado.verified && resultado.status === "APPROVED";
+    if (aprovado) {
+      return (
+        <div className="flex flex-col items-center gap-4 py-8 text-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--success)]/15 text-[color:var(--success)]">
+            <CheckCircle2 size={36} strokeWidth={2.5} />
+          </span>
+          <h2 className="font-display text-2xl font-bold text-[color:var(--success)]">
+            Verificação aprovada!
+          </h2>
+          <p className="text-sm text-[color:var(--muted)]">
+            Sua identidade foi verificada com{" "}
+            <strong>{resultado.confidence}%</strong> de confiança
+          </p>
+          <Card className="w-full border-l-4 border-l-[color:var(--success)] bg-[color:var(--success)]/5 text-left">
+            <CardContent>
+              <h3 className="mb-2 font-bold">Agora você pode:</h3>
+              <ul className="flex flex-col gap-1 text-sm">
+                <li>• Receber solicitações de shows</li>
+                <li>• Aparecer nas buscas de clientes</li>
+                <li>• Criar e gerenciar serviços</li>
+                <li>• Ter o selo "Verificado" no perfil</li>
               </ul>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-            <Botao
-              variante="primaria"
-              grande
-              onClick={() => setEtapa('captura')}
-            >
-              Começar Verificação
-            </Botao>
-            <Botao
-              variante="fantasma"
-              onClick={onCancelar}
-            >
-              Cancelar
-            </Botao>
-          </div>
-        </div>
-      </Cartao>
-    );
-  }
-
-  // Renderizar captura de fotos
-  if (etapa === 'captura') {
-    return (
-      <Cartao>
-        <div className="verificacao-container">
-          <h2 className="verificacao-titulo">📸 Enviar Fotos</h2>
-
-          <Stack spacing="large">
-            {/* Selfie */}
-            <div className="foto-secao">
-              <h3>📷 Passo 1: Selfie</h3>
-              <p className="foto-descricao">Tire uma foto do seu rosto usando a câmera frontal</p>
-
-              {previewSelfie ? (
-                <div className="foto-preview">
-                  <img src={previewSelfie} alt="Preview selfie" />
-                  <Botao
-                    variante="secundaria"
-                    onClick={() => inputSelfieRef.current?.click()}
-                  >
-                    Tirar Nova Selfie
-                  </Botao>
-                </div>
-              ) : (
-                <div className="foto-placeholder">
-                  <div className="foto-icone">🤳</div>
-                  <Botao
-                    variante="primaria"
-                    onClick={() => inputSelfieRef.current?.click()}
-                  >
-                    📸 Tirar Selfie
-                  </Botao>
-                </div>
-              )}
-
-              <input
-                ref={inputSelfieRef}
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                capture="user"
-                style={{ display: 'none' }}
-                onChange={handleSelecionarSelfie}
-              />
-            </div>
-
-            {/* Documento */}
-            <div className="foto-secao">
-              <h3>📄 Passo 2: Documento</h3>
-              <p className="foto-descricao">Tire uma foto do seu RG, CNH ou outro documento com foto</p>
-
-              {previewDocumento ? (
-                <div className="foto-preview">
-                  <img src={previewDocumento} alt="Preview documento" />
-                  <Botao
-                    variante="secundaria"
-                    onClick={() => inputDocumentoRef.current?.click()}
-                  >
-                    Tirar Nova Foto
-                  </Botao>
-                </div>
-              ) : (
-                <div className="foto-placeholder">
-                  <div className="foto-icone">🪪</div>
-                  <Botao
-                    variante="primaria"
-                    onClick={() => inputDocumentoRef.current?.click()}
-                  >
-                    📸 Foto do Documento
-                  </Botao>
-                </div>
-              )}
-
-              <input
-                ref={inputDocumentoRef}
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                capture="environment"
-                style={{ display: 'none' }}
-                onChange={handleSelecionarDocumento}
-              />
-            </div>
-
-            {/* Botões de ação */}
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <Botao
-                variante="primaria"
-                grande
-                onClick={handleEnviarVerificacao}
-                disabled={!selfie || !documento}
-              >
-                Enviar para Análise
-              </Botao>
-              <Botao
-                variante="fantasma"
-                onClick={onCancelar}
-              >
-                Cancelar
-              </Botao>
-            </div>
-          </Stack>
-        </div>
-      </Cartao>
-    );
-  }
-
-  // Renderizar processando
-  if (etapa === 'processando') {
-    return (
-      <Cartao>
-        <div className="verificacao-container verificacao-processando">
-          <div className="loading-spinner"></div>
-          <h2 className="verificacao-titulo">⏳ Analisando suas fotos...</h2>
-          <p className="verificacao-subtitulo">
-            Por favor, aguarde alguns segundos
+            </CardContent>
+          </Card>
+          <p className="text-xs text-[color:var(--muted)]">
+            Redirecionando em 3 segundos...
           </p>
         </div>
-      </Cartao>
-    );
-  }
-
-  // Renderizar resultado
-  if (etapa === 'resultado' && resultado) {
-    const aprovado = resultado.verified && resultado.status === 'APPROVED';
-
+      );
+    }
     return (
-      <Cartao>
-        <div className="verificacao-container">
-          {aprovado ? (
-            <>
-              <div className="verificacao-sucesso">
-                <div className="verificacao-icone-grande">🎉</div>
-                <h2 className="verificacao-titulo">✅ Verificação Aprovada!</h2>
-                <p className="verificacao-subtitulo">
-                  Sua identidade foi verificada com <strong>{resultado.confidence}%</strong> de confiança
-                </p>
-
-                <div className="verificacao-beneficios">
-                  <h3>Agora você pode:</h3>
-                  <ul>
-                    <li>✓ Receber solicitações de shows</li>
-                    <li>✓ Aparecer nas buscas de clientes</li>
-                    <li>✓ Criar e gerenciar serviços</li>
-                    <li>✓ Ter o selo "Verificado" no perfil</li>
-                  </ul>
-                </div>
-
-                <p className="verificacao-info">
-                  Redirecionando em 3 segundos...
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="verificacao-falha">
-                <div className="verificacao-icone-grande">❌</div>
-                <h2 className="verificacao-titulo">Verificação Não Aprovada</h2>
-                <p className="verificacao-subtitulo">
-                  Similaridade: {resultado.confidence}%
-                </p>
-
-                <div className="verificacao-motivos">
-                  <h3>Possíveis motivos:</h3>
-                  <ul>
-                    <li>Fotos com iluminação muito diferente</li>
-                    <li>Ângulos muito distintos</li>
-                    <li>Foto do documento desfocada ou com reflexo</li>
-                    <li>Acessórios cobrindo o rosto</li>
-                  </ul>
-                </div>
-
-                <p className="verificacao-mensagem">{resultado.message}</p>
-
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-                  <Botao
-                    variante="primaria"
-                    grande
-                    onClick={handleTentarNovamente}
-                  >
-                    Tentar Novamente
-                  </Botao>
-                  <Botao
-                    variante="fantasma"
-                    onClick={onCancelar}
-                  >
-                    Voltar
-                  </Botao>
-                </div>
-              </div>
-            </>
-          )}
+      <div className="flex flex-col items-center gap-4 py-8 text-center">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--danger)]/15 text-[color:var(--danger)]">
+          <XCircle size={36} strokeWidth={2.5} />
+        </span>
+        <h2 className="font-display text-2xl font-bold text-[color:var(--danger)]">
+          Verificação não aprovada
+        </h2>
+        <p className="text-sm text-[color:var(--muted)]">
+          Similaridade: {resultado.confidence}%
+        </p>
+        <Card className="w-full border-l-4 border-l-[color:var(--warning)] bg-[color:var(--warning)]/5 text-left">
+          <CardContent>
+            <h3 className="mb-2 font-bold">Possíveis motivos:</h3>
+            <ul className="flex flex-col gap-1 text-sm">
+              <li>• Iluminação muito diferente entre as fotos</li>
+              <li>• Ângulos muito distintos</li>
+              <li>• Foto do documento desfocada ou com reflexo</li>
+              <li>• Acessórios cobrindo o rosto</li>
+            </ul>
+          </CardContent>
+        </Card>
+        <p className="text-sm">{resultado.message}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="primary"
+            onPress={handleTentarNovamente}
+            className="bg-gradient-brand font-semibold text-white"
+          >
+            Tentar novamente
+          </Button>
+          <Button variant="ghost" onPress={onCancelar}>
+            Voltar
+          </Button>
         </div>
-      </Cartao>
+      </div>
     );
   }
 
   return null;
+}
+
+function FotoSecao({
+  titulo,
+  descricao,
+  Icone,
+  preview,
+  onClick,
+}: {
+  titulo: string;
+  descricao: string;
+  Icone: typeof Camera;
+  preview: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="font-bold">{titulo}</h3>
+      <p className="text-sm text-[color:var(--muted)]">{descricao}</p>
+      {preview ? (
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-secondary)] p-4">
+          <img
+            src={preview}
+            alt="Preview"
+            className="max-h-60 rounded-xl object-contain"
+          />
+          <Button variant="outline" size="sm" onPress={onClick}>
+            Trocar foto
+          </Button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onClick}
+          className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[color:var(--border)] bg-[color:var(--surface-secondary)] p-8 transition hover:border-[color:var(--accent)] hover:bg-[color:var(--accent)]/5"
+        >
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[color:var(--surface)] text-[color:var(--accent)]">
+            <Icone size={28} />
+          </span>
+          <span className="text-sm font-semibold text-[color:var(--accent)]">
+            Toque para tirar a foto
+          </span>
+        </button>
+      )}
+    </div>
+  );
 }

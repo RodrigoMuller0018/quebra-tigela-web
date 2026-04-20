@@ -1,8 +1,14 @@
 import { useMemo } from "react";
+import { Button, Card, CardContent } from "@heroui/react";
+import { Clock, Plus, Trash2, X as XIcon } from "lucide-react";
 import type { ScheduleEntry } from "../../tipos/schedule";
-import { Modal } from "../ui";
-import { NOMES_MESES, NOMES_DIAS_SEMANA, STATUS_LABELS, STATUS_BADGE_CLASSES } from "../../constantes/agenda";
+import {
+  NOMES_MESES,
+  NOMES_DIAS_SEMANA,
+  STATUS_LABELS,
+} from "../../constantes/agenda";
 import { dateParaString, extrairData } from "../../utilitarios/dataUtils";
+import { Dialogo } from "../ui/Dialogo";
 
 interface Props {
   aberto: boolean;
@@ -17,6 +23,12 @@ interface Props {
   modo?: "artista" | "cliente";
 }
 
+const STATUS_TONE: Record<string, string> = {
+  available: "bg-[color:var(--accent)]/15 text-[color:var(--accent)]",
+  booked: "bg-[color:var(--secondary)]/15 text-[color:var(--secondary)]",
+  cancelled: "bg-[color:var(--muted)]/15 text-[color:var(--muted)]",
+};
+
 export function ModalDiaAgenda({
   aberto,
   aoFechar,
@@ -29,221 +41,113 @@ export function ModalDiaAgenda({
   onAdicionarHorario,
   modo = "artista",
 }: Props) {
-  // Filtrar horários do dia específico
   const horariosDoDia = useMemo(() => {
     if (!dia) return [];
-
-    const chaveDia = dateParaString(dia);
-
-    return horarios.filter((horario) => {
-      const dataHorario = extrairData(horario.date);
-      return dataHorario === chaveDia;
-    });
+    const chave = dateParaString(dia);
+    return horarios.filter((h) => extrairData(h.date) === chave);
   }, [dia, horarios]);
-
-  // Formatar título do modal
-  const tituloModal = useMemo(() => {
-    if (!dia) return "";
-
-    return `${dia.getDate()} de ${NOMES_MESES[dia.getMonth()]} de ${dia.getFullYear()}`;
-  }, [dia]);
-
-  const diaSemana = useMemo(() => {
-    if (!dia) return "";
-    return NOMES_DIAS_SEMANA[dia.getDay()];
-  }, [dia]);
-
-  function obterStatusLabel(status: string): string {
-    return STATUS_LABELS[status] || status;
-  }
-
-  function obterStatusClass(status: string): string {
-    return STATUS_BADGE_CLASSES[status] || "badge bg-secondary";
-  }
 
   if (!dia) return null;
 
+  const titulo = `${dia.getDate()} de ${NOMES_MESES[dia.getMonth()]} de ${dia.getFullYear()}`;
+  const diaSemana = NOMES_DIAS_SEMANA[dia.getDay()];
+
   return (
-    <Modal
+    <Dialogo
       aberto={aberto}
-      aoFechar={aoFechar}
+      aoFechar={() => aoFechar()}
+      tamanho="lg"
       titulo={
-        <div>
-          <div className="text-light fw-semibold">{tituloModal}</div>
-          <small className="text-secondary">{diaSemana}</small>
+        <div className="flex flex-col">
+          <span className="font-display">{titulo}</span>
+          <span className="text-xs font-normal text-[color:var(--muted)]">
+            {diaSemana}
+          </span>
         </div>
       }
-      tamanho="grande"
     >
-      <div className="modal-dia-agenda">
-        {/* Botão adicionar horário neste dia */}
+      <div className="flex flex-col gap-3">
         {modo === "artista" && onAdicionarHorario && (
-          <div className="mb-4">
-            <button
-              type="button"
-              className="btn btn-outline-primary w-100"
-              onClick={() => {
-                aoFechar();
-                onAdicionarHorario(dia);
-              }}
-            >
-              <i className="bi bi-plus-lg me-2"></i>
-              Adicionar Horário neste Dia
-            </button>
-          </div>
+          <Button
+            variant="outline"
+            fullWidth
+            onPress={() => {
+              aoFechar();
+              onAdicionarHorario(dia);
+            }}
+          >
+            <Plus size={16} className="mr-2" />
+            Adicionar horário neste dia
+          </Button>
         )}
 
-        {/* Lista de agendamentos */}
-        <div className="schedule-list">
-          {horariosDoDia.length === 0 ? (
-            <div className="text-center py-5" id="emptyState">
-              <div className="display-1 text-secondary mb-3" style={{ fontSize: "4rem" }}>📅</div>
-              <p className="text-secondary mb-0">Nenhum agendamento para este dia</p>
-            </div>
-          ) : (
-            <div className="schedule-items">
-              {horariosDoDia.map((horario) => (
-                <div key={horario._id || horario.id} className="schedule-item">
-                  <div className="d-flex align-items-start gap-3">
-                    {/* Indicador de horário */}
-                    <div className="schedule-time">
-                      <i className="bi bi-clock text-secondary me-2"></i>
-                      <span className="text-light">{horario.startTime}</span>
-                      <span className="text-secondary mx-1">até</span>
-                      <span className="text-light">{horario.endTime}</span>
+        {horariosDoDia.length === 0 ? (
+          <Card className="border-dashed border-[color:var(--border)] bg-[color:var(--surface-secondary)]">
+            <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
+              <p className="text-sm text-[color:var(--muted)]">
+                Nenhum agendamento para este dia
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {horariosDoDia.map((h) => (
+              <Card
+                key={h._id || h.id}
+                className="border border-[color:var(--border)] bg-[color:var(--surface-secondary)]"
+              >
+                <CardContent className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <Clock
+                        size={16}
+                        className="text-[color:var(--muted)]"
+                      />
+                      <span>{h.startTime}</span>
+                      <span className="text-[color:var(--muted)]">→</span>
+                      <span>{h.endTime}</span>
                     </div>
-
-                    {/* Status e notas */}
-                    <div className="grow">
-                      <span className={obterStatusClass(horario.status)}>
-                        {obterStatusLabel(horario.status)}
-                      </span>
-                      <p className="text-secondary small mb-0 mt-2">
-                        {horario.notes || 'Sem observações'}
-                      </p>
-                    </div>
-
-                    {/* Ações */}
-                    {modo === "artista" && (
-                      <div className="schedule-actions d-flex gap-2">
-                        {podeCancelar && horario.status === "booked" && onCancelar && (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-warning"
-                            title="Cancelar"
-                            onClick={() => onCancelar(horario._id || horario.id!)}
-                          >
-                            <i className="bi bi-x-circle"></i>
-                          </button>
-                        )}
-                        {podeDeletar && horario.status === "available" && onDeletar && (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-danger"
-                            title="Deletar"
-                            onClick={() => onDeletar(horario._id || horario.id!)}
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <span
+                      className={`w-fit rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_TONE[h.status] || ""}`}
+                    >
+                      {STATUS_LABELS[h.status] || h.status}
+                    </span>
+                    <p className="text-xs text-[color:var(--muted)]">
+                      {h.notes || "Sem observações"}
+                    </p>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                  {modo === "artista" && (
+                    <div className="flex shrink-0 gap-1">
+                      {podeCancelar && h.status === "booked" && onCancelar && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          isIconOnly
+                          onPress={() => onCancelar(h._id || h.id!)}
+                          aria-label="Cancelar"
+                        >
+                          <XIcon size={14} />
+                        </Button>
+                      )}
+                      {podeDeletar && h.status === "available" && onDeletar && (
+                        <Button
+                          variant="danger-soft"
+                          size="sm"
+                          isIconOnly
+                          onPress={() => onDeletar(h._id || h.id!)}
+                          aria-label="Deletar"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
-
-      <style>{`
-        .modal-dia-agenda {
-          padding: 0;
-        }
-
-        .schedule-list {
-          max-height: 60vh;
-          overflow-y: auto;
-        }
-
-        .schedule-items {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        .schedule-item {
-          background-color: var(--gray-850);
-          border: 1px solid var(--gray-700);
-          border-radius: 0.5rem;
-          padding: 1rem;
-          transition: all 0.2s ease-in-out;
-        }
-
-        .schedule-item:hover {
-          background-color: var(--gray-800);
-          border-color: var(--gray-600);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .schedule-time {
-          display: flex;
-          align-items: center;
-          white-space: nowrap;
-          min-width: 200px;
-          font-size: 0.9375rem;
-        }
-
-        .schedule-actions {
-          flex-shrink: 0;
-        }
-
-        .badge {
-          font-size: 0.75rem;
-          font-weight: 600;
-          padding: 0.375rem 0.75rem;
-          border-radius: 0.375rem;
-        }
-
-        .badge.bg-success {
-          background-color: rgba(76, 175, 80, 0.2) !important;
-          color: var(--green-400) !important;
-          border: 1px solid var(--green-700);
-        }
-
-        .badge.bg-warning {
-          background-color: rgba(255, 152, 0, 0.2) !important;
-          color: var(--amber-400) !important;
-          border: 1px solid var(--amber-700);
-        }
-
-        .badge.bg-secondary {
-          background-color: rgba(158, 158, 158, 0.2) !important;
-          color: var(--gray-400) !important;
-          border: 1px solid var(--gray-700);
-        }
-
-        #emptyState {
-          opacity: 0.7;
-        }
-
-        @media (max-width: 768px) {
-          .schedule-time {
-            flex-direction: column;
-            align-items: flex-start;
-            min-width: auto;
-            font-size: 0.875rem;
-          }
-
-          .schedule-item {
-            padding: 0.75rem;
-          }
-
-          .schedule-actions {
-            flex-direction: column;
-          }
-        }
-      `}</style>
-    </Modal>
+    </Dialogo>
   );
 }

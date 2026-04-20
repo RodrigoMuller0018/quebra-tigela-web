@@ -1,12 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  Button,
+  Card,
+  CardContent,
+  Spinner,
+} from "@heroui/react";
+import { Search, MapPin, Trash2 } from "lucide-react";
 import { listarArtistas, excluirArtista } from "../../api/artistas.api";
 import type { Artista } from "../../tipos/artistas";
-import { Cartao, CampoTexto, Botao } from "../../componentes/ui";
-import { erro as avisoErro, sucesso as avisoSucesso } from "../../utilitarios/avisos";
+import {
+  erro as avisoErro,
+  sucesso as avisoSucesso,
+} from "../../utilitarios/avisos";
 import { useAutenticacao } from "../../contexts/Autenticacao.context";
 
-const TAMANHO_PAGINA = 10;
+const TAMANHO_PAGINA = 12;
 
 export default function ListaArtistasPagina() {
   const { role, usuario } = useAutenticacao();
@@ -38,137 +47,168 @@ export default function ListaArtistasPagina() {
       await excluirArtista(id);
       avisoSucesso("Excluído");
       setArtistas((prev) => prev.filter((a) => a.id !== id));
-      // corrige página se esvaziar
-      setPagina((p) => {
-        const filtered = aplicarFiltro(artistas.filter((a) => a.id !== id), filtro);
-        const paginasTotais = Math.max(1, Math.ceil(filtered.length / TAMANHO_PAGINA));
-        return Math.min(p, paginasTotais - 1);
-      });
     } catch (e: any) {
       avisoErro(e?.message ?? "Erro ao excluir");
     }
   }
 
-  function aplicarFiltro(lista: Artista[], termo: string) {
-    const t = termo.trim().toLowerCase();
-    if (!t) return lista;
-    return lista.filter((a) => a.name.toLowerCase().includes(t) || a.email.toLowerCase().includes(t));
-  }
+  const artistasFiltrados = useMemo(() => {
+    const t = filtro.trim().toLowerCase();
+    if (!t) return artistas;
+    return artistas.filter(
+      (a) =>
+        a.name.toLowerCase().includes(t) || a.email.toLowerCase().includes(t)
+    );
+  }, [artistas, filtro]);
 
-  const artistasFiltrados = useMemo(() => aplicarFiltro(artistas, filtro), [artistas, filtro]);
-  const paginasTotais = Math.max(1, Math.ceil(artistasFiltrados.length / TAMANHO_PAGINA));
+  const paginas = Math.max(1, Math.ceil(artistasFiltrados.length / TAMANHO_PAGINA));
   const inicio = pagina * TAMANHO_PAGINA;
-  const paginaAtualItems = artistasFiltrados.slice(inicio, inicio + TAMANHO_PAGINA);
+  const itens = artistasFiltrados.slice(inicio, inicio + TAMANHO_PAGINA);
 
-  // Verifica se o usuário pode excluir um artista
-  const podeExcluir = (artistaId: string) => {
-    // Admin pode excluir qualquer um
-    if (role === "admin") return true;
-    // Artista pode excluir apenas a própria conta
-    return usuario?.sub === artistaId;
-  };
+  const podeExcluir = (id: string) =>
+    role === "admin" || usuario?.sub === id;
 
   return (
-    <div className="lista-artistas-container">
-      <div className="lista-artistas-header">
-        <h1 className="title">Gerenciar Artistas</h1>
-        <p className="subtitle">Visualize e gerencie os artistas cadastrados</p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-1">
+        <h1 className="font-display text-3xl font-bold text-gradient-brand">
+          Gerenciar artistas
+        </h1>
+        <p className="text-sm text-[color:var(--muted)]">
+          Visualize e gerencie os artistas cadastrados
+        </p>
+      </header>
 
-      <Cartao className="filtro-card">
-        <CampoTexto
-          placeholder="Buscar por nome ou email..."
+      <div className="relative">
+        <Search
+          size={18}
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--muted)]"
+        />
+        <input
+          type="text"
           value={filtro}
           onChange={(e) => {
             setFiltro(e.target.value);
             setPagina(0);
           }}
+          placeholder="Buscar por nome ou email..."
+          className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] py-3 pl-11 pr-4 text-sm shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30"
         />
-      </Cartao>
+      </div>
+
+      <p className="text-sm text-[color:var(--muted)]">
+        {artistasFiltrados.length} artista
+        {artistasFiltrados.length !== 1 ? "s" : ""} encontrado
+        {artistasFiltrados.length !== 1 ? "s" : ""}
+      </p>
 
       {carregando ? (
-        <div className="text-center">
-          <p>Carregando artistas...</p>
+        <div className="flex justify-center py-16">
+          <Spinner size="lg" color="accent" />
         </div>
+      ) : itens.length === 0 ? (
+        <Card className="border-dashed border-[color:var(--border)] bg-[color:var(--surface-secondary)]">
+          <CardContent className="flex flex-col items-center gap-2 py-16 text-center">
+            <h3 className="font-display text-xl font-bold">
+              Nenhum artista encontrado
+            </h3>
+            <p className="text-sm text-[color:var(--muted)]">
+              Tente ajustar o filtro
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <>
-          <div className="results-info">
-            <p>{artistasFiltrados.length} artista{artistasFiltrados.length !== 1 ? 's' : ''} encontrado{artistasFiltrados.length !== 1 ? 's' : ''}</p>
-          </div>
+          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {itens.map((a) => (
+              <Card
+                key={a.id}
+                className="border border-[color:var(--border)] bg-[color:var(--surface)] transition hover:-translate-y-0.5 hover:border-[color:var(--accent)]"
+              >
+                <CardContent className="flex flex-col gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-brand font-display text-lg font-black text-white">
+                      {a.name?.[0]?.toUpperCase() ?? "QT"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-display text-base font-bold">
+                        {a.name}
+                      </h3>
+                      <p className="truncate text-xs text-[color:var(--muted)]">
+                        {a.email}
+                      </p>
+                      {a.city && a.state && (
+                        <p className="flex items-center gap-1 text-xs text-[color:var(--muted)]">
+                          <MapPin size={12} />
+                          {a.city}, {a.state}
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
-          <div className="artistas-grid-admin">
-            {paginaAtualItems.map((artista) => (
-              <div key={artista.id} className="artista-card-admin">
-                <div className="artista-card-admin-content">
-                  <h3 className="artista-nome-admin">{artista.name}</h3>
-
-                  {artista.city && artista.state && (
-                    <p className="artista-localizacao-admin">
-                      📍 {artista.city}, {artista.state}
-                    </p>
-                  )}
-
-                  {artista.artTypes.length > 0 && (
-                    <div className="artista-tags-admin">
-                      {artista.artTypes.map((tipo, index) => (
-                        <span key={index} className="artista-tag-admin">
-                          {tipo}
+                  {a.artTypes.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {a.artTypes.slice(0, 3).map((t, i) => (
+                        <span
+                          key={i}
+                          className="rounded-full bg-[color:var(--accent)]/15 px-2.5 py-0.5 text-xs text-[color:var(--accent)]"
+                        >
+                          {t}
                         </span>
                       ))}
                     </div>
                   )}
 
-                  <div className="artista-acoes-admin">
-                    <Link
-                      to={`/artistas/${artista.id}`}
-                      className="btn btn-primary btn-admin-ver"
-                    >
-                      Ver Perfil
-                    </Link>
-                    {podeExcluir(artista.id) && (
-                      <Botao
-                        variante="perigo"
-                        onClick={() => handleExcluir(artista.id)}
-                        className="btn-admin-excluir"
+                  <div className="mt-auto flex gap-2 pt-2">
+                    <Link to={`/artistas/${a.id}`} className="flex-1">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        fullWidth
+                        className="bg-gradient-brand text-white"
                       >
-                        Excluir
-                      </Botao>
+                        Ver perfil
+                      </Button>
+                    </Link>
+                    {podeExcluir(a.id) && (
+                      <Button
+                        variant="danger-soft"
+                        size="sm"
+                        isIconOnly
+                        onPress={() => handleExcluir(a.id)}
+                        aria-label="Excluir"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
                     )}
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
+          </section>
 
-            {paginaAtualItems.length === 0 && (
-              <div className="empty-state">
-                <p className="empty-titulo">Nenhum artista encontrado</p>
-                <p className="empty-descricao">
-                  Tente ajustar o filtro ou cadastre um novo artista
-                </p>
-              </div>
-            )}
-          </div>
-
-          {paginasTotais > 1 && (
-            <div className="paginacao">
-              <Botao
-                onClick={() => setPagina((p) => Math.max(0, p - 1))}
-                disabled={pagina === 0}
-                variante="fantasma"
+          {paginas > 1 && (
+            <nav className="flex items-center justify-center gap-3 pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={() => setPagina((p) => Math.max(0, p - 1))}
+                isDisabled={pagina === 0}
               >
-                ← Anterior
-              </Botao>
-              <span className="paginacao-info">
-                Página {pagina + 1} de {paginasTotais}
+                Anterior
+              </Button>
+              <span className="text-sm text-[color:var(--muted)]">
+                Página {pagina + 1} de {paginas}
               </span>
-              <Botao
-                onClick={() => setPagina((p) => Math.min(paginasTotais - 1, p + 1))}
-                disabled={pagina >= paginasTotais - 1}
-                variante="fantasma"
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={() => setPagina((p) => Math.min(paginas - 1, p + 1))}
+                isDisabled={pagina >= paginas - 1}
               >
-                Próxima →
-              </Botao>
-            </div>
+                Próxima
+              </Button>
+            </nav>
           )}
         </>
       )}

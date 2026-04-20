@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Botao } from "../ui";
+import { Button } from "@heroui/react";
 import type { NovoScheduleEntry } from "../../tipos/schedule";
+import { Caixa } from "../ui/Campo";
 
 interface Props {
   diaInicial?: Date;
@@ -8,37 +9,60 @@ interface Props {
   onCancelar?: () => void;
 }
 
-export function FormularioHorario({ diaInicial, onSubmit, onCancelar }: Props) {
-  // Data mínima é sempre hoje (não permite datas passadas)
+const SELECT_CLASS =
+  "w-full appearance-none rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-3 pr-10 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30";
+const INPUT_CLASS =
+  "w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-3 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30";
+
+export function FormularioHorario({
+  diaInicial,
+  onSubmit,
+  onCancelar,
+}: Props) {
   const agora = new Date();
   const dataMinima = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
-
-  // Data inicial pode ser a sugerida OU hoje (o que for maior)
   const hoje = diaInicial && diaInicial >= agora ? diaInicial : agora;
-  const dataFormatada = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+  const dataInicial = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 
-  const [data, setData] = useState(dataFormatada);
+  const [data, setData] = useState(dataInicial);
   const [horaInicio, setHoraInicio] = useState("09:00");
   const [horaFim, setHoraFim] = useState("10:00");
-  const [intervalo, setIntervalo] = useState(60); // minutos
+  const [intervalo, setIntervalo] = useState(60);
   const [modoLote, setModoLote] = useState(false);
   const [notas, setNotas] = useState("");
   const [salvando, setSalvando] = useState(false);
 
+  function gerarHorariosEmLote(): NovoScheduleEntry[] {
+    const horarios: NovoScheduleEntry[] = [];
+    const [hi, mi] = horaInicio.split(":").map(Number);
+    const [hf, mf] = horaFim.split(":").map(Number);
+    let atual = hi * 60 + mi;
+    const final = hf * 60 + mf;
+    while (atual + intervalo <= final) {
+      const inicio = `${String(Math.floor(atual / 60)).padStart(2, "0")}:${String(atual % 60).padStart(2, "0")}`;
+      const fim = `${String(Math.floor((atual + intervalo) / 60)).padStart(2, "0")}:${String((atual + intervalo) % 60).padStart(2, "0")}`;
+      horarios.push({
+        date: data,
+        startTime: inicio,
+        endTime: fim,
+        status: "available",
+        notes: notas || undefined,
+      });
+      atual += intervalo;
+    }
+    return horarios;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSalvando(true);
-
     try {
       if (modoLote) {
-        // Criar múltiplos horários baseado no intervalo
-        const horarios = gerarHorariosEmLote();
-        await onSubmit(horarios);
+        await onSubmit(gerarHorariosEmLote());
       } else {
-        // Criar apenas um horário
         await onSubmit([
           {
-            date: data, // YYYY-MM-DD format
+            date: data,
             startTime: horaInicio,
             endTime: horaFim,
             status: "available",
@@ -46,54 +70,26 @@ export function FormularioHorario({ diaInicial, onSubmit, onCancelar }: Props) {
           },
         ]);
       }
-
-      // Resetar formulário
       setHoraInicio("09:00");
       setHoraFim("10:00");
       setNotas("");
-    } catch (error) {
-      console.error("Erro ao criar horário:", error);
     } finally {
       setSalvando(false);
     }
   }
 
-  function gerarHorariosEmLote(): NovoScheduleEntry[] {
-    const horarios: NovoScheduleEntry[] = [];
-    const [horaInicioH, horaInicioM] = horaInicio.split(":").map(Number);
-    const [horaFimH, horaFimM] = horaFim.split(":").map(Number);
-
-    let minutoAtual = horaInicioH * 60 + horaInicioM;
-    const minutoFinal = horaFimH * 60 + horaFimM;
-
-    while (minutoAtual + intervalo <= minutoFinal) {
-      const inicio = `${String(Math.floor(minutoAtual / 60)).padStart(2, "0")}:${String(minutoAtual % 60).padStart(2, "0")}`;
-      const fim = `${String(Math.floor((minutoAtual + intervalo) / 60)).padStart(2, "0")}:${String((minutoAtual + intervalo) % 60).padStart(2, "0")}`;
-
-      horarios.push({
-        date: data, // YYYY-MM-DD format
-        startTime: inicio,
-        endTime: fim,
-        status: "available",
-        notes: notas || undefined,
-      });
-
-      minutoAtual += intervalo;
-    }
-
-    return horarios;
-  }
-
   const horariosGerados = modoLote ? gerarHorariosEmLote() : [];
 
   return (
-    <form onSubmit={handleSubmit} className="formulario-horario">
-      <div className="form-field">
-        <label htmlFor="data-horario" className="form-label">Data *</label>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="data-h" className="text-sm font-medium">
+          Data <span className="text-[color:var(--accent)]">*</span>
+        </label>
         <input
-          id="data-horario"
+          id="data-h"
           type="date"
-          className="form-input"
+          className={INPUT_CLASS}
           value={data}
           onChange={(e) => setData(e.target.value)}
           required
@@ -101,25 +97,28 @@ export function FormularioHorario({ diaInicial, onSubmit, onCancelar }: Props) {
         />
       </div>
 
-      <div className="formulario-horario-row">
-        <div className="form-field">
-          <label htmlFor="hora-inicio" className="form-label">Hora Início *</label>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="hi" className="text-sm font-medium">
+            Hora início *
+          </label>
           <input
-            id="hora-inicio"
+            id="hi"
             type="time"
-            className="form-input"
+            className={INPUT_CLASS}
             value={horaInicio}
             onChange={(e) => setHoraInicio(e.target.value)}
             required
           />
         </div>
-
-        <div className="form-field">
-          <label htmlFor="hora-fim" className="form-label">Hora Fim *</label>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="hf" className="text-sm font-medium">
+            Hora fim *
+          </label>
           <input
-            id="hora-fim"
+            id="hf"
             type="time"
-            className="form-input"
+            className={INPUT_CLASS}
             value={horaFim}
             onChange={(e) => setHoraFim(e.target.value)}
             required
@@ -127,42 +126,46 @@ export function FormularioHorario({ diaInicial, onSubmit, onCancelar }: Props) {
         </div>
       </div>
 
-      <div className="form-field">
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            className="form-checkbox"
-            checked={modoLote}
-            onChange={(e) => setModoLote(e.target.checked)}
-          />
-          <span>Criar múltiplos horários (modo lote)</span>
-        </label>
-      </div>
+      <Caixa isSelected={modoLote} onChange={setModoLote}>
+        Criar múltiplos horários (modo lote)
+      </Caixa>
 
       {modoLote && (
         <>
-          <div className="form-field">
-            <label htmlFor="intervalo" className="form-label">Intervalo (minutos)</label>
-            <select
-              id="intervalo"
-              className="form-select"
-              value={intervalo}
-              onChange={(e) => setIntervalo(Number(e.target.value))}
-            >
-              <option value={30}>30 minutos</option>
-              <option value={60}>1 hora</option>
-              <option value={90}>1h 30min</option>
-              <option value={120}>2 horas</option>
-            </select>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="intv" className="text-sm font-medium">
+              Intervalo
+            </label>
+            <div className="relative">
+              <select
+                id="intv"
+                className={SELECT_CLASS}
+                value={intervalo}
+                onChange={(e) => setIntervalo(Number(e.target.value))}
+              >
+                <option value={30}>30 minutos</option>
+                <option value={60}>1 hora</option>
+                <option value={90}>1h 30min</option>
+                <option value={120}>2 horas</option>
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]">
+                ▼
+              </span>
+            </div>
           </div>
 
           {horariosGerados.length > 0 && (
-            <div className="preview-horarios">
-              <p className="preview-titulo">Serão criados {horariosGerados.length} horários:</p>
-              <div className="preview-lista">
+            <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-secondary)] p-3">
+              <p className="mb-2 text-sm font-bold">
+                Serão criados {horariosGerados.length} horários:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
                 {horariosGerados.map((h, i) => (
-                  <span key={i} className="preview-item">
-                    {h.startTime} - {h.endTime}
+                  <span
+                    key={i}
+                    className="rounded-full bg-[color:var(--accent)]/10 px-2 py-1 text-xs text-[color:var(--accent)]"
+                  >
+                    {h.startTime}–{h.endTime}
                   </span>
                 ))}
               </div>
@@ -171,195 +174,39 @@ export function FormularioHorario({ diaInicial, onSubmit, onCancelar }: Props) {
         </>
       )}
 
-      <div className="form-field">
-        <label htmlFor="notas" className="form-label">Notas (opcional)</label>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="notas" className="text-sm font-medium">
+          Notas (opcional)
+        </label>
         <textarea
           id="notas"
-          className="form-textarea"
+          className={INPUT_CLASS}
           value={notas}
           onChange={(e) => setNotas(e.target.value)}
-          placeholder="Informações adicionais sobre este horário..."
+          placeholder="Informações adicionais..."
           rows={3}
         />
       </div>
 
-      <div className="formulario-horario-acoes">
-        <Botao type="submit" variante="primaria" disabled={salvando}>
-          {salvando ? "Salvando..." : modoLote ? `Criar ${horariosGerados.length} horários` : "Criar horário"}
-        </Botao>
+      <div className="flex flex-wrap gap-2 pt-2">
+        <Button
+          type="submit"
+          variant="primary"
+          isDisabled={salvando}
+          className="bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30"
+        >
+          {salvando
+            ? "Salvando..."
+            : modoLote
+              ? `Criar ${horariosGerados.length} horários`
+              : "Criar horário"}
+        </Button>
         {onCancelar && (
-          <Botao type="button" variante="fantasma" onClick={onCancelar}>
+          <Button type="button" variant="ghost" onPress={onCancelar}>
             Cancelar
-          </Botao>
+          </Button>
         )}
       </div>
-
-      <style>{`
-        .formulario-horario {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-md, 1rem);
-        }
-
-        /* Campo de formulário */
-        .form-field {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-
-        /* Label */
-        .form-label {
-          color: var(--text-secondary, #6b7280);
-          font-size: var(--fs-sm, 0.875rem);
-          font-weight: 500;
-          margin: 0;
-        }
-
-        /* Input estilizado (date, time, text) */
-        .form-input {
-          background: var(--bg, #ffffff);
-          border: 2px solid var(--border, #e5e7eb);
-          color: var(--text, #1f2937);
-          padding: 0.75rem;
-          border-radius: var(--radius-md, 8px);
-          outline: 0;
-          font-size: var(--fs-base, 1rem);
-          font-family: inherit;
-          transition: all 0.2s ease;
-          width: 100%;
-        }
-
-        .form-input:focus {
-          border-color: var(--border-focus, #4ecdc4);
-          box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
-        }
-
-        .form-input:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          background: var(--bg-tertiary, #f9fafb);
-        }
-
-        /* Select estilizado */
-        .form-select {
-          background: var(--bg, #ffffff);
-          border: 2px solid var(--border, #e5e7eb);
-          color: var(--text, #1f2937);
-          padding: 0.75rem;
-          border-radius: var(--radius-md, 8px);
-          outline: 0;
-          font-size: var(--fs-base, 1rem);
-          font-family: inherit;
-          transition: all 0.2s ease;
-          width: 100%;
-          cursor: pointer;
-        }
-
-        .form-select:focus {
-          border-color: var(--border-focus, #4ecdc4);
-          box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
-        }
-
-        /* Textarea estilizado */
-        .form-textarea {
-          background: var(--bg, #ffffff);
-          border: 2px solid var(--border, #e5e7eb);
-          color: var(--text, #1f2937);
-          padding: 0.75rem;
-          border-radius: var(--radius-md, 8px);
-          outline: 0;
-          font-size: var(--fs-base, 1rem);
-          font-family: inherit;
-          transition: all 0.2s ease;
-          width: 100%;
-          resize: vertical;
-          min-height: 80px;
-        }
-
-        .form-textarea:focus {
-          border-color: var(--border-focus, #4ecdc4);
-          box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
-        }
-
-        .form-textarea::placeholder {
-          color: var(--text-light, #9ca3af);
-        }
-
-        /* Checkbox */
-        .checkbox-label {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          cursor: pointer;
-          font-size: var(--fs-base, 1rem);
-          color: var(--text, #1f2937);
-          margin: 0;
-        }
-
-        .form-checkbox {
-          width: 1.25rem;
-          height: 1.25rem;
-          cursor: pointer;
-          accent-color: var(--primary, #4ecdc4);
-        }
-
-        .formulario-horario-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: var(--space-sm, 0.75rem);
-        }
-
-        .formulario-horario-acoes {
-          display: flex;
-          gap: var(--space-sm, 0.75rem);
-          margin-top: var(--space-sm, 0.75rem);
-        }
-
-        .preview-horarios {
-          background: var(--gray-850, #1a1d23);
-          padding: var(--space-sm, 0.75rem);
-          border-radius: var(--radius-sm, 6px);
-          border: 1px solid var(--gray-700, #3f4451);
-        }
-
-        .preview-titulo {
-          font-weight: 600;
-          margin-bottom: var(--space-xs, 0.5rem);
-          font-size: var(--fs-sm, 0.875rem);
-          margin-top: 0;
-          color: var(--gray-200, #e5e7eb);
-        }
-
-        .preview-lista {
-          display: flex;
-          flex-wrap: wrap;
-          gap: var(--space-2xs, 0.375rem);
-        }
-
-        .preview-item {
-          background: var(--gray-800, #1f2937);
-          padding: 0.25rem 0.5rem;
-          border-radius: var(--radius-sm, 6px);
-          font-size: var(--fs-xs, 0.75rem);
-          border: 1px solid var(--gray-600, #4b5563);
-          color: var(--gray-300, #d1d5db);
-        }
-
-        @media (max-width: 47.99em) {
-          .formulario-horario-row {
-            grid-template-columns: 1fr;
-          }
-
-          .formulario-horario-acoes {
-            flex-direction: column;
-          }
-
-          .formulario-horario-acoes button {
-            width: 100%;
-          }
-        }
-      `}</style>
     </form>
   );
 }

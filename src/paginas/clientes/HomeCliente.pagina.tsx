@@ -1,12 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Button, Card, CardContent, Spinner } from "@heroui/react";
+import {
+  SlidersHorizontal,
+  Search,
+  X,
+  MapPin,
+  Sparkles,
+  ChevronDown,
+} from "lucide-react";
 import { listarArtistas } from "../../api/artistas.api";
-import { listarEstados, listarCidadesPorEstado, type Estado, type Cidade } from "../../api/ibge.api";
+import {
+  listarEstados,
+  listarCidadesPorEstado,
+  type Estado,
+  type Cidade,
+} from "../../api/ibge.api";
 import type { Artista } from "../../tipos/artistas";
-import { Modal, Botao } from "../../componentes/ui";
-import { Stack, Container } from "../../componentes/layout";
 import { erro as avisoErro } from "../../utilitarios/avisos";
 import { useDebounce } from "../../hooks/useDebounce";
+
+const SELECT_CLASS =
+  "w-full appearance-none rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-3 pr-10 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30 disabled:cursor-not-allowed disabled:opacity-50";
 
 export default function HomeClientePagina() {
   const [artistas, setArtistas] = useState<Artista[]>([]);
@@ -15,24 +30,21 @@ export default function HomeClientePagina() {
   const buscaDebounced = useDebounce(busca, 300);
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
-  // Filtros avançados
-  const [cidadesSelecionadas, setCidadesSelecionadas] = useState<string[]>([]);
-  const [estadosSelecionados, setEstadosSelecionados] = useState<string[]>([]);
+  // Filtros — single-select pra estado/cidade, multi pra tipos
+  const [estado, setEstado] = useState("");
+  const [cidade, setCidade] = useState("");
   const [tiposSelecionados, setTiposSelecionados] = useState<string[]>([]);
 
-  // Dados da API do IBGE
+  // Dados de IBGE
   const [estados, setEstados] = useState<Estado[]>([]);
   const [cidades, setCidades] = useState<Cidade[]>([]);
 
   async function carregar() {
     setCarregando(true);
     try {
-      // Montar filtros para API
-      const filtros: any = {};
-      // Se houver apenas 1 estado selecionado, passar para a API
-      if (estadosSelecionados.length === 1) filtros.state = estadosSelecionados[0];
-      if (cidadesSelecionadas.length === 1) filtros.city = cidadesSelecionadas[0];
-
+      const filtros: { state?: string; city?: string } = {};
+      if (estado) filtros.state = estado;
+      if (cidade) filtros.city = cidade;
       const data = await listarArtistas(filtros);
       setArtistas(data);
     } catch (e: any) {
@@ -42,465 +54,414 @@ export default function HomeClientePagina() {
     }
   }
 
-  // Recarregar quando filtros de estado/cidade mudarem
   useEffect(() => {
     carregar();
-  }, [estadosSelecionados, cidadesSelecionadas]);
+  }, [estado, cidade]);
 
-  // Carregar estados ao montar
   useEffect(() => {
-    async function carregarEstados() {
+    (async () => {
       try {
-        const data = await listarEstados();
-        setEstados(data);
+        setEstados(await listarEstados());
       } catch (e: any) {
         avisoErro(e?.message ?? "Erro ao carregar estados");
       }
-    }
-    carregarEstados();
+    })();
   }, []);
 
-  // Carregar cidades quando estados mudarem
   useEffect(() => {
-    if (estadosSelecionados.length === 0) {
+    if (!estado) {
       setCidades([]);
-      setCidadesSelecionadas([]);
+      setCidade("");
       return;
     }
-
-    async function carregarCidades() {
+    (async () => {
       try {
-        // Carregar cidades de todos os estados selecionados
-        const todasCidades = await Promise.all(
-          estadosSelecionados.map(estado => listarCidadesPorEstado(estado))
-        );
-        const cidadesUnificadas = todasCidades.flat();
-        setCidades(cidadesUnificadas);
-
-        // Filtrar cidades selecionadas para manter apenas as que pertencem aos estados selecionados
-        const cidadesValidas = cidadesUnificadas.map(c => c.nome);
-        setCidadesSelecionadas(prev => prev.filter(cidade => cidadesValidas.includes(cidade)));
+        const data = await listarCidadesPorEstado(estado);
+        setCidades(data);
+        // Limpar cidade se não pertencer ao novo estado
+        if (cidade && !data.some((c) => c.nome === cidade)) {
+          setCidade("");
+        }
       } catch (e: any) {
         avisoErro(e?.message ?? "Erro ao carregar cidades");
         setCidades([]);
       }
-    }
-    carregarCidades();
-  }, [estadosSelecionados]);
+    })();
+  }, [estado]);
 
   const tiposDisponiveis = useMemo(() => {
-    const tipos = new Set<string>();
-    artistas.forEach(artista =>
-      artista.artTypes.forEach(tipo => tipos.add(tipo))
-    );
-    return Array.from(tipos).sort();
+    const t = new Set<string>();
+    artistas.forEach((a) => a.artTypes.forEach((tipo) => t.add(tipo)));
+    return Array.from(t).sort();
   }, [artistas]);
 
   const artistasFiltrados = useMemo(() => {
-    return artistas.filter(artista => {
-      // Filtragem client-side para busca, tipos, estados e cidades
-      const buscaLower = buscaDebounced.toLowerCase();
-      const matchBusca = !buscaDebounced ||
-        artista.name.toLowerCase().includes(buscaLower);
-
-      const matchTipos = tiposSelecionados.length === 0 ||
-        tiposSelecionados.some(tipo => artista.artTypes.includes(tipo));
-
-      // Filtrar por múltiplos estados (se houver mais de 1)
-      const matchEstados = estadosSelecionados.length === 0 ||
-        estadosSelecionados.includes(artista.state);
-
-      // Filtrar por múltiplas cidades (se houver mais de 1)
-      const matchCidades = cidadesSelecionadas.length === 0 ||
-        cidadesSelecionadas.includes(artista.city);
-
-      return matchBusca && matchTipos && matchEstados && matchCidades;
+    return artistas.filter((a) => {
+      const q = buscaDebounced.toLowerCase();
+      const matchBusca = !buscaDebounced || a.name.toLowerCase().includes(q);
+      const matchTipos =
+        tiposSelecionados.length === 0 ||
+        tiposSelecionados.some((t) => a.artTypes.includes(t));
+      return matchBusca && matchTipos;
     });
-  }, [artistas, buscaDebounced, tiposSelecionados, estadosSelecionados, cidadesSelecionadas]);
+  }, [artistas, buscaDebounced, tiposSelecionados]);
 
-  const filtrosAtivos = useMemo(() => {
-    let count = 0;
-    if (cidadesSelecionadas.length > 0) count++;
-    if (estadosSelecionados.length > 0) count++;
-    if (tiposSelecionados.length > 0) count++;
-    return count;
-  }, [cidadesSelecionadas, estadosSelecionados, tiposSelecionados]);
+  const filtrosAtivos =
+    (estado ? 1 : 0) + (cidade ? 1 : 0) + (tiposSelecionados.length > 0 ? 1 : 0);
 
   function toggleTipo(tipo: string) {
-    setTiposSelecionados(prev =>
-      prev.includes(tipo)
-        ? prev.filter(t => t !== tipo)
-        : [...prev, tipo]
-    );
-  }
-
-  function toggleEstado(uf: string) {
-    setEstadosSelecionados(prev =>
-      prev.includes(uf)
-        ? prev.filter(e => e !== uf)
-        : [...prev, uf]
-    );
-  }
-
-  function toggleCidade(cidade: string) {
-    setCidadesSelecionadas(prev =>
-      prev.includes(cidade)
-        ? prev.filter(c => c !== cidade)
-        : [...prev, cidade]
+    setTiposSelecionados((prev) =>
+      prev.includes(tipo) ? prev.filter((t) => t !== tipo) : [...prev, tipo]
     );
   }
 
   function limparFiltros() {
-    setCidadesSelecionadas([]);
-    setEstadosSelecionados([]);
+    setEstado("");
+    setCidade("");
     setTiposSelecionados([]);
   }
 
   return (
-    <Container>
-      <Stack spacing="large">
-        {/* Hero Section com contador destacado */}
-        <div className="hero-section">
-          <Stack spacing="small" align="center">
-            <h1 className="title">Encontre o Artista Perfeito</h1>
-            <p className="subtitle">Descubra talentos incríveis para seu projeto</p>
-          </Stack>
-
-          {/* Contador de artistas DESTACADO */}
-          <div className="artistas-contador-destaque">
-            <div className="contador-icone">🎨</div>
-            <div className="contador-info">
-              <div className="contador-numero">{artistasFiltrados.length}</div>
-              <div className="contador-texto">
-                {artistasFiltrados.length === 1 ? 'Artista Disponível' : 'Artistas Disponíveis'}
-              </div>
-            </div>
-            {filtrosAtivos > 0 && (
-              <div className="contador-badge">
-                {filtrosAtivos} filtro{filtrosAtivos > 1 ? 's' : ''} ativo{filtrosAtivos > 1 ? 's' : ''}
-              </div>
-            )}
+    <div className="flex flex-col gap-8">
+      {/* Hero */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-brand p-8 text-white shadow-2xl shadow-[color:var(--accent)]/30 sm:p-12">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative flex flex-col items-start gap-3">
+          <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider backdrop-blur">
+            Descubra talentos
+          </span>
+          <h1 className="font-display text-4xl font-bold sm:text-5xl">
+            Encontre o artista perfeito
+          </h1>
+          <p className="max-w-xl text-white/90">
+            Conecte-se com artistas incríveis de todo o país. Encontre o talento
+            ideal para o seu projeto.
+          </p>
+          <div className="mt-2 flex items-center gap-2 text-sm">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 backdrop-blur">
+              <Sparkles size={14} />
+              {artistasFiltrados.length} artistas disponíveis
+            </span>
           </div>
         </div>
+      </section>
 
-        {/* Barra de busca moderna */}
-        <div className="barra-busca-moderna">
-          <div className="busca-input-container">
-            <span className="busca-icone">🔍</span>
-            <input
-              type="text"
-              className="busca-input-principal"
-              placeholder="Buscar artistas por nome"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-          </div>
-
-          <button
-            className="btn-filtros"
-            onClick={() => setFiltrosAbertos(true)}
-          >
-            <span className="filtros-icone">⚙️</span>
-            <span className="filtros-texto">Filtros</span>
-            {filtrosAtivos > 0 && (
-              <span className="filtros-badge">{filtrosAtivos}</span>
-            )}
-          </button>
+      {/* Busca + filtros */}
+      <section className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Search
+            size={18}
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--muted)]"
+          />
+          <input
+            type="text"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar artistas por nome..."
+            className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] py-3 pl-11 pr-4 text-sm shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30"
+          />
         </div>
-
-        {/* Chips de filtros ativos */}
-        {filtrosAtivos > 0 && (
-          <div className="filtros-chips">
-            {estadosSelecionados.map(estado => (
-              <div key={estado} className="filter-chip">
-                <span>Estado: {estado}</span>
-                <button onClick={() => toggleEstado(estado)}>×</button>
-              </div>
-            ))}
-            {cidadesSelecionadas.map(cidade => (
-              <div key={cidade} className="filter-chip">
-                <span>Cidade: {cidade}</span>
-                <button onClick={() => toggleCidade(cidade)}>×</button>
-              </div>
-            ))}
-            {tiposSelecionados.map(tipo => (
-              <div key={tipo} className="filter-chip">
-                <span>{tipo}</span>
-                <button onClick={() => toggleTipo(tipo)}>×</button>
-              </div>
-            ))}
-            <button className="limpar-filtros-btn" onClick={limparFiltros}>
-              Limpar todos
-            </button>
-          </div>
-        )}
-
-        {/* Modal de filtros avançados */}
-        <Modal
-          aberto={filtrosAbertos}
-          aoFechar={() => setFiltrosAbertos(false)}
-          titulo="Filtros Avançados"
-          tamanho="medio"
+        <Button
+          variant="outline"
+          onPress={() => setFiltrosAbertos(true)}
+          className="shrink-0"
         >
-          <div className="filtros-modal-content">
-            {/* Estados - Lista de checkboxes */}
-            <div className="mb-4">
-              <h5 className="mb-3">Estados</h5>
-              {estados.length === 0 ? (
-                <p className="text-secondary text-center py-3">Carregando estados...</p>
-              ) : (
-                <div className="list-group filtros-list-scroll">
-                  {estados.map((estado) => {
-                    const checkboxId = `estado-${estado.sigla}-filtro`;
-                    return (
-                      <div key={estado.sigla} className="list-group-item">
-                        <div className="form-check">
-                          <input
-                            id={checkboxId}
-                            type="checkbox"
-                            className="form-check-input"
-                            checked={estadosSelecionados.includes(estado.sigla)}
-                            onChange={() => toggleEstado(estado.sigla)}
-                          />
-                          <label className="form-check-label" htmlFor={checkboxId}>
-                            {estado.sigla} - {estado.nome}
-                          </label>
-                        </div>
-                      </div>
-                    );
-                  })}
+          <SlidersHorizontal size={16} className="mr-2" />
+          Filtros
+          {filtrosAtivos > 0 && (
+            <span className="ml-2 rounded-full bg-gradient-brand px-2 py-0.5 text-xs font-bold text-white">
+              {filtrosAtivos}
+            </span>
+          )}
+        </Button>
+      </section>
+
+      {/* Chips ativos */}
+      {filtrosAtivos > 0 && (
+        <section className="flex flex-wrap items-center gap-2">
+          {estado && (
+            <PillRemovivel
+              label={`Estado: ${estado}`}
+              tone="secondary"
+              onRemove={() => setEstado("")}
+            />
+          )}
+          {cidade && (
+            <PillRemovivel
+              label={`Cidade: ${cidade}`}
+              tone="secondary"
+              onRemove={() => setCidade("")}
+            />
+          )}
+          {tiposSelecionados.map((t) => (
+            <PillRemovivel
+              key={t}
+              label={t}
+              tone="accent"
+              onRemove={() => toggleTipo(t)}
+            />
+          ))}
+          <Button variant="ghost" size="sm" onPress={limparFiltros}>
+            Limpar todos
+          </Button>
+        </section>
+      )}
+
+      {/* Grid de artistas */}
+      {carregando ? (
+        <div className="flex justify-center py-16">
+          <Spinner size="lg" color="accent" />
+        </div>
+      ) : artistasFiltrados.length === 0 ? (
+        <Card className="border-dashed border-[color:var(--border)] bg-[color:var(--surface-secondary)]">
+          <CardContent className="flex flex-col items-center gap-2 py-16 text-center">
+            <h3 className="font-display text-xl font-bold">
+              Nenhum artista encontrado
+            </h3>
+            <p className="text-sm text-[color:var(--muted)]">
+              Tente ajustar os filtros ou buscar por outros termos
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {artistasFiltrados.map((a) => (
+            <ArtistaCard key={a.id} artista={a} />
+          ))}
+        </section>
+      )}
+
+      {/* Drawer de filtros (custom, fixed-position, acima de tudo) */}
+      {filtrosAbertos && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={() => setFiltrosAbertos(false)}
+            aria-hidden="true"
+          />
+          <aside className="fixed inset-y-0 right-0 z-50 flex w-96 max-w-[90vw] flex-col border-l border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl">
+            <header className="flex items-center justify-between border-b border-[color:var(--border)] px-6 py-4">
+              <h2 className="font-display text-xl font-bold text-gradient-brand">
+                Filtros
+              </h2>
+              <button
+                type="button"
+                onClick={() => setFiltrosAbertos(false)}
+                aria-label="Fechar"
+                className="rounded-lg p-2 text-[color:var(--muted)] transition hover:bg-[color:var(--surface-secondary)] hover:text-[color:var(--foreground)]"
+              >
+                <X size={20} />
+              </button>
+            </header>
+
+            <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-5">
+              {/* Estado */}
+              <FiltroSecao titulo="Estado">
+                <div className="relative">
+                  <select
+                    value={estado}
+                    onChange={(e) => setEstado(e.target.value)}
+                    className={SELECT_CLASS}
+                  >
+                    <option value="">Todos os estados</option>
+                    {estados.map((e) => (
+                      <option key={e.sigla} value={e.sigla}>
+                        {e.sigla} — {e.nome}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]"
+                  />
                 </div>
-              )}
-            </div>
+              </FiltroSecao>
 
-            {/* Cidades - Lista de checkboxes dependente */}
-            <div className="mb-4">
-              <h5 className="mb-3">Cidades</h5>
-              {estadosSelecionados.length === 0 ? (
-                <p className="text-secondary text-center py-3">Selecione um estado primeiro</p>
-              ) : cidades.length === 0 ? (
-                <p className="text-secondary text-center py-3">Carregando cidades...</p>
-              ) : (
-                <div className="list-group filtros-list-scroll">
-                  {cidades.map((cidade) => {
-                    const checkboxId = `cidade-${cidade.id}-filtro`;
-                    return (
-                      <div key={cidade.id} className="list-group-item">
-                        <div className="form-check">
-                          <input
-                            id={checkboxId}
-                            type="checkbox"
-                            className="form-check-input"
-                            checked={cidadesSelecionadas.includes(cidade.nome)}
-                            onChange={() => toggleCidade(cidade.nome)}
-                          />
-                          <label className="form-check-label" htmlFor={checkboxId}>
-                            {cidade.nome}
-                          </label>
-                        </div>
-                      </div>
-                    );
-                  })}
+              {/* Cidade */}
+              <FiltroSecao titulo="Cidade">
+                <div className="relative">
+                  <select
+                    value={cidade}
+                    onChange={(e) => setCidade(e.target.value)}
+                    disabled={!estado}
+                    className={SELECT_CLASS}
+                  >
+                    <option value="">
+                      {!estado
+                        ? "Selecione um estado primeiro"
+                        : "Todas as cidades"}
+                    </option>
+                    {cidades.map((c) => (
+                      <option key={c.id} value={c.nome}>
+                        {c.nome}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]"
+                  />
                 </div>
-              )}
-            </div>
+              </FiltroSecao>
 
-            {/* Tipos de Arte */}
-            <div className="mb-4">
-              <h5 className="mb-3">Tipos de Arte</h5>
-              {tiposDisponiveis.length === 0 ? (
-                <p className="text-secondary text-center py-3">Nenhum tipo disponível</p>
-              ) : (
-                <div className="list-group filtros-list-scroll">
-                  {tiposDisponiveis.map((tipo) => {
-                    const checkboxId = `tipo-${tipo.toLowerCase().replace(/\s+/g, '-')}-filtro`;
-                    return (
-                      <div key={tipo} className="list-group-item">
-                        <div className="form-check">
-                          <input
-                            id={checkboxId}
-                            type="checkbox"
-                            className="form-check-input"
-                            checked={tiposSelecionados.includes(tipo)}
-                            onChange={() => toggleTipo(tipo)}
-                          />
-                          <label className="form-check-label" htmlFor={checkboxId}>
-                            {tipo}
-                          </label>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Botões do modal */}
-            <div className="filtros-modal-acoes">
-              <Botao variante="fantasma" onClick={limparFiltros}>
-                Limpar Filtros
-              </Botao>
-              <Botao onClick={() => setFiltrosAbertos(false)}>
-                Aplicar Filtros
-              </Botao>
-            </div>
-          </div>
-        </Modal>
-
-        {carregando ? (
-          <div className="text-center">
-            <div className="loading-spinner">
-              <div className="spinner"></div>
-              <p>Carregando artistas...</p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="artistas-lista">
-              {artistasFiltrados.map((artista) => (
-                <div key={artista.id} className="artista-item">
-                  <div className="artista-item-content">
-                    <h3 className="artista-nome">{artista.name}</h3>
-
-                    <p className="artista-localizacao">
-                      📍 {artista.city}
-                      {artista.state && ` - ${artista.state}`}
-                    </p>
-
-                    <div className="artista-tags">
-                      {artista.artTypes.map((tipo, index) => (
-                        <span key={index} className="artista-tag">
+              {/* Tipos de arte (chips toggleáveis, multi) */}
+              <FiltroSecao titulo="Tipos de arte">
+                {tiposDisponiveis.length === 0 ? (
+                  <p className="text-sm text-[color:var(--muted)]">
+                    Nenhum tipo disponível
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {tiposDisponiveis.map((tipo) => {
+                      const ativo = tiposSelecionados.includes(tipo);
+                      return (
+                        <button
+                          key={tipo}
+                          type="button"
+                          onClick={() => toggleTipo(tipo)}
+                          className={
+                            "rounded-full px-3 py-1.5 text-sm font-medium transition " +
+                            (ativo
+                              ? "bg-gradient-brand text-white shadow-md shadow-[color:var(--accent)]/30"
+                              : "bg-[color:var(--surface-secondary)] text-[color:var(--foreground)] hover:bg-[color:var(--accent)]/10 hover:text-[color:var(--accent)]")
+                          }
+                        >
                           {tipo}
-                        </span>
-                      ))}
-                    </div>
-
-                    <Link
-                      to={`/artistas/${artista.id}`}
-                      className="btn btn-primary artista-btn-perfil"
-                    >
-                      Ver Perfil
-                    </Link>
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
-              ))}
-
-              {artistasFiltrados.length === 0 && (
-                <div className="empty-state">
-                  <p className="empty-titulo">
-                    Nenhum artista encontrado
-                  </p>
-                  <p className="empty-descricao">
-                    Tente ajustar os filtros ou buscar por outros termos
-                  </p>
-                </div>
-              )}
+                )}
+              </FiltroSecao>
             </div>
-          </>
+
+            <footer className="flex gap-2 border-t border-[color:var(--border)] px-6 py-4">
+              <Button
+                variant="ghost"
+                onPress={limparFiltros}
+                className="flex-1"
+              >
+                Limpar
+              </Button>
+              <Button
+                variant="primary"
+                onPress={() => setFiltrosAbertos(false)}
+                className="flex-1 bg-gradient-brand text-white"
+              >
+                Aplicar
+              </Button>
+            </footer>
+          </aside>
+        </>
+      )}
+    </div>
+  );
+}
+
+type Tone = "accent" | "secondary";
+
+function PillRemovivel({
+  label,
+  tone,
+  onRemove,
+}: {
+  label: string;
+  tone: Tone;
+  onRemove: () => void;
+}) {
+  const palette =
+    tone === "accent"
+      ? "bg-[color:var(--accent)]/15 text-[color:var(--accent)]"
+      : "bg-[color:var(--secondary)]/15 text-[color:var(--secondary)]";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${palette}`}
+    >
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remover ${label}`}
+        className="flex h-4 w-4 items-center justify-center rounded-full transition hover:bg-black/10"
+      >
+        <X size={12} />
+      </button>
+    </span>
+  );
+}
+
+function FiltroSecao({
+  titulo,
+  children,
+}: {
+  titulo: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-sm font-bold uppercase tracking-wider text-[color:var(--muted)]">
+        {titulo}
+      </h3>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function ArtistaCard({ artista }: { artista: Artista }) {
+  const iniciais = artista.name
+    .split(" ")
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+
+  return (
+    <Card className="group overflow-hidden border border-[color:var(--border)] bg-[color:var(--surface)] transition-all hover:-translate-y-1 hover:border-[color:var(--accent)] hover:shadow-2xl hover:shadow-[color:var(--accent)]/20">
+      <div className="relative h-32 overflow-hidden bg-gradient-brand">
+        <div className="absolute inset-0 bg-gradient-mesh opacity-60" />
+        <div className="absolute -bottom-8 left-5 flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-[color:var(--surface)] bg-[color:var(--surface)] shadow-xl">
+          <span className="bg-gradient-brand bg-clip-text font-display text-2xl font-black text-transparent">
+            {iniciais || "QT"}
+          </span>
+        </div>
+      </div>
+      <CardContent className="flex flex-col gap-3 pt-12">
+        <div>
+          <h3 className="font-display text-lg font-bold">{artista.name}</h3>
+          <p className="flex items-center gap-1 text-sm text-[color:var(--muted)]">
+            <MapPin size={14} />
+            {artista.city}
+            {artista.state && ` — ${artista.state}`}
+          </p>
+        </div>
+        {artista.artTypes.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {artista.artTypes.slice(0, 3).map((t, i) => (
+              <span
+                key={i}
+                className="rounded-full bg-[color:var(--accent)]/10 px-2.5 py-0.5 text-xs text-[color:var(--accent)]"
+              >
+                {t}
+              </span>
+            ))}
+            {artista.artTypes.length > 3 && (
+              <span className="text-xs text-[color:var(--muted)]">
+                +{artista.artTypes.length - 3}
+              </span>
+            )}
+          </div>
         )}
-      </Stack>
-
-      <style>{`
-        /* Scroll para lista de filtros */
-        .filtros-list-scroll {
-          max-height: 300px;
-          overflow-y: auto;
-        }
-
-        /* Cursor pointer nos labels */
-        .filtros-list-scroll .list-group-item {
-          cursor: pointer;
-          user-select: none;
-          transition: background-color 0.15s ease;
-        }
-
-        /* Hover apenas no background */
-        .filtros-list-scroll .list-group-item:hover {
-          background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        /* Destaque da linha quando checkbox estiver em focus */
-        .filtros-list-scroll .list-group-item:focus-within {
-          background-color: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        /* Checkbox com aparência padrão melhorada */
-        .filtros-list-scroll .form-check-input {
-          width: 1.125rem;
-          height: 1.125rem;
-          margin-top: 0.125em;
-          vertical-align: top;
-          background-color: #ffffff !important;
-          background-repeat: no-repeat;
-          background-position: center;
-          background-size: contain;
-          border: 1px solid #dee2e6 !important;
-          appearance: none;
-          print-color-adjust: exact;
-        }
-
-        .filtros-list-scroll .form-check-input:checked {
-          background-color: #0d6efd !important;
-          border-color: #0d6efd !important;
-          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e") !important;
-        }
-
-        /* Garantir que não herde estilos do tema dark */
-        .filtros-list-scroll .form-check-input:checked[type="checkbox"] {
-          background-color: #0d6efd !important;
-          border-color: #0d6efd !important;
-        }
-
-        /* Focus mínimo no checkbox, sem box-shadow */
-        .filtros-list-scroll .form-check-input:focus {
-          outline: 0;
-        }
-
-        /* Scrollbar customizada */
-        .filtros-list-scroll::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .filtros-list-scroll::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.1);
-          border-radius: 4px;
-        }
-
-        .filtros-list-scroll::-webkit-scrollbar-thumb {
-          background: rgba(0, 0, 0, 0.3);
-          border-radius: 4px;
-        }
-
-        .filtros-list-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 0, 0, 0.5);
-        }
-
-        /* Estilos dos botões do modal */
-        .filtros-modal-content {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .filtros-modal-acoes {
-          display: flex;
-          gap: 0.75rem;
-          margin-top: 1.5rem;
-          padding-top: 1.5rem;
-          border-top: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        /* Responsivo */
-        @media (max-width: 640px) {
-          .filtros-modal-acoes {
-            flex-direction: column;
-          }
-
-          .filtros-modal-acoes button {
-            width: 100%;
-          }
-        }
-      `}</style>
-    </Container>
+        <Link to={`/artistas/${artista.id}`} className="mt-auto">
+          <Button
+            variant="primary"
+            fullWidth
+            className="bg-gradient-brand font-semibold text-white"
+          >
+            Ver perfil
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
   );
 }

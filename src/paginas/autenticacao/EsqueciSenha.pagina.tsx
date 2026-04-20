@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { solicitarRedefinicaoSenha, redefinirSenha } from "../../api/senha.api";
-import { Cartao, CampoTexto, Botao } from "../../componentes/ui";
-import { Stack } from "../../componentes/layout";
-import { sucesso as avisoSucesso, erro as avisoErro } from "../../utilitarios/avisos";
+import { Button, Card, CardHeader, CardContent } from "@heroui/react";
+import { KeyRound, Lock, Check, ArrowLeft } from "lucide-react";
+import {
+  solicitarRedefinicaoSenha,
+  redefinirSenha,
+} from "../../api/senha.api";
+import {
+  sucesso as avisoSucesso,
+  erro as avisoErro,
+} from "../../utilitarios/avisos";
+import { Campo, CampoSenha } from "../../componentes/ui/Campo";
 
 type Etapa = "email" | "codigo" | "sucesso";
 
@@ -32,17 +39,14 @@ export default function EsqueciSenha() {
 
   async function handleRedefinirSenha(e: React.FormEvent) {
     e.preventDefault();
-
     if (novaSenha !== confirmaSenha) {
       avisoErro("As senhas não conferem.");
       return;
     }
-
     if (novaSenha.length < 6) {
       avisoErro("A senha deve ter no mínimo 6 caracteres.");
       return;
     }
-
     setProcessando(true);
     try {
       await redefinirSenha(email, codigo, novaSenha);
@@ -56,123 +60,139 @@ export default function EsqueciSenha() {
     }
   }
 
-  function handleVoltar() {
-    if (etapa === "codigo") {
-      setEtapa("email");
-      setCodigo("");
-      setNovaSenha("");
-      setConfirmaSenha("");
-    }
-  }
-
   return (
-    <Cartao>
+    <Card className="w-full max-w-md border border-[color:var(--border)] bg-[color:var(--surface)]/90 shadow-2xl backdrop-blur-xl">
       {etapa === "email" && (
         <>
-          <h1 className="title">Esqueci minha senha</h1>
-          <p className="subtitle">Digite seu e-mail para receber o código de redefinição</p>
-
-          <form onSubmit={handleSolicitarCodigo}>
-            <Stack spacing="medium">
-              <CampoTexto
-                id="email-esqueci-senha"
-                name="email"
+          <CardHeader className="flex flex-col items-start gap-2 pb-2">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-brand text-white shadow-lg shadow-[color:var(--accent)]/30">
+              <KeyRound size={24} />
+            </span>
+            <h1 className="font-display text-3xl font-bold text-gradient-brand">
+              Esqueci a senha
+            </h1>
+            <p className="text-sm text-[color:var(--muted)]">
+              Enviaremos um código de verificação para seu e-mail
+            </p>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 pt-4">
+            <form
+              onSubmit={handleSolicitarCodigo}
+              className="flex flex-col gap-4"
+            >
+              <Campo
                 label="E-mail"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                onChange={setEmail}
+                isRequired
+                autoComplete="email"
               />
-
-              <Botao type="submit" variante="primaria" grande disabled={processando}>
-                {processando ? "Enviando..." : "Enviar Código"}
-              </Botao>
-            </Stack>
-          </form>
-
-          <div className="shortcuts">
-            <Link to="/login" className="shortcut">
-              Já lembrou? <strong>ENTRAR</strong>
-            </Link>
-          </div>
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                isDisabled={processando}
+                fullWidth
+                className="bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30"
+              >
+                {processando ? "Enviando..." : "Enviar código"}
+              </Button>
+            </form>
+            <div className="mt-2 text-center text-sm text-[color:var(--muted)]">
+              Lembrou?{" "}
+              <Link
+                to="/login"
+                className="font-semibold text-[color:var(--accent)] hover:underline"
+              >
+                Entrar
+              </Link>
+            </div>
+          </CardContent>
         </>
       )}
 
       {etapa === "codigo" && (
         <>
-          <h1 className="title">Redefinir Senha</h1>
-          <p className="subtitle">Digite o código recebido por e-mail e sua nova senha</p>
-
-          <form onSubmit={handleRedefinirSenha}>
-            <Stack spacing="medium">
-              <div className="field">
-                <label htmlFor="email-display" className="field__label">
-                  E-mail
-                </label>
-                <input
-                  id="email-display"
-                  type="email"
-                  className="field__input"
-                  value={email}
-                  disabled
-                  readOnly
-                />
-              </div>
-
-              <CampoTexto
-                id="codigo-reset"
-                name="codigo"
-                label="Código de Verificação"
-                type="text"
+          <CardHeader className="flex flex-col items-start gap-2 pb-2">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-brand text-white shadow-lg shadow-[color:var(--accent)]/30">
+              <Lock size={24} />
+            </span>
+            <h1 className="font-display text-3xl font-bold text-gradient-brand">
+              Redefinir senha
+            </h1>
+            <p className="text-sm text-[color:var(--muted)]">
+              Código enviado para <strong>{email}</strong>
+            </p>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 pt-4">
+            <form
+              onSubmit={handleRedefinirSenha}
+              className="flex flex-col gap-4"
+            >
+              <Campo
+                label="Código de verificação"
                 value={codigo}
-                onChange={(e) => {
-                  const valor = e.target.value.slice(0, 6); // Limitar a 6 caracteres
-                  setCodigo(valor);
-                }}
-                required
-                placeholder="Digite o código de 6 dígitos"
+                onChange={(v) => setCodigo(v.slice(0, 6))}
+                isRequired
+                placeholder="000000"
               />
-
-              <CampoTexto
-                id="nova-senha"
-                name="nova-senha"
-                label="Nova Senha"
-                type="password"
+              <CampoSenha
+                label="Nova senha"
                 value={novaSenha}
-                onChange={(e) => setNovaSenha(e.target.value)}
-                showPasswordToggle
-                required
+                onChange={setNovaSenha}
+                isRequired
+                autoComplete="new-password"
               />
-
-              <CampoTexto
-                id="confirma-senha"
-                name="confirma-senha"
-                label="Confirmar Nova Senha"
-                type="password"
+              <CampoSenha
+                label="Confirmar nova senha"
                 value={confirmaSenha}
-                onChange={(e) => setConfirmaSenha(e.target.value)}
-                showPasswordToggle
-                required
+                onChange={setConfirmaSenha}
+                isRequired
+                autoComplete="new-password"
               />
-
-              <Botao type="submit" variante="primaria" grande disabled={processando}>
-                {processando ? "Redefinindo..." : "Redefinir Senha"}
-              </Botao>
-
-              <Botao type="button" variante="fantasma" onClick={handleVoltar}>
-                ← Voltar
-              </Botao>
-            </Stack>
-          </form>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onPress={() => {
+                    setEtapa("email");
+                    setCodigo("");
+                    setNovaSenha("");
+                    setConfirmaSenha("");
+                  }}
+                  className="flex-1"
+                >
+                  <ArrowLeft size={16} className="mr-2" />
+                  Voltar
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isDisabled={processando}
+                  className="flex-[2] bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30"
+                >
+                  {processando ? "Redefinindo..." : "Redefinir senha"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
         </>
       )}
 
       {etapa === "sucesso" && (
-        <>
-          <h1 className="title">✓ Senha Redefinida!</h1>
-          <p className="subtitle">Sua senha foi alterada com sucesso. Redirecionando para o login...</p>
-        </>
+        <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--success)]/15 text-[color:var(--success)]">
+            <Check size={32} strokeWidth={3} />
+          </span>
+          <h1 className="font-display text-3xl font-bold text-gradient-brand">
+            Senha redefinida!
+          </h1>
+          <p className="text-sm text-[color:var(--muted)]">
+            Redirecionando para o login...
+          </p>
+        </CardContent>
       )}
-    </Cartao>
+    </Card>
   );
 }

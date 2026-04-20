@@ -1,5 +1,232 @@
-/* Import utilities CSS */
-@import './estilos/utilities.css';
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap");
+@import "../node_modules/@heroui/react/node_modules/@heroui/styles/dist/index.css";
 
-/* Import responsive system */
-@import './estilos/responsive.css';
+/* ============================================================
+   QUEBRA TIGELA — Tema Vibe B (Criativo/Artístico)
+   Paleta vibrante inspirada em Behance/Dribbble
+   Sobrescreve variáveis do HeroUI v3
+   ============================================================ */
+
+@layer theme {
+  :root,
+  .light,
+  [data-theme="light"] {
+    /* === Accent (cor principal) — Rosa vibrante === */
+    --accent: oklch(0.65 0.24 0);
+    --accent-foreground: oklch(1 0 0);
+
+    /* === Secondary (apoio) — Violeta criativo === */
+    --secondary: oklch(0.6 0.22 295);
+    --secondary-foreground: oklch(1 0 0);
+
+    /* === Tertiary — Âmbar caloroso (para destaques) === */
+    --tertiary: oklch(0.78 0.16 65);
+    --tertiary-foreground: oklch(0.2 0 0);
+
+    /* === Background com textura sutil === */
+    --background: oklch(0.99 0.005 320);
+    --foreground: oklch(0.15 0.01 285);
+
+    /* === Surfaces === */
+    --surface: oklch(1 0 0);
+    --surface-foreground: var(--foreground);
+
+    --surface-secondary: oklch(0.97 0.015 320);
+    --surface-secondary-foreground: var(--foreground);
+
+    --surface-tertiary: oklch(0.94 0.02 320);
+    --surface-tertiary-foreground: var(--foreground);
+
+    /* === Focus ring usa accent === */
+    --focus: var(--accent);
+
+    /* === Radius mais arredondado (vibe jovem/moderna) === */
+    --radius: 0.75rem;
+    --field-radius: 0.625rem;
+  }
+
+  .dark,
+  [data-theme="dark"] {
+    color-scheme: dark;
+
+    /* === Accent (cor principal) — Rosa ainda mais vibrante no dark === */
+    --accent: oklch(0.7 0.26 0);
+    --accent-foreground: oklch(1 0 0);
+
+    /* === Secondary — Violeta brilhante === */
+    --secondary: oklch(0.7 0.25 295);
+    --secondary-foreground: oklch(1 0 0);
+
+    /* === Tertiary — Âmbar === */
+    --tertiary: oklch(0.8 0.17 70);
+    --tertiary-foreground: oklch(0.15 0 0);
+
+    /* === Background escuro com tom levemente violáceo === */
+    --background: oklch(0.12 0.015 285);
+    --foreground: oklch(0.97 0.005 320);
+
+    /* === Surfaces === */
+    --surface: oklch(0.17 0.018 285);
+    --surface-foreground: var(--foreground);
+
+    --surface-secondary: oklch(0.22 0.02 285);
+    --surface-secondary-foreground: var(--foreground);
+
+    --surface-tertiary: oklch(0.27 0.025 285);
+    --surface-tertiary-foreground: var(--foreground);
+
+    /* === Overlay (modais, popovers) === */
+    --overlay: oklch(0.2 0.02 285);
+    --overlay-foreground: var(--foreground);
+
+    /* === Muted text === */
+    --muted: oklch(0.65 0.01 285);
+
+    /* === Borders & separators === */
+    --border: oklch(0.28 0.02 285);
+    --separator: oklch(0.24 0.02 285);
+
+    /* === Default === */
+    --default: oklch(0.27 0.025 285);
+    --default-foreground: var(--foreground);
+
+    /* === Field === */
+    --field-background: oklch(0.2 0.02 285);
+    --field-foreground: var(--foreground);
+    --field-placeholder: oklch(0.55 0.01 285);
+    --field-border: oklch(0.3 0.02 285);
+
+    /* === Focus === */
+    --focus: var(--accent);
+
+    /* === Radius === */
+    --radius: 0.75rem;
+    --field-radius: 0.625rem;
+
+    /* === Scrollbar === */
+    --scrollbar: oklch(0.3 0.02 285);
+
+    /* === Backdrop === */
+    --backdrop: rgba(5, 3, 10, 0.7);
+  }
+}
+
+/* ============================================================
+   Utilidades globais customizadas
+   ============================================================ */
+
+@theme {
+  /* Gradientes da identidade (usados em CTAs, headings e destaques) */
+  --gradient-brand: linear-gradient(
+    135deg,
+    oklch(0.7 0.26 0) 0%,
+    oklch(0.7 0.25 295) 100%
+  );
+  --gradient-warm: linear-gradient(
+    135deg,
+    oklch(0.8 0.17 70) 0%,
+    oklch(0.7 0.26 0) 100%
+  );
+  --gradient-mesh: radial-gradient(
+      ellipse at top left,
+      oklch(0.7 0.26 0 / 0.2),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at bottom right,
+      oklch(0.7 0.25 295 / 0.2),
+      transparent 50%
+    );
+}
+
+/* Aplica o fundo e texto base do tema ativo */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+}
+
+/* Fonte display (títulos criativos) */
+.font-display {
+  font-family: "Outfit", "Inter", system-ui, sans-serif;
+}
+
+/* Classe utilitária: texto em gradient */
+.text-gradient-brand {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-gradient-brand {
+  background: var(--gradient-brand);
+}
+
+.bg-gradient-warm {
+  background: var(--gradient-warm);
+}
+
+.bg-gradient-mesh {
+  background: var(--gradient-mesh);
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar, rgba(120, 120, 140, 0.3));
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Animações suaves entre temas */
+html {
+  color-scheme: light dark;
+}
+
+html * {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Seleção de texto */
+::selection {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* Esconder o "reveal" nativo do navegador em campos de senha
+   (Edge mostra um olhinho, Chrome mostra um chaveirinho de
+   autofill). Como temos nosso próprio toggle, esses dois
+   competem pelo mesmo espaço e poluem o visual. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-strong-password-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+  height: 0;
+  width: 0;
+  margin: 0;
+}

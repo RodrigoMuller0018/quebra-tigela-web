@@ -1,235 +1,220 @@
-import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Spinner,
+} from "@heroui/react";
+import { CheckCircle2, MapPin, Mail, MessageSquarePlus } from "lucide-react";
 import type { Artista } from "../../tipos/artistas";
 import type { Service } from "../../tipos/servicos";
-import { Cartao, Botao } from "../ui";
-import { Stack } from "../layout";
 import { AgendaCliente } from "../agenda";
 import { ListaServicos } from "../servicos";
 import { listarServicosPorArtista } from "../../api/servicos.api";
+import { ListaReviews } from "../reviews";
+import { SolicitarServicoModal } from "../requests";
+import { useAutenticacao } from "../../contexts/Autenticacao.context";
 
 interface Props {
   artista: Artista;
 }
 
 export function PerfilPublicoArtista({ artista }: Props) {
-  const navigate = useNavigate();
+  const { usuario, userType } = useAutenticacao();
   const [servicos, setServicos] = useState<Service[]>([]);
   const [carregandoServicos, setCarregandoServicos] = useState(false);
+  const [solicitarAberto, setSolicitarAberto] = useState(false);
 
-  // Debug detalhado - verificar TODA a estrutura de dados
-  console.log("=== DEBUG PERFIL PÚBLICO ===");
-  console.log("1. Props recebidas:", artista);
-  console.log("2. Tipo de dados:", typeof artista);
-  console.log("3. É array?", Array.isArray(artista));
-  console.log("4. Keys disponíveis:", artista ? Object.keys(artista) : "null");
-  
-  // Se artista vier dentro de um objeto aninhado (ex: { artist: {...} })
-  console.log("5. Possível nested artist:", (artista as any)?.artist);
-  console.log("6. Nome direto:", artista?.name);
-  console.log("7. Email direto:", artista?.email);
-  console.log("8. Art types direto:", artista?.artTypes);
+  const dados = (artista as any)?.artist || artista;
+  const nome = dados?.name || dados?.nome || "Nome não informado";
+  const email = dados?.email || "Email não disponível";
+  const bio = dados?.bio || dados?.biografia || null;
+  const verificado = dados?.verified || dados?.verificado || false;
+  const cidade = dados?.city || dados?.cidade || null;
+  const estado = dados?.state || dados?.estado || null;
+  const tiposArte =
+    dados?.artTypes || dados?.tipos_arte || dados?.specialties || [];
+  const artistaId = dados?.id || dados?._id;
 
-  // Verificação de dados
-  if (!artista) {
-    return (
-      <Stack spacing="large">
-        <Botao variante="fantasma" onClick={() => navigate(-1)}>
-          ← Voltar
-        </Botao>
-        <Cartao>
-          <p>Carregando perfil...</p>
-        </Cartao>
-      </Stack>
-    );
-  }
-
-  // Tentar acessar dados em diferentes estruturas possíveis
-  const dadosArtista = (artista as any)?.artist || artista;
-  
-  console.log("9. Dados finais a serem usados:", dadosArtista);
-  console.log("10. Nome final:", dadosArtista?.name);
-  console.log("11. Email final:", dadosArtista?.email);
-  console.log("12. Art Types final:", dadosArtista?.artTypes);
-
-  // Extrair dados com fallbacks
-  const nome = dadosArtista?.name || dadosArtista?.nome || "Nome não informado";
-  const email = dadosArtista?.email || "Email não disponível";
-  const bio = dadosArtista?.bio || dadosArtista?.biografia || null;
-  const verificado = dadosArtista?.verified || dadosArtista?.verificado || false;
-  const cidade = dadosArtista?.city || dadosArtista?.cidade || null;
-  const estado = dadosArtista?.state || dadosArtista?.estado || null;
-  const tiposArte = dadosArtista?.artTypes || dadosArtista?.tipos_arte || dadosArtista?.specialties || [];
-
-  console.log("13. Valores extraídos:", { nome, email, bio, verificado, cidade, estado, tiposArte });
-
-  // Carregar serviços do artista
   useEffect(() => {
-    const artistaId = dadosArtista?.id || dadosArtista?._id;
     if (!artistaId) return;
-
     setCarregandoServicos(true);
     listarServicosPorArtista(artistaId)
-      .then((dados) => {
-        // Filtrar apenas serviços ativos para exibição pública
-        const servicosAtivos = dados.filter((s) => s.active);
-        setServicos(servicosAtivos);
-      })
-      .catch((err) => {
-        console.error("Erro ao carregar serviços:", err);
-        setServicos([]);
-      })
-      .finally(() => {
-        setCarregandoServicos(false);
-      });
-  }, [dadosArtista?.id, dadosArtista?._id]);
+      .then((dados) => setServicos(dados.filter((s) => s.active)))
+      .catch(() => setServicos([]))
+      .finally(() => setCarregandoServicos(false));
+  }, [artistaId]);
 
-  // Formatar localização
-  const localizacao = cidade && estado
-    ? `${cidade}, ${estado}`
-    : cidade || estado || "Localização não informada";
+  const localizacao =
+    cidade && estado
+      ? `${cidade}, ${estado}`
+      : cidade || estado || "Localização não informada";
+
+  const iniciais =
+    nome
+      ?.split(" ")
+      .slice(0, 2)
+      .map((p: string) => p[0])
+      .join("")
+      .toUpperCase() || "QT";
 
   return (
-    <Stack spacing="large">
-      {/* Botão Voltar */}
-      <Botao variante="fantasma" onClick={() => navigate(-1)}>
-        ← Voltar
-      </Botao>
-
-      <Cartao>
-        <Stack spacing="large">
-          {/* Cabeçalho do Perfil */}
-          <div>
-            <Stack spacing="small">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-                  {nome}
-                </h1>
+    <div className="flex flex-col gap-6">
+      {/* Hero do perfil */}
+      <Card className="overflow-hidden border-0 bg-gradient-brand text-white shadow-2xl shadow-[color:var(--accent)]/30">
+        <div className="relative">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-mesh opacity-50" />
+          <CardContent className="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl border-4 border-white/30 bg-white/20 font-display text-3xl font-black backdrop-blur">
+              {iniciais}
+            </div>
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-display text-3xl font-bold">{nome}</h1>
                 {verificado && (
-                  <span style={{
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    padding: '4px 12px',
-                    borderRadius: '12px',
-                    fontSize: '0.875rem',
-                    fontWeight: '600'
-                  }}>
-                    ✓ Verificado
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/30 px-3 py-1 text-xs font-bold backdrop-blur">
+                    <CheckCircle2 size={12} />
+                    Verificado
                   </span>
                 )}
               </div>
-
-              <p style={{ fontSize: '1rem', color: 'var(--text)', fontWeight: '500', margin: '8px 0 0 0' }}>
-                📍 {localizacao}
+              <p className="flex items-center gap-1.5 text-white/90">
+                <MapPin size={14} />
+                {localizacao}
               </p>
-
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '500', margin: '4px 0 0 0' }}>
-                ✉️ {email}
+              <p className="flex items-center gap-1.5 text-sm text-white/80">
+                <Mail size={14} />
+                {email}
               </p>
-            </Stack>
-          </div>
+            </div>
+          </CardContent>
+        </div>
+      </Card>
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
+      {/* Sobre */}
+      <Card className="border border-[color:var(--border)] bg-[color:var(--surface)]">
+        <CardHeader>
+          <h2 className="font-display text-xl font-bold">Sobre</h2>
+        </CardHeader>
+        <CardContent>
+          {bio ? (
+            <p className="text-sm leading-relaxed">{bio}</p>
+          ) : (
+            <p className="text-sm italic text-[color:var(--muted)]">
+              Este artista ainda não adicionou uma biografia.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-          {/* Biografia */}
-          <div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text)' }}>
-              Sobre
-            </h3>
-            {bio ? (
-              <p style={{ lineHeight: '1.7', color: 'var(--text)', fontSize: '1rem', fontWeight: '400' }}>
-                {bio}
-              </p>
-            ) : (
-              <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontWeight: '400' }}>
-                Este artista ainda não adicionou uma biografia.
-              </p>
-            )}
-          </div>
+      {/* Especialidades */}
+      <Card className="border border-[color:var(--border)] bg-[color:var(--surface)]">
+        <CardHeader>
+          <h2 className="font-display text-xl font-bold">Especialidades</h2>
+        </CardHeader>
+        <CardContent>
+          {tiposArte && tiposArte.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {tiposArte.map((t: string, i: number) => (
+                <span
+                  key={i}
+                  className="rounded-full bg-[color:var(--accent)]/15 px-3 py-1 text-xs font-medium text-[color:var(--accent)]"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm italic text-[color:var(--muted)]">
+              Nenhuma especialidade cadastrada ainda.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-          {/* Especialidades */}
-          <div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text)' }}>
-              Especialidades
-            </h3>
-            {tiposArte && tiposArte.length > 0 ? (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {tiposArte.map((tipo: string, index: number) => (
-                  <span
-                    key={index}
-                    style={{
-                      backgroundColor: 'var(--primary)',
-                      color: 'var(--text-on-primary)',
-                      padding: '6px 16px',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      fontWeight: '700'
-                    }}
-                  >
-                    {tipo}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontWeight: '400' }}>
-                Nenhuma especialidade cadastrada ainda.
-              </p>
-            )}
-          </div>
+      {/* Serviços */}
+      <Card className="border border-[color:var(--border)] bg-[color:var(--surface)]">
+        <CardHeader>
+          <h2 className="font-display text-xl font-bold">
+            Serviços oferecidos
+          </h2>
+        </CardHeader>
+        <CardContent>
+          {carregandoServicos ? (
+            <div className="flex justify-center py-8">
+              <Spinner color="accent" />
+            </div>
+          ) : servicos.length > 0 ? (
+            <ListaServicos servicos={servicos} modo="publico" />
+          ) : (
+            <p className="text-sm italic text-[color:var(--muted)]">
+              Este artista ainda não cadastrou serviços.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
-
-          {/* Serviços Oferecidos */}
-          <div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text)' }}>
-              Serviços Oferecidos
-            </h3>
-            {carregandoServicos ? (
-              <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontWeight: '400' }}>
-                Carregando serviços...
-              </p>
-            ) : servicos.length > 0 ? (
-              <ListaServicos servicos={servicos} modo="publico" />
-            ) : (
-              <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontWeight: '400' }}>
-                Este artista ainda não cadastrou serviços.
-              </p>
-            )}
-          </div>
-
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
-
-          {/* Agenda - Horários Disponíveis */}
-          <div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text)' }}>
-              Agendar Horário
-            </h3>
+      {/* Agenda */}
+      <Card className="border border-[color:var(--border)] bg-[color:var(--surface)]">
+        <CardHeader>
+          <h2 className="font-display text-xl font-bold">Agendar horário</h2>
+        </CardHeader>
+        <CardContent>
+          {artistaId && (
             <AgendaCliente
-              artistaId={dadosArtista?.id || dadosArtista?._id}
+              artistaId={artistaId}
               artistaNome={nome}
               artistaEmail={email}
             />
-          </div>
+          )}
+        </CardContent>
+      </Card>
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
+      {/* Avaliações */}
+      {artistaId && (
+        <Card className="border border-[color:var(--border)] bg-[color:var(--surface)]">
+          <CardHeader>
+            <h2 className="font-display text-xl font-bold">Avaliações</h2>
+          </CardHeader>
+          <CardContent>
+            <ListaReviews artistId={artistaId} limite={5} />
+          </CardContent>
+        </Card>
+      )}
 
-          {/* Call to Action */}
-          <div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text)' }}>
+      {/* CTA — solicitar serviço (apenas pra clientes logados) */}
+      {userType === "client" && usuario?.sub && artistaId && (
+        <Card className="overflow-hidden border-0 bg-gradient-warm text-[color:var(--foreground)] shadow-xl">
+          <CardContent className="flex flex-col items-start gap-3 py-6">
+            <h2 className="font-display text-xl font-bold">
               Interessado no trabalho?
-            </h3>
-            <p style={{ lineHeight: '1.7', color: 'var(--text)', fontSize: '1rem', fontWeight: '400', marginBottom: '16px' }}>
-              Entre em contato com {nome?.split(' ')?.[0] || nome} para solicitar serviços e
-              conhecer mais sobre seu portfólio.
+            </h2>
+            <p className="text-sm">
+              Solicite um serviço de {nome?.split(" ")?.[0] || nome} pra um
+              evento ou projeto seu.
             </p>
-            <Botao variante="primaria" disabled grande>
-              Solicitar Serviço (em breve)
-            </Botao>
-          </div>
-        </Stack>
-      </Cartao>
+            <Button
+              variant="primary"
+              onPress={() => setSolicitarAberto(true)}
+              className="bg-[color:var(--foreground)] font-semibold text-[color:var(--background)] shadow-lg"
+            >
+              <MessageSquarePlus size={16} className="mr-2" />
+              Solicitar serviço
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-
-    </Stack>
+      {artistaId && usuario?.sub && (
+        <SolicitarServicoModal
+          aberto={solicitarAberto}
+          aoFechar={setSolicitarAberto}
+          artistId={artistaId}
+          artistNome={nome}
+          userId={usuario.sub}
+        />
+      )}
+    </div>
   );
 }
