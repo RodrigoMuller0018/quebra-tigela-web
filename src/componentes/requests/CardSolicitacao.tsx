@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Button, Card, CardContent } from "@heroui/react";
-import { Calendar, MapPin, FileText, Star } from "lucide-react";
+import { Calendar, MapPin, FileText, Star, Clock, Pencil } from "lucide-react";
 import type { Solicitacao } from "../../tipos/requests";
 import { STATUS_LABELS, STATUS_TONE } from "../../tipos/requests";
 import type { Service } from "../../tipos/servicos";
 import type { Artista } from "../../tipos/artistas";
+import type { Review } from "../../tipos/reviews";
 import { obterArtistaPorId } from "../../api/artistas.api";
 
 interface AcaoBotao {
@@ -22,9 +23,12 @@ interface CardSolicitacaoProps {
   /** Lista de serviços pra resolver o nome do serviço pelo serviceId */
   servicos?: Service[];
   acoes?: AcaoBotao[];
-  /** Mostrar botão "Avaliar" (somente cliente, status completed) */
+  /** Mostrar botão "Avaliar" (somente cliente, status completed, sem review ainda) */
   podeAvaliar?: boolean;
   onAvaliar?: () => void;
+  /** Review já feita pra essa solicitação (mostra badge + botão editar) */
+  reviewExistente?: Review;
+  onEditarReview?: () => void;
 }
 
 export function CardSolicitacao({
@@ -34,6 +38,8 @@ export function CardSolicitacao({
   acoes = [],
   podeAvaliar,
   onAvaliar,
+  reviewExistente,
+  onEditarReview,
 }: CardSolicitacaoProps) {
   const [artista, setArtista] = useState<Artista | null>(null);
 
@@ -51,8 +57,7 @@ export function CardSolicitacao({
     day: "2-digit",
     month: "long",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    timeZone: "UTC",
   }).format(new Date(solicitacao.eventDate));
 
   return (
@@ -88,6 +93,12 @@ export function CardSolicitacao({
             <Calendar size={14} />
             {dataFormatada}
           </p>
+          {solicitacao.startTime && solicitacao.endTime && (
+            <p className="flex items-center gap-1.5">
+              <Clock size={14} />
+              {solicitacao.startTime} → {solicitacao.endTime}
+            </p>
+          )}
           <p className="flex items-center gap-1.5">
             <MapPin size={14} />
             {solicitacao.location}
@@ -102,7 +113,48 @@ export function CardSolicitacao({
           )}
         </div>
 
-        {(acoes.length > 0 || podeAvaliar) && (
+        {reviewExistente && (
+          <div className="rounded-xl border border-[color:var(--accent)]/30 bg-[color:var(--accent)]/5 p-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-[color:var(--muted)]">
+                  Sua avaliação:
+                </span>
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star
+                      key={n}
+                      size={12}
+                      className={
+                        n <= reviewExistente.rating
+                          ? "fill-[color:var(--warning)] text-[color:var(--warning)]"
+                          : "text-[color:var(--border)]"
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+              {onEditarReview && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onPress={onEditarReview}
+                  className="text-[color:var(--accent)]"
+                >
+                  <Pencil size={12} className="mr-1" />
+                  Editar
+                </Button>
+              )}
+            </div>
+            {reviewExistente.comment && (
+              <p className="mt-1 text-xs italic text-[color:var(--muted)]">
+                "{reviewExistente.comment}"
+              </p>
+            )}
+          </div>
+        )}
+
+        {(acoes.length > 0 || (podeAvaliar && onAvaliar)) && (
           <div className="flex flex-wrap gap-2 pt-1">
             {acoes.map((a, i) => (
               <Button

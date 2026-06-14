@@ -262,11 +262,8 @@ export default function HomeArtistaPagina() {
                             day: "2-digit",
                             month: "short",
                             year: "numeric",
-                          }).format(
-                            new Date(
-                              h.date.includes("T") ? h.date : h.date + "T00:00:00"
-                            )
-                          )}
+                            timeZone: "UTC",
+                          }).format(new Date(h.date))}
                         </span>
                         {h.startTime && (
                           <span className="text-[color:var(--muted)]">

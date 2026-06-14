@@ -10,7 +10,7 @@ import { Plus } from "lucide-react";
 import { useAutenticacao } from "../../contexts/Autenticacao.context";
 import {
   criarServico,
-  listarServicosPorArtista,
+  listarMeusServicos,
   atualizarServico,
 } from "../../api/servicos.api";
 import type { Service, ServiceMedia } from "../../tipos/servicos";
@@ -39,7 +39,7 @@ export default function ServicosArtistaPagina() {
     if (!artistId) return;
     setCarregando(true);
     try {
-      const dados = await listarServicosPorArtista(artistId);
+      const dados = await listarMeusServicos();
       setServicos(dados);
     } catch (err: any) {
       avisoErro(err?.message ?? "Erro ao carregar serviços");
@@ -57,7 +57,7 @@ export default function ServicosArtistaPagina() {
     if (!artistId) return;
     setSalvando(true);
     try {
-      await criarServico({ artistId, ...dados });
+      await criarServico(dados);
       await carregarServicos();
       setMostrarFormulario(false);
       avisoSucesso("Serviço criado com sucesso!");
@@ -147,6 +147,7 @@ export default function ServicosArtistaPagina() {
           </CardHeader>
           <CardContent>
             <FormularioServico
+              key={servicoEditando?._id || "novo"}
               servicoInicial={servicoEditando || undefined}
               onSubmit={servicoEditando ? handleAtualizar : handleCriar}
               onCancelar={handleCancelar}

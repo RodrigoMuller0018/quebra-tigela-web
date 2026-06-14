@@ -15,14 +15,12 @@ import { NOMES_MESES, NOMES_MESES_CAPITALIZADOS, NOMES_DIAS_SEMANA } from "../co
  * formatarDataPorExtenso("2025-11-19T10:00:00") // "19 de novembro de 2025"
  */
 export function formatarDataPorExtenso(dataISO: string): string {
-  // Se vier em formato YYYY-MM-DD, adiciona T00:00:00 para evitar problemas de timezone
-  const dataStr = dataISO.includes('T') ? dataISO : dataISO + 'T00:00:00';
-  const data = new Date(dataStr);
-
-  const dia = data.getDate();
-  const mes = NOMES_MESES[data.getMonth()];
-  const ano = data.getFullYear();
-
+  // Datas do backend vêm como UTC midnight — lemos componentes UTC pra evitar
+  // shift de fuso horário (ex: 2026-05-25T00:00:00Z virar 24/05 em BRT).
+  const data = new Date(dataISO);
+  const dia = data.getUTCDate();
+  const mes = NOMES_MESES[data.getUTCMonth()];
+  const ano = data.getUTCFullYear();
   return `${dia} de ${mes} de ${ano}`;
 }
 
@@ -35,14 +33,12 @@ export function formatarDataPorExtenso(dataISO: string): string {
  * formatarData("2025-11-19") // "19 de novembro de 2025"
  */
 export function formatarData(dataISO: string): string {
-  const dataStr = dataISO.includes('T') ? dataISO : dataISO + 'T00:00:00';
-  const data = new Date(dataStr);
-
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
-  }).format(data);
+    timeZone: "UTC",
+  }).format(new Date(dataISO));
 }
 
 /**
@@ -54,10 +50,8 @@ export function formatarData(dataISO: string): string {
  * obterNomeDiaSemana("2025-11-19") // "Quarta-feira"
  */
 export function obterNomeDiaSemana(dataISO: string): string {
-  const dataStr = dataISO.includes('T') ? dataISO : dataISO + 'T00:00:00';
-  const data = new Date(dataStr);
-
-  return NOMES_DIAS_SEMANA[data.getDay()];
+  const data = new Date(dataISO);
+  return NOMES_DIAS_SEMANA[data.getUTCDay()];
 }
 
 /**
@@ -69,10 +63,10 @@ export function obterNomeDiaSemana(dataISO: string): string {
  * formatarDiaSemana("2025-11-19") // "quarta-feira"
  */
 export function formatarDiaSemana(dataISO: string): string {
-  const dataStr = dataISO.includes('T') ? dataISO : dataISO + 'T00:00:00';
-  const data = new Date(dataStr);
-
-  return new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(data);
+  return new Intl.DateTimeFormat("pt-BR", {
+    weekday: "long",
+    timeZone: "UTC",
+  }).format(new Date(dataISO));
 }
 
 /**

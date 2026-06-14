@@ -15,11 +15,17 @@ import {
 interface Props {
   horarios: ScheduleEntry[];
   mesAno?: Date;
+  diaSelecionado?: Date | null;
   onDiaClick?: (dia: Date) => void;
   onHorarioClick?: (horario: ScheduleEntry) => void;
 }
 
-export function CalendarioAgenda({ horarios, mesAno, onDiaClick }: Props) {
+export function CalendarioAgenda({
+  horarios,
+  mesAno,
+  diaSelecionado,
+  onDiaClick,
+}: Props) {
   const [dataAtual, setDataAtual] = useState(mesAno || new Date());
 
   const diasDoMes = useMemo(() => {
@@ -95,11 +101,14 @@ export function CalendarioAgenda({ horarios, mesAno, onDiaClick }: Props) {
         {diasDoMes.map((dia, index) => {
           const horariosNoDia = obterHorariosDoDia(dia);
           const temHorarios = horariosNoDia.length > 0;
-          const disponivel = horariosNoDia.some(
-            (h) => h.status === "available"
-          );
+          const disponivel = horariosNoDia.some((h) => h.status === "available");
           const reservado = horariosNoDia.some((h) => h.status === "booked");
+          const pendente = horariosNoDia.some((h) => h.status === "pending");
+          const apenasCancelados =
+            temHorarios && horariosNoDia.every((h) => h.status === "cancelled");
           const hoje = ehHoje(dia);
+          const selecionado =
+            dia && diaSelecionado ? ehMesmoDia(dia, diaSelecionado) : false;
 
           if (!dia) {
             return <div key={index} className="aspect-square" />;
@@ -108,7 +117,10 @@ export function CalendarioAgenda({ horarios, mesAno, onDiaClick }: Props) {
           let classes =
             "relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg text-sm font-medium transition";
 
-          if (hoje) {
+          if (selecionado) {
+            classes +=
+              " bg-[color:var(--accent)] text-white shadow-lg ring-2 ring-[color:var(--accent)]/40 ring-offset-2 ring-offset-[color:var(--surface)]";
+          } else if (hoje) {
             classes += " bg-gradient-brand text-white shadow-lg";
           } else if (disponivel) {
             classes +=
@@ -116,6 +128,12 @@ export function CalendarioAgenda({ horarios, mesAno, onDiaClick }: Props) {
           } else if (reservado) {
             classes +=
               " bg-[color:var(--secondary)]/15 text-[color:var(--secondary)] border border-[color:var(--secondary)]/40 hover:bg-[color:var(--secondary)]/25";
+          } else if (pendente) {
+            classes +=
+              " bg-[color:var(--warning)]/15 text-[color:var(--warning)] border border-[color:var(--warning)]/40 hover:bg-[color:var(--warning)]/25";
+          } else if (apenasCancelados) {
+            classes +=
+              " bg-[color:var(--muted)]/10 text-[color:var(--muted)] border border-[color:var(--muted)]/30 line-through hover:bg-[color:var(--muted)]/20";
           } else {
             classes +=
               " text-[color:var(--foreground)] hover:bg-[color:var(--surface-secondary)]";

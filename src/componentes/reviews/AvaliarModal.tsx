@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@heroui/react";
 import { Star } from "lucide-react";
 import { Dialogo } from "../ui/Dialogo";
 import { AreaTexto } from "../ui/Campo";
-import { criarReview } from "../../api/reviews.api";
+import { atualizarReview, criarReview } from "../../api/reviews.api";
+import type { Review } from "../../tipos/reviews";
 import {
   sucesso as avisoSucesso,
   erro as avisoErro,
@@ -12,24 +13,35 @@ import {
 interface AvaliarModalProps {
   aberto: boolean;
   aoFechar: (aberto: boolean) => void;
-  artistId: string;
+  /** ID da solicitação que está sendo avaliada (obrigatório em modo criar) */
+  requestId?: string;
   artistNome?: string;
-  userId: string;
+  /** Se passada, modal entra em modo "editar" (PATCH) */
+  reviewInicial?: Review | null;
   onSucesso?: () => void;
 }
 
 export function AvaliarModal({
   aberto,
   aoFechar,
-  artistId,
+  requestId,
   artistNome,
-  userId,
+  reviewInicial,
   onSucesso,
 }: AvaliarModalProps) {
-  const [rating, setRating] = useState(0);
+  const modoEdicao = !!reviewInicial;
+  const [rating, setRating] = useState(reviewInicial?.rating ?? 0);
   const [hover, setHover] = useState(0);
-  const [comentario, setComentario] = useState("");
+  const [comentario, setComentario] = useState(reviewInicial?.comment ?? "");
   const [enviando, setEnviando] = useState(false);
+
+  // Re-sincroniza quando reviewInicial muda (ex: troca de review no mesmo modal)
+  useEffect(() => {
+    if (aberto) {
+      setRating(reviewInicial?.rating ?? 0);
+      setComentario(reviewInicial?.comment ?? "");
+    }
+  }, [aberto, reviewInicial]);
 
   function reset() {
     setRating(0);
@@ -44,37 +56,60 @@ export function AvaliarModal({
     }
     setEnviando(true);
     try {
-      await criarReview({
-        artistId,
-        userId,
-        rating,
-        comment: comentario.trim() || undefined,
-      });
-      avisoSucesso("Avaliação enviada com sucesso!");
+      if (modoEdicao && reviewInicial) {
+        await atualizarReview(reviewInicial.id, {
+          rating,
+          comment: comentario.trim() || undefined,
+        });
+        avisoSucesso("Avaliação atualizada");
+      } else {
+        if (!requestId) {
+          avisoErro("Solicitação não informada");
+          return;
+        }
+        await criarReview({
+          requestId,
+          rating,
+          comment: comentario.trim() || undefined,
+        });
+        avisoSucesso("Avaliação enviada com sucesso!");
+      }
       reset();
       aoFechar(false);
       onSucesso?.();
     } catch (e: any) {
-      avisoErro(e?.message ?? "Erro ao enviar avaliação");
+      const msg =
+        e?.response?.data?.message ??
+        e?.message ??
+        "Erro ao enviar avaliação";
+      avisoErro(msg);
     } finally {
       setEnviando(false);
     }
   }
 
+  const titulo = modoEdicao
+    ? "Editar avaliação"
+    : artistNome
+      ? `Avaliar ${artistNome}`
+      : "Avaliar artista";
+
   return (
     <Dialogo
       aberto={aberto}
       aoFechar={(open) => {
-        if (!open) reset();
+        if (!open && !modoEdicao) reset();
         aoFechar(open);
       }}
       tamanho="md"
-      titulo={artistNome ? `Avaliar ${artistNome}` : "Avaliar artista"}
+      titulo={titulo}
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-col items-center gap-2">
           <p className="text-sm text-[color:var(--muted)]">
-            Sua avaliação ajuda outros clientes
+            {modoEdicao
+              ? "Atualize sua avaliação como achar melhor"
+              : "Sua avaliação ajuda outros clientes"}
           </p>
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((n) => {
@@ -133,7 +168,11 @@ export function AvaliarModal({
             isDisabled={enviando}
             className="bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30"
           >
-            {enviando ? "Enviando..." : "Enviar avaliação"}
+            {enviando
+              ? "Salvando..."
+              : modoEdicao
+                ? "Salvar alterações"
+                : "Enviar avaliação"}
           </Button>
         </div>
       </div>

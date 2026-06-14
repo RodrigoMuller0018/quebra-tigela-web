@@ -38,6 +38,7 @@ import { VerificacaoIdentidade } from "../../componentes/verificacao";
 import { useEhDispositivoMovel } from "../../utilitarios/dispositivo";
 import { Campo, AreaTexto } from "../../componentes/ui/Campo";
 import { Dialogo } from "../../componentes/ui/Dialogo";
+import { UploadFotoPerfil } from "../../componentes/ui/UploadFotoPerfil";
 
 export default function DetalheArtistaPagina() {
   const { id } = useParams();
@@ -92,6 +93,7 @@ export default function DetalheArtistaPagina() {
         city: artista.city,
         state: artista.state,
         artTypes: artista.artTypes,
+        profilePicture: artista.profilePicture,
       });
       avisoSucesso("Perfil atualizado com sucesso!");
       navigate("/artista");
@@ -236,6 +238,14 @@ export default function DetalheArtistaPagina() {
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
+          <UploadFotoPerfil
+            fotoAtual={artista.profilePicture}
+            nome={artista.name || "Artista"}
+            onChange={(foto) =>
+              setArtista({ ...artista, profilePicture: foto })
+            }
+            desabilitado={salvando}
+          />
           <Campo
             label="Nome artístico"
             value={artista.name}

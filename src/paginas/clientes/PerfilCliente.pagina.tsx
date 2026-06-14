@@ -10,6 +10,7 @@ import {
 } from "../../utilitarios/avisos";
 import { Campo } from "../../componentes/ui/Campo";
 import { ConfirmacaoModal } from "../../componentes/ui/ConfirmacaoModal";
+import { UploadFotoPerfil } from "../../componentes/ui/UploadFotoPerfil";
 import {
   obterUsuarioPorId,
   atualizarUsuario,
@@ -21,6 +22,7 @@ interface DadosPerfil {
   email: string;
   city: string;
   state: string;
+  profilePicture?: string;
 }
 
 const INICIAL: DadosPerfil = { name: "", email: "", city: "", state: "" };
@@ -44,6 +46,7 @@ export default function PerfilCliente() {
           email: u.email || "",
           city: u.city || "",
           state: u.state || "",
+          profilePicture: u.profilePicture,
         })
       )
       .catch((e) => avisoErro(e?.message ?? "Erro ao carregar perfil"))
@@ -67,6 +70,7 @@ export default function PerfilCliente() {
         email: dados.email,
         city: dados.city || undefined,
         state: dados.state || undefined,
+        profilePicture: dados.profilePicture,
       });
       avisoSucesso("Perfil atualizado com sucesso!");
     } catch (err: any) {
@@ -117,6 +121,14 @@ export default function PerfilCliente() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <UploadFotoPerfil
+              fotoAtual={dados.profilePicture}
+              nome={dados.name || "Você"}
+              onChange={(foto) =>
+                setDados((p) => ({ ...p, profilePicture: foto }))
+              }
+              desabilitado={salvando}
+            />
             <div className="grid gap-4 sm:grid-cols-2">
               <Campo
                 label="Nome completo"

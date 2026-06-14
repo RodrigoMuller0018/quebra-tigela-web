@@ -13,7 +13,6 @@ export interface Service {
 }
 
 export interface NovoService {
-  artistId: string;
   title: string;
   description?: string;
   media?: ServiceMedia[];

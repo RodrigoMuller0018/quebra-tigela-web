@@ -2,7 +2,12 @@
  * Tipos para Sistema de Agendamento
  */
 
-export type ScheduleStatus = 'available' | 'booked' | 'cancelled';
+export type ScheduleStatus =
+  | 'available'
+  | 'pending'
+  | 'booked'
+  | 'completed'
+  | 'cancelled';
 
 export interface ScheduleEntry {
   _id?: string;

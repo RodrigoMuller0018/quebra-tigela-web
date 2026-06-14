@@ -179,24 +179,26 @@ export function useAgenda(options: UseAgendaOptions = {}): UseAgendaReturn {
         }));
 
         if (horariosComArtista.length === 1) {
-          console.log("Criando horário ÚNICO");
           await criarHorario(horariosComArtista[0] as any);
           avisoSucesso("Horário criado com sucesso!");
         } else {
-          console.log("Criando horários EM LOTE");
           await criarHorariosEmLote(horariosComArtista as any);
           avisoSucesso(`${horariosComArtista.length} horários criados com sucesso!`);
         }
-
-        console.log("Recarregando horários...");
-        await recarregar();
         onSuccess?.();
       } catch (e: any) {
-        console.error("ERRO AO CRIAR HORÁRIOS:", e);
-        avisoErro(e?.message ?? "Erro ao criar horário");
+        // Backend pode retornar string ou objeto detalhado — extrai mensagem útil
+        const msg =
+          e?.response?.data?.message ??
+          e?.message ??
+          "Erro ao criar horário";
+        avisoErro(msg);
         onError?.(e);
         throw e;
       } finally {
+        // Sempre recarrega — mesmo após erro, pra refletir slots que podem ter sido
+        // criados parcialmente em versões antigas do backend
+        await recarregar();
         setSalvando(false);
       }
     },

@@ -76,10 +76,13 @@ export default function SolicitacoesArtistaPagina() {
   const grupos = useMemo(() => {
     const pendentes = solicitacoes.filter((s) => s.status === "pending");
     const aceitas = solicitacoes.filter((s) => s.status === "accepted");
+    const aguardandoConfirmacao = solicitacoes.filter(
+      (s) => s.status === "awaiting_confirmation"
+    );
     const finalizadas = solicitacoes.filter((s) =>
       ["completed", "rejected", "cancelled"].includes(s.status)
     );
-    return { pendentes, aceitas, finalizadas };
+    return { pendentes, aceitas, aguardandoConfirmacao, finalizadas };
   }, [solicitacoes]);
 
   function acoesParaSolicitacao(s: Solicitacao) {
@@ -119,18 +122,33 @@ export default function SolicitacoesArtistaPagina() {
     if (s.status === "accepted") {
       return [
         {
-          label: "Marcar como concluída",
+          label: "Marcar como realizado",
           variant: "primary" as const,
           icone: <CheckCircle2 size={14} />,
           className: "bg-gradient-brand font-semibold text-white",
           onPress: () =>
             setConfirmacao({
               solicitacao: s,
-              novoStatus: "completed",
-              titulo: "Marcar como concluída?",
+              novoStatus: "awaiting_confirmation",
+              titulo: "Marcar serviço como realizado?",
               mensagem:
-                "Indique que o serviço foi prestado. O cliente poderá te avaliar.",
-              textoConfirmar: "Concluir",
+                "O cliente terá que confirmar o recebimento pra concluir. Sem ação dele, o sistema confirma automaticamente após 7 dias.",
+              textoConfirmar: "Marcar realizado",
+            }),
+        },
+        {
+          label: "Cancelar",
+          variant: "danger-soft" as const,
+          icone: <X size={14} />,
+          onPress: () =>
+            setConfirmacao({
+              solicitacao: s,
+              novoStatus: "cancelled",
+              titulo: "Cancelar agendamento aceito?",
+              mensagem:
+                "O cliente será notificado e o horário voltará a ficar disponível na sua agenda.",
+              destrutivo: true,
+              textoConfirmar: "Sim, cancelar",
             }),
         },
       ];
@@ -196,6 +214,19 @@ export default function SolicitacoesArtistaPagina() {
                   modo="artista"
                   servicos={servicos}
                   acoes={acoesParaSolicitacao(s)}
+                />
+              ))}
+            </Secao>
+          )}
+
+          {grupos.aguardandoConfirmacao.length > 0 && (
+            <Secao titulo="Aguardando confirmação do cliente">
+              {grupos.aguardandoConfirmacao.map((s) => (
+                <CardSolicitacao
+                  key={s.id}
+                  solicitacao={s}
+                  modo="artista"
+                  servicos={servicos}
                 />
               ))}
             </Secao>

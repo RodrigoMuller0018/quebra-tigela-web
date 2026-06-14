@@ -8,8 +8,10 @@ import {
   MapPin,
   Sparkles,
   ChevronDown,
+  Star,
 } from "lucide-react";
 import { listarArtistas } from "../../api/artistas.api";
+import { AvatarPerfil } from "../../componentes/ui/AvatarPerfil";
 import {
   listarEstados,
   listarCidadesPorEstado,
@@ -409,26 +411,40 @@ function FiltroSecao({
 }
 
 function ArtistaCard({ artista }: { artista: Artista }) {
-  const iniciais = artista.name
-    .split(" ")
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase();
-
   return (
     <Card className="group overflow-hidden border border-[color:var(--border)] bg-[color:var(--surface)] transition-all hover:-translate-y-1 hover:border-[color:var(--accent)] hover:shadow-2xl hover:shadow-[color:var(--accent)]/20">
       <div className="relative h-32 overflow-hidden bg-gradient-brand">
         <div className="absolute inset-0 bg-gradient-mesh opacity-60" />
-        <div className="absolute -bottom-8 left-5 flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-[color:var(--surface)] bg-[color:var(--surface)] shadow-xl">
-          <span className="bg-gradient-brand bg-clip-text font-display text-2xl font-black text-transparent">
-            {iniciais || "QT"}
-          </span>
+        <div className="absolute -bottom-8 left-5 overflow-hidden rounded-2xl border-4 border-[color:var(--surface)] shadow-xl">
+          <AvatarPerfil
+            foto={artista.profilePicture}
+            nome={artista.name}
+            tamanho="lg"
+            className="!rounded-2xl"
+          />
         </div>
       </div>
       <CardContent className="flex flex-col gap-3 pt-12">
         <div>
-          <h3 className="font-display text-lg font-bold">{artista.name}</h3>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-display text-lg font-bold">{artista.name}</h3>
+            {artista.ratingCount != null && artista.ratingCount > 0 &&
+              artista.ratingAvg != null && (
+                <span
+                  className="flex shrink-0 items-center gap-0.5 text-sm font-bold"
+                  title={`${artista.ratingCount} ${artista.ratingCount === 1 ? "avaliação" : "avaliações"}`}
+                >
+                  <Star
+                    size={14}
+                    className="fill-[color:var(--warning)] text-[color:var(--warning)]"
+                  />
+                  {artista.ratingAvg.toFixed(1)}
+                  <span className="text-xs font-normal text-[color:var(--muted)]">
+                    ({artista.ratingCount})
+                  </span>
+                </span>
+              )}
+          </div>
           <p className="flex items-center gap-1 text-sm text-[color:var(--muted)]">
             <MapPin size={14} />
             {artista.city}

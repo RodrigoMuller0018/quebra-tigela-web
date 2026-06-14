@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, Spinner } from "@heroui/react";
-import { X, Inbox } from "lucide-react";
+import { X, Inbox, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useAutenticacao } from "../../contexts/Autenticacao.context";
 import {
   listarSolicitacoesPorUsuario,
   atualizarStatusSolicitacao,
 } from "../../api/requests.api";
 import { listarServicosPorArtista } from "../../api/servicos.api";
-import type { Solicitacao } from "../../tipos/requests";
+import { listarMinhasReviews } from "../../api/reviews.api";
+import type { Solicitacao, StatusSolicitacao } from "../../tipos/requests";
 import type { Service } from "../../tipos/servicos";
+import type { Review } from "../../tipos/reviews";
 import {
   sucesso as avisoSucesso,
   erro as avisoErro,
@@ -17,24 +19,39 @@ import { CardSolicitacao } from "../../componentes/requests";
 import { AvaliarModal } from "../../componentes/reviews";
 import { ConfirmacaoModal } from "../../componentes/ui/ConfirmacaoModal";
 
+type AcaoStatus = {
+  solicitacao: Solicitacao;
+  novoStatus: Exclude<StatusSolicitacao, "pending">;
+  titulo: string;
+  mensagem: string;
+  destrutivo?: boolean;
+  textoConfirmar: string;
+  sucesso?: string;
+};
+
 export default function SolicitacoesClientePagina() {
   const { usuario } = useAutenticacao();
   const userId = usuario?.sub;
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [servicos, setServicos] = useState<Service[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [avaliarSolic, setAvaliarSolic] = useState<Solicitacao | null>(null);
-  const [cancelarSolic, setCancelarSolic] = useState<Solicitacao | null>(null);
+  const [editarReview, setEditarReview] = useState<Review | null>(null);
+  const [acaoStatus, setAcaoStatus] = useState<AcaoStatus | null>(null);
   const [processando, setProcessando] = useState(false);
 
   async function carregar() {
     if (!userId) return;
     setCarregando(true);
     try {
-      const dados = await listarSolicitacoesPorUsuario(userId);
+      const [dados, minhasReviews] = await Promise.all([
+        listarSolicitacoesPorUsuario(userId),
+        listarMinhasReviews().catch(() => [] as Review[]),
+      ]);
       setSolicitacoes(dados);
+      setReviews(minhasReviews);
 
-      // Carregar serviços únicos referenciados, agrupados por artista
       const idsArtistas = Array.from(new Set(dados.map((d) => d.artistId)));
       const todosServicos = await Promise.all(
         idsArtistas.map((aid) =>
@@ -53,31 +70,46 @@ export default function SolicitacoesClientePagina() {
     carregar();
   }, [userId]);
 
-  async function confirmarCancelamento() {
-    if (!cancelarSolic) return;
+  const reviewsPorRequest = useMemo(() => {
+    const m = new Map<string, Review>();
+    for (const r of reviews) m.set(r.requestId, r);
+    return m;
+  }, [reviews]);
+
+  async function executarAcao() {
+    if (!acaoStatus) return;
     setProcessando(true);
     try {
-      await atualizarStatusSolicitacao(cancelarSolic.id, "cancelled");
-      avisoSucesso("Solicitação cancelada");
-      setCancelarSolic(null);
+      await atualizarStatusSolicitacao(
+        acaoStatus.solicitacao.id,
+        acaoStatus.novoStatus,
+      );
+      avisoSucesso(acaoStatus.sucesso ?? "Status atualizado");
+      setAcaoStatus(null);
       carregar();
     } catch (e: any) {
-      avisoErro(e?.message ?? "Erro ao cancelar");
+      avisoErro(
+        e?.response?.data?.message ??
+          e?.message ??
+          "Erro ao atualizar solicitação",
+      );
     } finally {
       setProcessando(false);
     }
   }
 
-  // Agrupar por status
   const grupos = useMemo(() => {
     const ativas = solicitacoes.filter((s) =>
-      ["pending", "accepted"].includes(s.status)
+      ["pending", "accepted"].includes(s.status),
+    );
+    const aguardandoConfirmacao = solicitacoes.filter(
+      (s) => s.status === "awaiting_confirmation",
     );
     const finalizadas = solicitacoes.filter((s) => s.status === "completed");
     const inativas = solicitacoes.filter((s) =>
-      ["rejected", "cancelled"].includes(s.status)
+      ["rejected", "cancelled"].includes(s.status),
     );
-    return { ativas, finalizadas, inativas };
+    return { ativas, aguardandoConfirmacao, finalizadas, inativas };
   }, [solicitacoes]);
 
   return (
@@ -124,8 +156,71 @@ export default function SolicitacoesClientePagina() {
                     {
                       label: "Cancelar",
                       variant: "danger-soft",
-                      onPress: () => setCancelarSolic(s),
+                      onPress: () =>
+                        setAcaoStatus({
+                          solicitacao: s,
+                          novoStatus: "cancelled",
+                          titulo: "Cancelar solicitação?",
+                          mensagem:
+                            "O artista será notificado e o horário (se já reservado) volta pra agenda dele.",
+                          destrutivo: true,
+                          textoConfirmar: "Sim, cancelar",
+                          sucesso: "Solicitação cancelada",
+                        }),
                       icone: <X size={14} />,
+                    },
+                  ]}
+                />
+              ))}
+            </Secao>
+          )}
+
+          {grupos.aguardandoConfirmacao.length > 0 && (
+            <Secao
+              titulo="Aguardando sua confirmação"
+              destaque
+              count={grupos.aguardandoConfirmacao.length}
+            >
+              {grupos.aguardandoConfirmacao.map((s) => (
+                <CardSolicitacao
+                  key={s.id}
+                  solicitacao={s}
+                  modo="cliente"
+                  servicos={servicos}
+                  acoes={[
+                    {
+                      label: "Confirmar recebimento",
+                      variant: "primary",
+                      className:
+                        "bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30",
+                      onPress: () =>
+                        setAcaoStatus({
+                          solicitacao: s,
+                          novoStatus: "completed",
+                          titulo: "Confirmar que o serviço foi realizado?",
+                          mensagem:
+                            "Ao confirmar, a solicitação fica concluída e você poderá avaliar o artista.",
+                          textoConfirmar: "Sim, foi realizado",
+                          sucesso: "Serviço confirmado! Agora você pode avaliar.",
+                        }),
+                      icone: <CheckCircle2 size={14} />,
+                    },
+                    {
+                      label: "Não foi realizado",
+                      variant: "danger-soft",
+                      onPress: () =>
+                        setAcaoStatus({
+                          solicitacao: s,
+                          novoStatus: "accepted",
+                          titulo: "Marcar como não realizado?",
+                          mensagem:
+                            "A solicitação volta pra 'em andamento'. O artista poderá tentar marcar como realizado de novo.",
+                          textoConfirmar: "Sim, não foi realizado",
+                          sucesso:
+                            "Solicitação retornou pra 'em andamento'",
+                          destrutivo: true,
+                        }),
+                      icone: <AlertTriangle size={14} />,
                     },
                   ]}
                 />
@@ -135,16 +230,25 @@ export default function SolicitacoesClientePagina() {
 
           {grupos.finalizadas.length > 0 && (
             <Secao titulo="Concluídas">
-              {grupos.finalizadas.map((s) => (
-                <CardSolicitacao
-                  key={s.id}
-                  solicitacao={s}
-                  modo="cliente"
-                  servicos={servicos}
-                  podeAvaliar
-                  onAvaliar={() => setAvaliarSolic(s)}
-                />
-              ))}
+              {grupos.finalizadas.map((s) => {
+                const reviewExistente = reviewsPorRequest.get(s.id);
+                return (
+                  <CardSolicitacao
+                    key={s.id}
+                    solicitacao={s}
+                    modo="cliente"
+                    servicos={servicos}
+                    podeAvaliar={!reviewExistente}
+                    onAvaliar={() => setAvaliarSolic(s)}
+                    reviewExistente={reviewExistente}
+                    onEditarReview={
+                      reviewExistente
+                        ? () => setEditarReview(reviewExistente)
+                        : undefined
+                    }
+                  />
+                );
+              })}
             </Secao>
           )}
 
@@ -163,27 +267,39 @@ export default function SolicitacoesClientePagina() {
         </>
       )}
 
-      {/* Modal cancelar */}
       <ConfirmacaoModal
-        aberto={!!cancelarSolic}
-        aoFechar={(open) => !open && setCancelarSolic(null)}
-        titulo="Cancelar solicitação?"
-        mensagem="O artista será notificado. Esta ação não pode ser desfeita."
-        textoConfirmar="Sim, cancelar"
+        aberto={!!acaoStatus}
+        aoFechar={(open) => !open && setAcaoStatus(null)}
+        titulo={acaoStatus?.titulo ?? ""}
+        mensagem={acaoStatus?.mensagem ?? ""}
+        textoConfirmar={acaoStatus?.textoConfirmar ?? "Confirmar"}
         textoCancelar="Voltar"
-        variante="destrutivo"
+        variante={acaoStatus?.destrutivo ? "destrutivo" : "padrao"}
         carregando={processando}
-        onConfirmar={confirmarCancelamento}
+        onConfirmar={executarAcao}
       />
 
-      {/* Modal avaliar */}
       {avaliarSolic && userId && (
         <AvaliarModal
           aberto={!!avaliarSolic}
           aoFechar={(open) => !open && setAvaliarSolic(null)}
-          artistId={avaliarSolic.artistId}
-          userId={userId}
-          onSucesso={() => setAvaliarSolic(null)}
+          requestId={avaliarSolic.id}
+          onSucesso={() => {
+            setAvaliarSolic(null);
+            carregar();
+          }}
+        />
+      )}
+
+      {editarReview && (
+        <AvaliarModal
+          aberto={!!editarReview}
+          aoFechar={(open) => !open && setEditarReview(null)}
+          reviewInicial={editarReview}
+          onSucesso={() => {
+            setEditarReview(null);
+            carregar();
+          }}
         />
       )}
     </div>
@@ -192,16 +308,33 @@ export default function SolicitacoesClientePagina() {
 
 function Secao({
   titulo,
+  destaque,
+  count,
   children,
 }: {
   titulo: string;
+  destaque?: boolean;
+  count?: number;
   children: React.ReactNode;
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-sm font-bold uppercase tracking-wider text-[color:var(--muted)]">
-        {titulo}
-      </h2>
+      <div className="flex items-center gap-2">
+        <h2
+          className={
+            destaque
+              ? "font-display text-lg font-bold text-gradient-brand"
+              : "text-sm font-bold uppercase tracking-wider text-[color:var(--muted)]"
+          }
+        >
+          {titulo}
+        </h2>
+        {count !== undefined && count > 0 && (
+          <span className="rounded-full bg-gradient-brand px-2 py-0.5 text-xs font-bold text-white">
+            {count}
+          </span>
+        )}
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">{children}</div>
     </section>
   );

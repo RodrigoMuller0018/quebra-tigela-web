@@ -70,7 +70,9 @@ export const NOMES_DIAS_SEMANA_ABREVIADOS = [
  */
 export const STATUS_LABELS: Record<string, string> = {
   available: "Disponível",
+  pending: "Aguardando aceite",
   booked: "Reservado",
+  completed: "Concluído",
   cancelled: "Cancelado",
 } as const;
 

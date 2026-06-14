@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@heroui/react";
 import { ChevronDown } from "lucide-react";
 import { Dialogo } from "../ui/Dialogo";
@@ -6,6 +6,7 @@ import { Campo, AreaTexto } from "../ui/Campo";
 import { listarServicosPorArtista } from "../../api/servicos.api";
 import { criarSolicitacao } from "../../api/requests.api";
 import type { Service } from "../../tipos/servicos";
+import type { ScheduleEntry } from "../../tipos/schedule";
 import {
   sucesso as avisoSucesso,
   erro as avisoErro,
@@ -16,35 +17,60 @@ interface SolicitarServicoModalProps {
   aoFechar: (aberto: boolean) => void;
   artistId: string;
   artistNome?: string;
-  userId: string;
-  /** Pré-selecionar um serviço específico (caso clique a partir do card) */
+  /** Pré-selecionar um serviço específico (caso clique a partir do card de serviço) */
   serviceIdInicial?: string;
+  /**
+   * Se passado, a modal entra em modo "reserva de slot":
+   * data/hora ficam read-only com os valores do slot, e scheduleId é enviado ao backend.
+   */
+  slot?: ScheduleEntry | null;
   onSucesso?: () => void;
 }
 
 const SELECT_CLASS =
   "w-full appearance-none rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-3 pr-10 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30 disabled:cursor-not-allowed disabled:opacity-50";
 const INPUT_CLASS =
-  "w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-3 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30";
+  "w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-3 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30 disabled:opacity-60";
+
+function dataParaInput(iso: string): string {
+  // ISO ou YYYY-MM-DD → YYYY-MM-DD
+  return iso.includes("T") ? iso.split("T")[0] : iso;
+}
 
 export function SolicitarServicoModal({
   aberto,
   aoFechar,
   artistId,
   artistNome,
-  userId,
   serviceIdInicial,
+  slot,
   onSucesso,
 }: SolicitarServicoModalProps) {
+  const modoReserva = !!slot;
+
   const [servicos, setServicos] = useState<Service[]>([]);
   const [carregandoServicos, setCarregandoServicos] = useState(false);
   const [serviceId, setServiceId] = useState(serviceIdInicial ?? "");
   const [eventDate, setEventDate] = useState("");
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("10:00");
   const [location, setLocation] = useState("");
   const [details, setDetails] = useState("");
   const [enviando, setEnviando] = useState(false);
 
-  const dataMinima = `${new Date().toISOString().split("T")[0]}T00:00`;
+  const dataMinima = useMemo(
+    () => new Date().toISOString().split("T")[0],
+    [],
+  );
+
+  // Quando abre em modo reserva, pré-preenche e trava data/horas
+  useEffect(() => {
+    if (aberto && slot) {
+      setEventDate(dataParaInput(slot.date));
+      setStartTime(slot.startTime);
+      setEndTime(slot.endTime);
+    }
+  }, [aberto, slot]);
 
   useEffect(() => {
     if (!aberto || !artistId) return;
@@ -56,8 +82,10 @@ export function SolicitarServicoModal({
   }, [aberto, artistId]);
 
   function reset() {
-    setServiceId("");
+    setServiceId(serviceIdInicial ?? "");
     setEventDate("");
+    setStartTime("09:00");
+    setEndTime("10:00");
     setLocation("");
     setDetails("");
   }
@@ -71,6 +99,14 @@ export function SolicitarServicoModal({
       avisoErro("Informe a data do evento");
       return;
     }
+    if (!startTime || !endTime) {
+      avisoErro("Informe horário de início e fim");
+      return;
+    }
+    if (startTime >= endTime) {
+      avisoErro("Hora de fim deve ser maior que hora de início");
+      return;
+    }
     if (!location.trim()) {
       avisoErro("Informe o local do evento");
       return;
@@ -79,23 +115,39 @@ export function SolicitarServicoModal({
     setEnviando(true);
     try {
       await criarSolicitacao({
-        userId,
         artistId,
         serviceId,
-        eventDate: new Date(eventDate).toISOString(),
+        scheduleId: slot ? slot._id || slot.id : undefined,
+        eventDate,
+        startTime,
+        endTime,
         location: location.trim(),
         details: details.trim() || undefined,
       });
-      avisoSucesso("Solicitação enviada! Aguarde a resposta do artista.");
+      avisoSucesso(
+        modoReserva
+          ? "Reserva enviada! Aguarde a confirmação do artista."
+          : "Solicitação enviada! Aguarde a resposta do artista.",
+      );
       reset();
       aoFechar(false);
       onSucesso?.();
     } catch (e: any) {
-      avisoErro(e?.message ?? "Erro ao enviar solicitação");
+      avisoErro(
+        e?.response?.data?.message ?? e?.message ?? "Erro ao enviar solicitação",
+      );
     } finally {
       setEnviando(false);
     }
   }
+
+  const titulo = modoReserva
+    ? artistNome
+      ? `Reservar horário com ${artistNome}`
+      : "Reservar horário"
+    : artistNome
+      ? `Solicitar serviço de ${artistNome}`
+      : "Solicitar serviço";
 
   return (
     <Dialogo
@@ -105,7 +157,7 @@ export function SolicitarServicoModal({
         aoFechar(open);
       }}
       tamanho="md"
-      titulo={artistNome ? `Solicitar serviço de ${artistNome}` : "Solicitar serviço"}
+      titulo={titulo}
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
@@ -142,17 +194,51 @@ export function SolicitarServicoModal({
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="solicitar-data" className="text-sm font-medium">
-            Data e hora do evento{" "}
-            <span className="text-[color:var(--accent)]">*</span>
+            Data <span className="text-[color:var(--accent)]">*</span>
           </label>
           <input
             id="solicitar-data"
-            type="datetime-local"
+            type="date"
             min={dataMinima}
             value={eventDate}
             onChange={(e) => setEventDate(e.target.value)}
+            disabled={modoReserva}
             className={INPUT_CLASS}
           />
+          {modoReserva && (
+            <span className="text-xs text-[color:var(--muted)]">
+              Data fixa do slot escolhido na agenda
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="solicitar-hi" className="text-sm font-medium">
+              Hora início <span className="text-[color:var(--accent)]">*</span>
+            </label>
+            <input
+              id="solicitar-hi"
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              disabled={modoReserva}
+              className={INPUT_CLASS}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="solicitar-hf" className="text-sm font-medium">
+              Hora fim <span className="text-[color:var(--accent)]">*</span>
+            </label>
+            <input
+              id="solicitar-hf"
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              disabled={modoReserva}
+              className={INPUT_CLASS}
+            />
+          </div>
         </div>
 
         <Campo
@@ -185,7 +271,11 @@ export function SolicitarServicoModal({
             isDisabled={enviando || servicos.length === 0}
             className="bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30"
           >
-            {enviando ? "Enviando..." : "Enviar solicitação"}
+            {enviando
+              ? "Enviando..."
+              : modoReserva
+                ? "Confirmar reserva"
+                : "Enviar solicitação"}
           </Button>
         </div>
       </div>

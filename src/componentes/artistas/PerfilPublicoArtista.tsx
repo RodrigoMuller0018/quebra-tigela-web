@@ -6,7 +6,7 @@ import {
   CardHeader,
   Spinner,
 } from "@heroui/react";
-import { CheckCircle2, MapPin, Mail, MessageSquarePlus } from "lucide-react";
+import { CheckCircle2, MapPin, Mail, MessageSquarePlus, Star } from "lucide-react";
 import type { Artista } from "../../tipos/artistas";
 import type { Service } from "../../tipos/servicos";
 import { AgendaCliente } from "../agenda";
@@ -14,6 +14,7 @@ import { ListaServicos } from "../servicos";
 import { listarServicosPorArtista } from "../../api/servicos.api";
 import { ListaReviews } from "../reviews";
 import { SolicitarServicoModal } from "../requests";
+import { AvatarPerfil } from "../ui/AvatarPerfil";
 import { useAutenticacao } from "../../contexts/Autenticacao.context";
 
 interface Props {
@@ -37,6 +38,14 @@ export function PerfilPublicoArtista({ artista }: Props) {
     dados?.artTypes || dados?.tipos_arte || dados?.specialties || [];
   const artistaId = dados?.id || dados?._id;
 
+  // Rating vem em 2 formatos: /profile devolve { rating: { avg, count } },
+  // /search devolve campos flat ratingAvg/ratingCount no próprio artista.
+  const ratingObj = (artista as any)?.rating;
+  const ratingAvg: number | null =
+    ratingObj?.avg ?? (dados as any)?.ratingAvg ?? null;
+  const ratingCount: number =
+    ratingObj?.count ?? (dados as any)?.ratingCount ?? 0;
+
   useEffect(() => {
     if (!artistaId) return;
     setCarregandoServicos(true);
@@ -51,13 +60,7 @@ export function PerfilPublicoArtista({ artista }: Props) {
       ? `${cidade}, ${estado}`
       : cidade || estado || "Localização não informada";
 
-  const iniciais =
-    nome
-      ?.split(" ")
-      .slice(0, 2)
-      .map((p: string) => p[0])
-      .join("")
-      .toUpperCase() || "QT";
+  const fotoPerfil = dados?.profilePicture;
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,9 +69,12 @@ export function PerfilPublicoArtista({ artista }: Props) {
         <div className="relative">
           <div className="pointer-events-none absolute inset-0 bg-gradient-mesh opacity-50" />
           <CardContent className="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl border-4 border-white/30 bg-white/20 font-display text-3xl font-black backdrop-blur">
-              {iniciais}
-            </div>
+            <AvatarPerfil
+              foto={fotoPerfil}
+              nome={nome}
+              tamanho="xl"
+              className="!rounded-3xl border-4 border-white/30"
+            />
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="font-display text-3xl font-bold">{nome}</h1>
@@ -79,6 +85,18 @@ export function PerfilPublicoArtista({ artista }: Props) {
                   </span>
                 )}
               </div>
+              {ratingCount > 0 && ratingAvg !== null && (
+                <p className="mt-1 flex items-center gap-1.5 text-white/95">
+                  <Star
+                    size={16}
+                    className="fill-[color:var(--warning)] text-[color:var(--warning)]"
+                  />
+                  <span className="font-bold">{ratingAvg.toFixed(1)}</span>
+                  <span className="text-sm text-white/80">
+                    · {ratingCount} {ratingCount === 1 ? "avaliação" : "avaliações"}
+                  </span>
+                </p>
+              )}
               <p className="flex items-center gap-1.5 text-white/90">
                 <MapPin size={14} />
                 {localizacao}
@@ -212,7 +230,6 @@ export function PerfilPublicoArtista({ artista }: Props) {
           aoFechar={setSolicitarAberto}
           artistId={artistaId}
           artistNome={nome}
-          userId={usuario.sub}
         />
       )}
     </div>

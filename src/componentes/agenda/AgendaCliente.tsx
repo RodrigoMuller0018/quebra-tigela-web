@@ -1,22 +1,20 @@
-import { useState, useEffect } from "react";
-import {
-  Button,
-  Card,
-  CardContent,
-  Spinner,
-} from "@heroui/react";
-import { CalendarioAgenda, ListaHorarios } from "./";
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, Spinner } from "@heroui/react";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { CalendarioAgenda } from "./";
 import type { ScheduleEntry } from "../../tipos/schedule";
+import { obterHorariosDisponiveis } from "../../api/schedule.api";
+import { erro as avisoErro } from "../../utilitarios/avisos";
 import {
-  obterHorariosDisponiveis,
-  reservarHorario,
-} from "../../api/schedule.api";
+  dateParaString,
+  extrairData,
+  ehMesmoDia,
+} from "../../utilitarios/dataUtils";
 import {
-  erro as avisoErro,
-  sucesso as avisoSucesso,
-} from "../../utilitarios/avisos";
-import { Dialogo } from "../ui/Dialogo";
-import { AreaTexto } from "../ui/Campo";
+  NOMES_MESES,
+  NOMES_DIAS_SEMANA,
+} from "../../constantes/agenda";
+import { SolicitarServicoModal } from "../requests/SolicitarServicoModal";
 
 interface Props {
   artistaId: string;
@@ -24,18 +22,14 @@ interface Props {
   artistaEmail?: string;
 }
 
-export function AgendaCliente({
-  artistaId,
-  artistaNome,
-  artistaEmail,
-}: Props) {
+export function AgendaCliente({ artistaId, artistaNome }: Props) {
   const [horarios, setHorarios] = useState<ScheduleEntry[]>([]);
   const [carregando, setCarregando] = useState(false);
+  const [diaSelecionado, setDiaSelecionado] = useState<Date | null>(null);
   const [modalReserva, setModalReserva] = useState(false);
-  const [horarioSelecionado, setHorarioSelecionado] =
-    useState<ScheduleEntry | null>(null);
-  const [notas, setNotas] = useState("");
-  const [reservando, setReservando] = useState(false);
+  const [slotSelecionado, setSlotSelecionado] = useState<ScheduleEntry | null>(
+    null,
+  );
 
   async function carregarHorarios() {
     setCarregando(true);
@@ -46,7 +40,7 @@ export function AgendaCliente({
       const dados = await obterHorariosDisponiveis(
         artistaId,
         hoje.toISOString().split("T")[0],
-        fim.toISOString().split("T")[0]
+        fim.toISOString().split("T")[0],
       );
       setHorarios(dados);
     } catch (e: any) {
@@ -60,39 +54,29 @@ export function AgendaCliente({
     if (artistaId) carregarHorarios();
   }, [artistaId]);
 
-  function handleReservar(id: string) {
-    const h = horarios.find((x) => (x._id || x.id) === id);
-    if (!h) return;
-    setHorarioSelecionado(h);
-    setModalReserva(true);
-  }
-
-  async function confirmarReserva() {
-    if (!horarioSelecionado) return;
-    setReservando(true);
-    try {
-      await reservarHorario(horarioSelecionado._id || horarioSelecionado.id!, {
-        notes: notas || undefined,
-      });
-      avisoSucesso("Horário reservado com sucesso!");
-      setModalReserva(false);
-      setHorarioSelecionado(null);
-      setNotas("");
-      carregarHorarios();
-    } catch (e: any) {
-      avisoErro(e?.message ?? "Erro ao reservar horário");
-    } finally {
-      setReservando(false);
+  // Auto-seleciona o primeiro dia que tem slot disponível
+  useEffect(() => {
+    if (diaSelecionado || horarios.length === 0) return;
+    const primeiroDia = [...horarios]
+      .map((h) => extrairData(h.date))
+      .sort()[0];
+    if (primeiroDia) {
+      const [y, m, d] = primeiroDia.split("-").map(Number);
+      setDiaSelecionado(new Date(y, m - 1, d));
     }
-  }
+  }, [horarios, diaSelecionado]);
 
-  function formatarData(dataISO: string): string {
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-      weekday: "long",
-    }).format(new Date(dataISO));
+  const slotsDoDia = useMemo(() => {
+    if (!diaSelecionado) return [];
+    const chave = dateParaString(diaSelecionado);
+    return horarios
+      .filter((h) => extrairData(h.date) === chave)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }, [diaSelecionado, horarios]);
+
+  function abrirReserva(slot: ScheduleEntry) {
+    setSlotSelecionado(slot);
+    setModalReserva(true);
   }
 
   if (carregando) {
@@ -123,73 +107,146 @@ export function AgendaCliente({
       <div className="text-center">
         <h3 className="font-display text-xl font-bold">Horários disponíveis</h3>
         <p className="text-xs text-[color:var(--muted)]">
-          {horarios.length} horários disponíveis
+          Escolha um dia no calendário pra ver os horários
         </p>
       </div>
 
-      <CalendarioAgenda horarios={horarios} />
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,480px)_1fr]">
+        {/* Calendário (capado em 480px mesmo em telas largas) */}
+        <div className="mx-auto w-full max-w-[480px] lg:mx-0">
+          <CalendarioAgenda
+            horarios={horarios}
+            diaSelecionado={diaSelecionado}
+            onDiaClick={setDiaSelecionado}
+          />
+        </div>
 
-      <ListaHorarios
-        horarios={horarios}
-        artistaNome={artistaNome}
-        artistaEmail={artistaEmail}
-        modo="cliente"
-        onReservar={handleReservar}
-      />
-
-      <Dialogo
-        aberto={modalReserva}
-        aoFechar={setModalReserva}
-        titulo="Confirmar reserva"
-        tamanho="md"
-      >
-        {horarioSelecionado && (
-          <div className="flex flex-col gap-4">
-            <Card className="border border-[color:var(--border)] bg-[color:var(--surface-secondary)]">
-              <CardContent className="flex flex-col gap-1">
-                <h4 className="font-bold">Detalhes da reserva</h4>
-                <p className="text-sm">
-                  <strong>Artista:</strong> {artistaNome}
-                </p>
-                <p className="text-sm">
-                  <strong>Data:</strong>{" "}
-                  {formatarData(horarioSelecionado.date)}
-                </p>
-                <p className="text-sm">
-                  <strong>Horário:</strong> {horarioSelecionado.startTime} →{" "}
-                  {horarioSelecionado.endTime}
+        {/* Painel de slots do dia selecionado */}
+        <div>
+          {diaSelecionado ? (
+            <CardSlotsDoDia
+              dia={diaSelecionado}
+              slots={slotsDoDia}
+              onReservar={abrirReserva}
+            />
+          ) : (
+            <Card className="border-dashed border-[color:var(--border)] bg-[color:var(--surface-secondary)]">
+              <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
+                <CalendarIcon
+                  size={32}
+                  className="text-[color:var(--muted)]"
+                />
+                <p className="text-sm text-[color:var(--muted)]">
+                  Selecione uma data no calendário ao lado
                 </p>
               </CardContent>
             </Card>
+          )}
+        </div>
+      </div>
 
-            <AreaTexto
-              label="Observações"
-              value={notas}
-              onChange={setNotas}
-              rows={4}
-              placeholder="Ex: Gostaria de discutir um projeto de pintura mural..."
-            />
+      <SolicitarServicoModal
+        aberto={modalReserva}
+        aoFechar={(open) => {
+          setModalReserva(open);
+          if (!open) setSlotSelecionado(null);
+        }}
+        artistId={artistaId}
+        artistNome={artistaNome}
+        slot={slotSelecionado}
+        onSucesso={() => {
+          setSlotSelecionado(null);
+          carregarHorarios();
+        }}
+      />
+    </div>
+  );
+}
 
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="primary"
-                onPress={confirmarReserva}
-                isDisabled={reservando}
-                className="bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30"
-              >
-                {reservando ? "Reservando..." : "Confirmar reserva"}
-              </Button>
-              <Button
-                variant="ghost"
-                onPress={() => setModalReserva(false)}
-                isDisabled={reservando}
-              >
-                Cancelar
-              </Button>
-            </div>
+interface CardSlotsDoDiaProps {
+  dia: Date;
+  slots: ScheduleEntry[];
+  onReservar: (slot: ScheduleEntry) => void;
+}
+
+type Periodo = "manha" | "tarde" | "noite";
+
+const PERIODO_LABEL: Record<Periodo, string> = {
+  manha: "Manhã",
+  tarde: "Tarde",
+  noite: "Noite",
+};
+
+function classificarPeriodo(startTime: string): Periodo {
+  if (startTime < "12:00") return "manha";
+  if (startTime < "18:00") return "tarde";
+  return "noite";
+}
+
+function CardSlotsDoDia({ dia, slots, onReservar }: CardSlotsDoDiaProps) {
+  const hojeMesmoDia = ehMesmoDia(dia, new Date());
+  const titulo = `${dia.getDate()} de ${NOMES_MESES[dia.getMonth()]}`;
+  const subtitulo = hojeMesmoDia ? "Hoje" : NOMES_DIAS_SEMANA[dia.getDay()];
+  const disponiveis = slots.filter((s) => s.status === "available");
+
+  const porPeriodo: Record<Periodo, ScheduleEntry[]> = {
+    manha: [],
+    tarde: [],
+    noite: [],
+  };
+  for (const s of disponiveis) {
+    porPeriodo[classificarPeriodo(s.startTime)].push(s);
+  }
+
+  const ordemPeriodos: Periodo[] = ["manha", "tarde", "noite"];
+
+  return (
+    <Card className="border border-[color:var(--border)] bg-[color:var(--surface)]">
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex items-baseline justify-between gap-2">
+          <div>
+            <h4 className="font-display text-lg font-bold">{titulo}</h4>
+            <p className="text-xs text-[color:var(--muted)]">{subtitulo}</p>
+          </div>
+          <span className="text-xs text-[color:var(--muted)]">
+            {disponiveis.length}{" "}
+            {disponiveis.length === 1 ? "horário" : "horários"}
+          </span>
+        </div>
+
+        {disponiveis.length === 0 ? (
+          <p className="py-6 text-center text-sm text-[color:var(--muted)]">
+            Nenhum horário disponível neste dia
+          </p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {ordemPeriodos.map((p) => {
+              const items = porPeriodo[p];
+              if (items.length === 0) return null;
+              return (
+                <div key={p} className="flex flex-col gap-2">
+                  <h5 className="text-xs font-bold uppercase tracking-wider text-[color:var(--muted)]">
+                    {PERIODO_LABEL[p]}
+                  </h5>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {items.map((s) => (
+                      <button
+                        key={s._id || s.id}
+                        type="button"
+                        onClick={() => onReservar(s)}
+                        title={`${s.startTime} → ${s.endTime}`}
+                        className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-secondary)] py-2.5 text-sm font-semibold transition hover:border-[color:var(--accent)] hover:bg-[color:var(--accent)]/10 hover:text-[color:var(--accent)] active:scale-95"
+                      >
+                        {s.startTime}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-      </Dialogo>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

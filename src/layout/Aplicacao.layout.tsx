@@ -1,6 +1,9 @@
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Button, Avatar, AvatarFallback, Spinner } from "@heroui/react";
+import { Button, Spinner } from "@heroui/react";
+import { AvatarPerfil } from "../componentes/ui/AvatarPerfil";
+import { obterUsuarioPorId } from "../api/usuarios.api";
+import { obterMeuPerfil } from "../api/artistas.api";
 import {
   Home,
   Users,
@@ -59,6 +62,20 @@ export default function AplicacaoLayout() {
   const userId = usuario?.sub;
   const mostrarShell = Boolean(token && usuario && !estaEmAuth);
 
+  // Foto de perfil do usuário/artista logado — busca pra refletir mudanças sem
+  // precisar mexer no JWT. Refetcha quando o caminho muda (após editar perfil).
+  const [fotoLogado, setFotoLogado] = useState<string | undefined>();
+  useEffect(() => {
+    if (!mostrarShell || !userId) return;
+    const fetchFn =
+      userType === "artist"
+        ? () => obterMeuPerfil().then((a) => a.profilePicture)
+        : () => obterUsuarioPorId(userId).then((u) => u.profilePicture);
+    fetchFn()
+      .then(setFotoLogado)
+      .catch(() => setFotoLogado(undefined));
+  }, [userId, userType, mostrarShell, location.pathname]);
+
   const itensCliente: ItemNav[] = [
     { rota: "/cliente", Icone: Home, titulo: "Início", ativo: (p) => p === "/cliente" },
     { rota: "/artistas", Icone: Users, titulo: "Artistas", ativo: (p) => p.startsWith("/artistas") },
@@ -103,7 +120,6 @@ export default function AplicacaoLayout() {
     );
   }
 
-  const iniciais = (usuario?.email?.[0] || "?").toUpperCase();
   const nome = usuario?.email?.split("@")[0] ?? "Usuário";
   const labelTipo = userType === "client" ? "Cliente" : "Artista";
 
@@ -119,9 +135,7 @@ export default function AplicacaoLayout() {
       </div>
 
       <div className="mx-3 flex items-center gap-3 rounded-2xl bg-[color:var(--surface-secondary)] p-3">
-        <Avatar className="h-11 w-11 shrink-0 bg-gradient-brand text-sm font-bold text-white">
-          <AvatarFallback>{iniciais}</AvatarFallback>
-        </Avatar>
+        <AvatarPerfil foto={fotoLogado} nome={nome} tamanho="md" />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold text-[color:var(--foreground)]">
             {nome}
@@ -192,9 +206,7 @@ export default function AplicacaoLayout() {
             </span>
           </div>
         </div>
-        <Avatar className="h-9 w-9 bg-gradient-brand text-xs font-bold text-white">
-          <AvatarFallback>{iniciais}</AvatarFallback>
-        </Avatar>
+        <AvatarPerfil foto={fotoLogado} nome={nome} tamanho="sm" />
       </header>
 
       {/* Drawer mobile (custom, fixed-position) */}

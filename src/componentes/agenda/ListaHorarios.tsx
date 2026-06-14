@@ -43,20 +43,19 @@ export function ListaHorarios({
   modo = "artista",
 }: Props) {
   function formatarData(dataISO: string): string {
-    const dataStr = dataISO.includes("T") ? dataISO : dataISO + "T00:00:00";
-    const data = new Date(dataStr);
     return new Intl.DateTimeFormat("pt-BR", {
       day: "2-digit",
       month: "long",
       year: "numeric",
-    }).format(data);
+      timeZone: "UTC",
+    }).format(new Date(dataISO));
   }
 
   function formatarDiaSemana(dataISO: string): string {
-    const dataStr = dataISO.includes("T") ? dataISO : dataISO + "T00:00:00";
-    return new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(
-      new Date(dataStr)
-    );
+    return new Intl.DateTimeFormat("pt-BR", {
+      weekday: "long",
+      timeZone: "UTC",
+    }).format(new Date(dataISO));
   }
 
   function handleCalendario(h: ScheduleEntry, tipo: "google" | "ics") {

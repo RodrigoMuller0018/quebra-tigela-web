@@ -25,6 +25,7 @@ interface Props {
 
 const STATUS_TONE: Record<string, string> = {
   available: "bg-[color:var(--accent)]/15 text-[color:var(--accent)]",
+  pending: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]",
   booked: "bg-[color:var(--secondary)]/15 text-[color:var(--secondary)]",
   cancelled: "bg-[color:var(--muted)]/15 text-[color:var(--muted)]",
 };

@@ -7,6 +7,12 @@ export interface Artista {
   state: string;
   verified: boolean;
   artTypes: string[];
+  /** Data URL base64 (data:image/jpeg;base64,...) ou URL de CDN no futuro */
+  profilePicture?: string;
+  /** Média das avaliações (vem do backend no /search e /profile). null se sem reviews. */
+  ratingAvg?: number | null;
+  /** Total de avaliações */
+  ratingCount?: number;
 }
 
 export interface NovoArtista {
