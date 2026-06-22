@@ -26,10 +26,25 @@ export interface DadosTornarSeArtista {
   redesSociais?: string[];
 }
 
-/** Usuário logado vira artista. Backend cria Artista linkado ao Usuario do JWT. */
-export async function tornarSeArtista(dados: DadosTornarSeArtista): Promise<Artista> {
+/**
+ * Usuário logado vira artista. Backend cria Artista linkado ao Usuario do JWT
+ * e devolve um JWT novo já refletindo `temPerfilArtista=true` + `artistaId`,
+ * pra UI atualizar na hora sem deslogar.
+ *
+ * Aceita ambos os formatos do backend (legacy: Artista direto; atual:
+ * { artista, access_token }) — quando o backend ainda não foi reiniciado
+ * depois do deploy do endpoint novo, o frontend não quebra.
+ */
+export async function tornarSeArtista(
+  dados: DadosTornarSeArtista,
+): Promise<{ artista: Artista; access_token?: string }> {
   const res = await http.post("/api/artistas/tornar-se-artista", dados);
-  return normalizar(res.data);
+  const formatoNovo = res.data && typeof res.data === "object" && "artista" in res.data;
+  const rawArtista = formatoNovo ? res.data.artista : res.data;
+  return {
+    artista: normalizar(rawArtista),
+    access_token: formatoNovo ? res.data.access_token : undefined,
+  };
 }
 
 export interface FiltrosArtistas {

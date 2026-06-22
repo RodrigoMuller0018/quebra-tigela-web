@@ -21,7 +21,7 @@ import {
 
 export default function TornarSeArtistaPagina() {
   const nav = useNavigate();
-  const { token, login, temPerfilArtista, usuario } = useAutenticacao();
+  const { login, temPerfilArtista, usuario } = useAutenticacao();
 
   const [bio, setBio] = useState("");
   const [artTypes, setArtTypes] = useState<string[]>([]);
@@ -77,7 +77,7 @@ export default function TornarSeArtistaPagina() {
     }
     setSalvando(true);
     try {
-      await tornarSeArtista({
+      const { access_token } = await tornarSeArtista({
         bio: bio || undefined,
         tiposArte: artTypes,
         telefone,
@@ -86,12 +86,17 @@ export default function TornarSeArtistaPagina() {
         dataNascimento: birthDate || undefined,
         portfolio: portfolio || undefined,
       });
-      avisoSucesso("Perfil de artista criado! Faça login novamente pra ativar.");
-      // Força relogin pra atualizar o JWT com hasArtistProfile/artistId
-      if (token) {
-        login(token);
+      avisoSucesso("Perfil de artista criado!");
+      // Backend novo devolve JWT já com temPerfilArtista=true + artistaId — login()
+      // re-decodifica e a UI (sidebar, rotas protegidas) atualiza na hora.
+      // Fallback: backend antigo (sem access_token) — força hard reload pra recarregar
+      // o estado, já que o JWT atual ainda não reflete o perfil criado.
+      if (access_token) {
+        login(access_token);
+        nav("/artista");
+      } else {
+        window.location.href = "/artista";
       }
-      nav("/artista");
     } catch (err: any) {
       avisoErro(err?.response?.data?.message ?? err?.message ?? "Erro ao criar perfil");
     } finally {
