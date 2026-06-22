@@ -384,6 +384,7 @@ export default function DetalheArtistaPagina() {
               id="birthDate"
               type="date"
               value={artista.dataNascimento || ""}
+              min="1900-01-01"
               max={new Date().toISOString().split("T")[0]}
               onChange={(e) =>
                 setArtista({ ...artista, dataNascimento: e.target.value || undefined })

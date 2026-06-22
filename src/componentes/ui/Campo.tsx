@@ -19,6 +19,9 @@ type CampoProps = Omit<TextFieldRootProps, "children"> & {
   placeholder?: string;
   autoComplete?: string;
   inputClassName?: string;
+  /** Limites HTML pro <input> — usado em type="date" pra impedir anos absurdos. */
+  min?: string | number;
+  max?: string | number;
 };
 
 export function Campo({
@@ -28,6 +31,8 @@ export function Campo({
   autoComplete,
   inputClassName,
   className,
+  min,
+  max,
   ...rest
 }: CampoProps) {
   return (
@@ -35,7 +40,13 @@ export function Campo({
       <Label className="text-sm font-medium text-[color:var(--foreground)]">
         {label}
       </Label>
-      <Input placeholder={placeholder} autoComplete={autoComplete} className={inputClassName} />
+      <Input
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className={inputClassName}
+        min={min}
+        max={max}
+      />
       {description && (
         <span className="text-xs text-[color:var(--muted)]">{description}</span>
       )}

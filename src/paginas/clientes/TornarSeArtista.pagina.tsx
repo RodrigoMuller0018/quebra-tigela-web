@@ -33,6 +33,8 @@ export default function TornarSeArtistaPagina() {
   const [portfolio, setPortfolio] = useState("");
   const [salvando, setSalvando] = useState(false);
 
+  const hojeIso = new Date().toISOString().split("T")[0];
+
   // Base pra sugerir handle: parte antes do @ do email do usuário logado
   const sugestaoBase = usuario?.email?.split("@")[0] ?? "";
 
@@ -67,6 +69,10 @@ export default function TornarSeArtistaPagina() {
     }
     if (!handleDisponivel) {
       avisoErro("Escolha um handle válido e disponível");
+      return;
+    }
+    if (birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+      avisoErro("Data de nascimento inválida");
       return;
     }
     setSalvando(true);
@@ -160,6 +166,8 @@ export default function TornarSeArtistaPagina() {
               type="date"
               value={birthDate}
               onChange={setBirthDate}
+              min="1900-01-01"
+              max={hojeIso}
             />
 
             <Campo
