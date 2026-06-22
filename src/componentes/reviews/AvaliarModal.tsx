@@ -3,8 +3,8 @@ import { Button } from "@heroui/react";
 import { Star } from "lucide-react";
 import { Dialogo } from "../ui/Dialogo";
 import { AreaTexto } from "../ui/Campo";
-import { atualizarReview, criarReview } from "../../api/reviews.api";
-import type { Review } from "../../tipos/reviews";
+import { atualizarAvaliacao, criarAvaliacao } from "../../api/reviews.api";
+import type { Avaliacao } from "../../tipos/reviews";
 import {
   sucesso as avisoSucesso,
   erro as avisoErro,
@@ -13,64 +13,61 @@ import {
 interface AvaliarModalProps {
   aberto: boolean;
   aoFechar: (aberto: boolean) => void;
-  /** ID da solicitação que está sendo avaliada (obrigatório em modo criar) */
-  requestId?: string;
-  artistNome?: string;
-  /** Se passada, modal entra em modo "editar" (PATCH) */
-  reviewInicial?: Review | null;
+  solicitacaoId?: string;
+  artistaNome?: string;
+  avaliacaoInicial?: Avaliacao | null;
   onSucesso?: () => void;
 }
 
 export function AvaliarModal({
   aberto,
   aoFechar,
-  requestId,
-  artistNome,
-  reviewInicial,
+  solicitacaoId,
+  artistaNome,
+  avaliacaoInicial,
   onSucesso,
 }: AvaliarModalProps) {
-  const modoEdicao = !!reviewInicial;
-  const [rating, setRating] = useState(reviewInicial?.rating ?? 0);
+  const modoEdicao = !!avaliacaoInicial;
+  const [nota, setNota] = useState(avaliacaoInicial?.nota ?? 0);
   const [hover, setHover] = useState(0);
-  const [comentario, setComentario] = useState(reviewInicial?.comment ?? "");
+  const [comentario, setComentario] = useState(avaliacaoInicial?.comentario ?? "");
   const [enviando, setEnviando] = useState(false);
 
-  // Re-sincroniza quando reviewInicial muda (ex: troca de review no mesmo modal)
   useEffect(() => {
     if (aberto) {
-      setRating(reviewInicial?.rating ?? 0);
-      setComentario(reviewInicial?.comment ?? "");
+      setNota(avaliacaoInicial?.nota ?? 0);
+      setComentario(avaliacaoInicial?.comentario ?? "");
     }
-  }, [aberto, reviewInicial]);
+  }, [aberto, avaliacaoInicial]);
 
   function reset() {
-    setRating(0);
+    setNota(0);
     setHover(0);
     setComentario("");
   }
 
   async function handleEnviar() {
-    if (rating < 1) {
+    if (nota < 1) {
       avisoErro("Selecione uma nota de 1 a 5 estrelas");
       return;
     }
     setEnviando(true);
     try {
-      if (modoEdicao && reviewInicial) {
-        await atualizarReview(reviewInicial.id, {
-          rating,
-          comment: comentario.trim() || undefined,
+      if (modoEdicao && avaliacaoInicial) {
+        await atualizarAvaliacao(avaliacaoInicial.id, {
+          nota,
+          comentario: comentario.trim() || undefined,
         });
         avisoSucesso("Avaliação atualizada");
       } else {
-        if (!requestId) {
+        if (!solicitacaoId) {
           avisoErro("Solicitação não informada");
           return;
         }
-        await criarReview({
-          requestId,
-          rating,
-          comment: comentario.trim() || undefined,
+        await criarAvaliacao({
+          solicitacaoId,
+          nota,
+          comentario: comentario.trim() || undefined,
         });
         avisoSucesso("Avaliação enviada com sucesso!");
       }
@@ -90,8 +87,8 @@ export function AvaliarModal({
 
   const titulo = modoEdicao
     ? "Editar avaliação"
-    : artistNome
-      ? `Avaliar ${artistNome}`
+    : artistaNome
+      ? `Avaliar ${artistaNome}`
       : "Avaliar artista";
 
   return (
@@ -113,12 +110,12 @@ export function AvaliarModal({
           </p>
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((n) => {
-              const ativo = (hover || rating) >= n;
+              const ativo = (hover || nota) >= n;
               return (
                 <button
                   key={n}
                   type="button"
-                  onClick={() => setRating(n)}
+                  onClick={() => setNota(n)}
                   onMouseEnter={() => setHover(n)}
                   onMouseLeave={() => setHover(0)}
                   aria-label={`${n} estrela${n > 1 ? "s" : ""}`}
@@ -137,12 +134,12 @@ export function AvaliarModal({
             })}
           </div>
           <p className="text-xs text-[color:var(--muted)]">
-            {rating === 0 && "Toque nas estrelas pra avaliar"}
-            {rating === 1 && "Péssimo"}
-            {rating === 2 && "Ruim"}
-            {rating === 3 && "Razoável"}
-            {rating === 4 && "Bom"}
-            {rating === 5 && "Excelente"}
+            {nota === 0 && "Toque nas estrelas pra avaliar"}
+            {nota === 1 && "Péssimo"}
+            {nota === 2 && "Ruim"}
+            {nota === 3 && "Razoável"}
+            {nota === 4 && "Bom"}
+            {nota === 5 && "Excelente"}
           </p>
         </div>
 

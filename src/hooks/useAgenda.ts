@@ -1,10 +1,5 @@
-/**
- * HOOK CUSTOMIZADO: useAgenda
- * Gerencia o estado e operações da agenda de um artista
- */
-
 import { useState, useEffect, useCallback } from "react";
-import type { ScheduleEntry, NovoScheduleEntry, FiltrosSchedule } from "../tipos/schedule";
+import type { ItemAgenda, NovoItemAgenda, FiltrosAgenda } from "../tipos/schedule";
 import {
   listarHorarios,
   criarHorario,
@@ -17,177 +12,78 @@ import { CONFIG_BUSCA_HORARIOS } from "../constantes/agenda";
 import { obterDataRelativa, dateParaString } from "../utilitarios/dataUtils";
 
 interface UseAgendaOptions {
-  /**
-   * ID do artista para buscar horários
-   */
-  artistId?: string;
-
-  /**
-   * Carregar automaticamente ao montar
-   */
+  artistaId?: string;
   autoLoad?: boolean;
-
-  /**
-   * Callback executado após operações bem-sucedidas
-   */
   onSuccess?: () => void;
-
-  /**
-   * Callback executado após erros
-   */
   onError?: (error: Error) => void;
 }
 
 interface UseAgendaReturn {
-  /**
-   * Lista de horários carregados
-   */
-  horarios: ScheduleEntry[];
-
-  /**
-   * Indica se está carregando
-   */
+  horarios: ItemAgenda[];
   carregando: boolean;
-
-  /**
-   * Indica se está salvando/deletando
-   */
   salvando: boolean;
-
-  /**
-   * Recarrega a lista de horários
-   */
   recarregar: () => Promise<void>;
-
-  /**
-   * Cria um ou mais horários
-   */
-  criar: (novosHorarios: NovoScheduleEntry[]) => Promise<void>;
-
-  /**
-   * Cancela um horário reservado
-   */
+  criar: (novos: NovoItemAgenda[]) => Promise<void>;
   cancelar: (id: string) => Promise<void>;
-
-  /**
-   * Deleta um horário disponível
-   */
   deletar: (id: string) => Promise<void>;
-
-  /**
-   * Filtra horários por dia
-   */
-  obterHorariosDoDia: (dia: Date) => ScheduleEntry[];
+  obterHorariosDoDia: (dia: Date) => ItemAgenda[];
 }
 
-/**
- * Hook para gerenciar agenda de horários
- *
- * @example
- * ```tsx
- * function AgendaPage() {
- *   const { usuario } = useAutenticacao();
- *   const {
- *     horarios,
- *     carregando,
- *     recarregar,
- *     criar,
- *     deletar
- *   } = useAgenda({ artistId: usuario?.sub });
- *
- *   return (
- *     <div>
- *       {carregando ? <Loading /> : <Calendar horarios={horarios} />}
- *     </div>
- *   );
- * }
- * ```
- */
 export function useAgenda(options: UseAgendaOptions = {}): UseAgendaReturn {
-  const { artistId, autoLoad = true, onSuccess, onError } = options;
+  const { artistaId, autoLoad = true, onSuccess, onError } = options;
 
-  const [horarios, setHorarios] = useState<ScheduleEntry[]>([]);
+  const [horarios, setHorarios] = useState<ItemAgenda[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
-  /**
-   * Carrega horários do artista
-   */
   const recarregar = useCallback(async () => {
-    if (!artistId) return;
-
-    console.log("=== CARREGAR HORÁRIOS - INÍCIO ===");
-    console.log("Artista ID:", artistId);
+    if (!artistaId) return;
 
     setCarregando(true);
     try {
-      // Buscar horários de 6 meses atrás até 6 meses no futuro
       const dataInicio = obterDataRelativa(-CONFIG_BUSCA_HORARIOS.MESES_PASSADO);
       const dataFim = obterDataRelativa(CONFIG_BUSCA_HORARIOS.MESES_FUTURO);
 
-      const filtros: FiltrosSchedule = {
-        artistId,
-        dateFrom: dateParaString(dataInicio),
-        dateTo: dateParaString(dataFim),
+      const filtros: FiltrosAgenda = {
+        artistaId,
+        de: dateParaString(dataInicio),
+        ate: dateParaString(dataFim),
       };
 
-      console.log("Filtros de busca:", filtros);
-
       const dados = await listarHorarios(filtros);
-
-      console.log("Horários recebidos:", dados.length);
-
-      if (dados.length > 0) {
-        console.log("PRIMEIRO HORÁRIO:", {
-          date: dados[0].date,
-          startTime: dados[0].startTime,
-          endTime: dados[0].endTime,
-          status: dados[0].status,
-        });
-      }
-
       setHorarios(dados);
       onSuccess?.();
     } catch (e: any) {
-      console.error("Erro ao carregar horários:", e);
       avisoErro(e?.message ?? "Erro ao carregar horários");
       onError?.(e);
     } finally {
       setCarregando(false);
     }
-  }, [artistId, onSuccess, onError]);
+  }, [artistaId, onSuccess, onError]);
 
-  /**
-   * Cria um ou mais horários
-   */
   const criar = useCallback(
-    async (novosHorarios: NovoScheduleEntry[]) => {
-      if (!artistId) {
+    async (novos: NovoItemAgenda[]) => {
+      if (!artistaId) {
         avisoErro("Usuário não autenticado");
         return;
       }
 
-      console.log("=== CRIAR HORÁRIOS - INÍCIO ===");
-      console.log("Horários a criar:", novosHorarios.length);
-
       setSalvando(true);
       try {
-        // Adicionar artistId a todos os horários
-        const horariosComArtista = novosHorarios.map((h) => ({
+        const horariosComArtista = novos.map((h) => ({
           ...h,
-          artistId,
+          artistaId,
         }));
 
         if (horariosComArtista.length === 1) {
-          await criarHorario(horariosComArtista[0] as any);
+          await criarHorario(horariosComArtista[0]);
           avisoSucesso("Horário criado com sucesso!");
         } else {
-          await criarHorariosEmLote(horariosComArtista as any);
+          await criarHorariosEmLote(horariosComArtista);
           avisoSucesso(`${horariosComArtista.length} horários criados com sucesso!`);
         }
         onSuccess?.();
       } catch (e: any) {
-        // Backend pode retornar string ou objeto detalhado — extrai mensagem útil
         const msg =
           e?.response?.data?.message ??
           e?.message ??
@@ -196,18 +92,13 @@ export function useAgenda(options: UseAgendaOptions = {}): UseAgendaReturn {
         onError?.(e);
         throw e;
       } finally {
-        // Sempre recarrega — mesmo após erro, pra refletir slots que podem ter sido
-        // criados parcialmente em versões antigas do backend
         await recarregar();
         setSalvando(false);
       }
     },
-    [artistId, recarregar, onSuccess, onError]
+    [artistaId, recarregar, onSuccess, onError],
   );
 
-  /**
-   * Cancela um horário reservado
-   */
   const cancelar = useCallback(
     async (id: string) => {
       if (!confirm("Deseja realmente cancelar este horário?")) return;
@@ -219,19 +110,15 @@ export function useAgenda(options: UseAgendaOptions = {}): UseAgendaReturn {
         await recarregar();
         onSuccess?.();
       } catch (e: any) {
-        console.error("Erro ao cancelar horário:", e);
         avisoErro(e?.message ?? "Erro ao cancelar horário");
         onError?.(e);
       } finally {
         setSalvando(false);
       }
     },
-    [recarregar, onSuccess, onError]
+    [recarregar, onSuccess, onError],
   );
 
-  /**
-   * Deleta um horário disponível
-   */
   const deletar = useCallback(
     async (id: string) => {
       if (!confirm("Deseja realmente deletar este horário?")) return;
@@ -243,39 +130,35 @@ export function useAgenda(options: UseAgendaOptions = {}): UseAgendaReturn {
         await recarregar();
         onSuccess?.();
       } catch (e: any) {
-        console.error("Erro ao deletar horário:", e);
         avisoErro(e?.message ?? "Erro ao deletar horário");
         onError?.(e);
       } finally {
         setSalvando(false);
       }
     },
-    [recarregar, onSuccess, onError]
+    [recarregar, onSuccess, onError],
   );
 
-  /**
-   * Filtra horários de um dia específico
-   */
   const obterHorariosDoDia = useCallback(
-    (dia: Date): ScheduleEntry[] => {
+    (dia: Date): ItemAgenda[] => {
       const chaveDia = dateParaString(dia);
 
       return horarios.filter((horario) => {
-        const dataHorario = horario.date.includes("T")
-          ? horario.date.split("T")[0]
-          : horario.date;
-        return dataHorario === chaveDia;
+        const start = new Date(horario.inicio);
+        const y = start.getFullYear();
+        const m = String(start.getMonth() + 1).padStart(2, "0");
+        const d = String(start.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}` === chaveDia;
       });
     },
-    [horarios]
+    [horarios],
   );
 
-  // Auto-load ao montar ou quando artistId mudar
   useEffect(() => {
-    if (autoLoad && artistId) {
+    if (autoLoad && artistaId) {
       recarregar();
     }
-  }, [artistId, autoLoad, recarregar]);
+  }, [artistaId, autoLoad, recarregar]);
 
   return {
     horarios,

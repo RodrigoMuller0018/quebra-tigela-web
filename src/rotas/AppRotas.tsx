@@ -10,8 +10,8 @@ import HomeArtistaPagina from "../paginas/artistas/HomeArtista.pagina";
 import AgendaArtistaPagina from "../paginas/artistas/AgendaArtista.pagina";
 import ServicosArtistaPagina from "../paginas/artistas/ServicosArtista.pagina";
 import SolicitacoesArtistaPagina from "../paginas/artistas/SolicitacoesArtista.pagina";
+import TornarSeArtistaPagina from "../paginas/clientes/TornarSeArtista.pagina";
 import EsqueciSenha from "../paginas/autenticacao/EsqueciSenha.pagina";
-import PopularArtistasDevPagina from "../paginas/dev/PopularArtistas.pagina";
 import Pagina404 from "../paginas/Pagina404";
 import AplicacaoLayout from "../layout/Aplicacao.layout";
 import RotaProtegida from "./RotaProtegida";
@@ -26,96 +26,103 @@ const router = createBrowserRouter([
       { path: "/registro", element: <RegistroPagina /> },
       { path: "/autenticacao/esqueci-senha", element: <EsqueciSenha /> },
 
-      // Rota de desenvolvimento - remover em produção
-      { path: "/dev/popular-artistas", element: <PopularArtistasDevPagina /> },
-
-      // Rotas protegidas (requerem autenticação)
-
-      // Rotas para clientes
+      // Modo CLIENTE
       {
         path: "/cliente",
         element: (
-          <RotaProtegida>
+          <RotaProtegida modos={["cliente"]}>
             <HomeClientePagina />
           </RotaProtegida>
-        )
+        ),
       },
       {
         path: "/cliente/perfil",
         element: (
-          <RotaProtegida>
+          <RotaProtegida modos={["cliente"]}>
             <PerfilCliente />
           </RotaProtegida>
-        )
+        ),
       },
       {
         path: "/cliente/solicitacoes",
         element: (
-          <RotaProtegida>
+          <RotaProtegida modos={["cliente"]}>
             <SolicitacoesClientePagina />
           </RotaProtegida>
-        )
+        ),
+      },
+      {
+        path: "/cliente/tornar-se-artista",
+        element: (
+          <RotaProtegida modos={["cliente"]}>
+            <TornarSeArtistaPagina />
+          </RotaProtegida>
+        ),
       },
 
-      // Rotas para artistas
+      // Modo ARTISTA — exige temArtistProfile=true E modoAtivo='artist'
       {
         path: "/artista",
         element: (
-          <RotaProtegida>
+          <RotaProtegida modos={["artista"]}>
             <HomeArtistaPagina />
           </RotaProtegida>
-        )
+        ),
       },
       {
         path: "/artista/agenda",
         element: (
-          <RotaProtegida>
+          <RotaProtegida modos={["artista"]}>
             <AgendaArtistaPagina />
           </RotaProtegida>
-        )
+        ),
       },
       {
         path: "/artista/servicos",
         element: (
-          <RotaProtegida>
+          <RotaProtegida modos={["artista"]}>
             <ServicosArtistaPagina />
           </RotaProtegida>
-        )
+        ),
       },
       {
         path: "/artista/solicitacoes",
         element: (
-          <RotaProtegida>
+          <RotaProtegida modos={["artista"]}>
             <SolicitacoesArtistaPagina />
           </RotaProtegida>
-        )
+        ),
+      },
+      // Edição do próprio perfil (JWT-based, sem id na URL)
+      {
+        path: "/artista/perfil",
+        element: (
+          <RotaProtegida modos={["artista"]}>
+            <DetalheArtista />
+          </RotaProtegida>
+        ),
       },
 
-      // Rotas para explorar artistas
-      // Nota: /artistas usa HomeClientePagina que mostra a lista de artistas
-      // Tanto clientes quanto artistas podem visualizar a lista
+      // Rotas compartilhadas — qualquer logado pode ver
       {
         path: "/artistas",
         element: (
           <RotaProtegida>
             <HomeClientePagina />
           </RotaProtegida>
-        )
+        ),
       },
+      // Perfil público pelo handle (estilo @username) — handle no param vem com @ na frente
       {
-        path: "/artistas/:id",
+        path: "/artistas/:handle",
         element: (
           <RotaProtegida>
             <DetalheArtista />
           </RotaProtegida>
-        )
+        ),
       },
 
-      // Rota 404 - deve estar por último
-      {
-        path: "*",
-        element: <Pagina404 />
-      },
+      { path: "*", element: <Pagina404 /> },
     ],
   },
 ]);

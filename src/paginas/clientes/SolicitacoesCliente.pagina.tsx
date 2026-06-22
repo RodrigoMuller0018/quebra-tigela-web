@@ -7,10 +7,10 @@ import {
   atualizarStatusSolicitacao,
 } from "../../api/requests.api";
 import { listarServicosPorArtista } from "../../api/servicos.api";
-import { listarMinhasReviews } from "../../api/reviews.api";
+import { listarMinhasAvaliacoes } from "../../api/reviews.api";
 import type { Solicitacao, StatusSolicitacao } from "../../tipos/requests";
-import type { Service } from "../../tipos/servicos";
-import type { Review } from "../../tipos/reviews";
+import type { Servico } from "../../tipos/servicos";
+import type { Avaliacao } from "../../tipos/reviews";
 import {
   sucesso as avisoSucesso,
   erro as avisoErro,
@@ -21,7 +21,7 @@ import { ConfirmacaoModal } from "../../componentes/ui/ConfirmacaoModal";
 
 type AcaoStatus = {
   solicitacao: Solicitacao;
-  novoStatus: Exclude<StatusSolicitacao, "pending">;
+  novoStatus: Exclude<StatusSolicitacao, "pendente">;
   titulo: string;
   mensagem: string;
   destrutivo?: boolean;
@@ -34,10 +34,10 @@ export default function SolicitacoesClientePagina() {
   const userId = usuario?.sub;
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [servicos, setServicos] = useState<Service[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([]);
+  const [reviews, setAvaliacaos] = useState<Avaliacao[]>([]);
   const [avaliarSolic, setAvaliarSolic] = useState<Solicitacao | null>(null);
-  const [editarReview, setEditarReview] = useState<Review | null>(null);
+  const [editarAvaliacao, setEditarAvaliacao] = useState<Avaliacao | null>(null);
   const [acaoStatus, setAcaoStatus] = useState<AcaoStatus | null>(null);
   const [processando, setProcessando] = useState(false);
 
@@ -45,14 +45,14 @@ export default function SolicitacoesClientePagina() {
     if (!userId) return;
     setCarregando(true);
     try {
-      const [dados, minhasReviews] = await Promise.all([
+      const [dados, minhasAvaliacoes] = await Promise.all([
         listarSolicitacoesPorUsuario(userId),
-        listarMinhasReviews().catch(() => [] as Review[]),
+        listarMinhasAvaliacoes().catch(() => [] as Avaliacao[]),
       ]);
       setSolicitacoes(dados);
-      setReviews(minhasReviews);
+      setAvaliacaos(minhasAvaliacoes);
 
-      const idsArtistas = Array.from(new Set(dados.map((d) => d.artistId)));
+      const idsArtistas = Array.from(new Set(dados.map((d) => d.artistaId)));
       const todosServicos = await Promise.all(
         idsArtistas.map((aid) =>
           listarServicosPorArtista(aid).catch(() => [])
@@ -71,8 +71,8 @@ export default function SolicitacoesClientePagina() {
   }, [userId]);
 
   const reviewsPorRequest = useMemo(() => {
-    const m = new Map<string, Review>();
-    for (const r of reviews) m.set(r.requestId, r);
+    const m = new Map<string, Avaliacao>();
+    for (const r of reviews) m.set(r.solicitacaoId, r);
     return m;
   }, [reviews]);
 
@@ -100,14 +100,14 @@ export default function SolicitacoesClientePagina() {
 
   const grupos = useMemo(() => {
     const ativas = solicitacoes.filter((s) =>
-      ["pending", "accepted"].includes(s.status),
+      ["pendente", "aceita"].includes(s.status),
     );
     const aguardandoConfirmacao = solicitacoes.filter(
-      (s) => s.status === "awaiting_confirmation",
+      (s) => s.status === "aguardando_confirmacao",
     );
-    const finalizadas = solicitacoes.filter((s) => s.status === "completed");
+    const finalizadas = solicitacoes.filter((s) => s.status === "concluida");
     const inativas = solicitacoes.filter((s) =>
-      ["rejected", "cancelled"].includes(s.status),
+      ["recusada", "cancelada"].includes(s.status),
     );
     return { ativas, aguardandoConfirmacao, finalizadas, inativas };
   }, [solicitacoes]);
@@ -159,7 +159,7 @@ export default function SolicitacoesClientePagina() {
                       onPress: () =>
                         setAcaoStatus({
                           solicitacao: s,
-                          novoStatus: "cancelled",
+                          novoStatus: "cancelada",
                           titulo: "Cancelar solicitação?",
                           mensagem:
                             "O artista será notificado e o horário (se já reservado) volta pra agenda dele.",
@@ -196,7 +196,7 @@ export default function SolicitacoesClientePagina() {
                       onPress: () =>
                         setAcaoStatus({
                           solicitacao: s,
-                          novoStatus: "completed",
+                          novoStatus: "concluida",
                           titulo: "Confirmar que o serviço foi realizado?",
                           mensagem:
                             "Ao confirmar, a solicitação fica concluída e você poderá avaliar o artista.",
@@ -211,7 +211,7 @@ export default function SolicitacoesClientePagina() {
                       onPress: () =>
                         setAcaoStatus({
                           solicitacao: s,
-                          novoStatus: "accepted",
+                          novoStatus: "aceita",
                           titulo: "Marcar como não realizado?",
                           mensagem:
                             "A solicitação volta pra 'em andamento'. O artista poderá tentar marcar como realizado de novo.",
@@ -241,9 +241,9 @@ export default function SolicitacoesClientePagina() {
                     podeAvaliar={!reviewExistente}
                     onAvaliar={() => setAvaliarSolic(s)}
                     reviewExistente={reviewExistente}
-                    onEditarReview={
+                    onEditarAvaliacao={
                       reviewExistente
-                        ? () => setEditarReview(reviewExistente)
+                        ? () => setEditarAvaliacao(reviewExistente)
                         : undefined
                     }
                   />
@@ -283,7 +283,7 @@ export default function SolicitacoesClientePagina() {
         <AvaliarModal
           aberto={!!avaliarSolic}
           aoFechar={(open) => !open && setAvaliarSolic(null)}
-          requestId={avaliarSolic.id}
+          solicitacaoId={avaliarSolic.id}
           onSucesso={() => {
             setAvaliarSolic(null);
             carregar();
@@ -291,13 +291,13 @@ export default function SolicitacoesClientePagina() {
         />
       )}
 
-      {editarReview && (
+      {editarAvaliacao && (
         <AvaliarModal
-          aberto={!!editarReview}
-          aoFechar={(open) => !open && setEditarReview(null)}
-          reviewInicial={editarReview}
+          aberto={!!editarAvaliacao}
+          aoFechar={(open) => !open && setEditarAvaliacao(null)}
+          avaliacaoInicial={editarAvaliacao}
           onSucesso={() => {
-            setEditarReview(null);
+            setEditarAvaliacao(null);
             carregar();
           }}
         />

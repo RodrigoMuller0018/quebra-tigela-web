@@ -15,7 +15,7 @@ export const http = axios.create({
 http.interceptors.request.use((config) => {
   try {
     // NÃO adicionar Authorization header para endpoints de auth
-    const isAuthEndpoint = config.url?.includes('/api/auth/');
+    const isAuthEndpoint = config.url?.includes('/api/autenticacao/');
 
     if (!isAuthEndpoint) {
       const token = localStorage.getItem("token");
@@ -34,9 +34,12 @@ http.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     const status = error?.response?.status;
-    const isAuthEndpoint = error?.config?.url?.includes('/api/auth/');
+    const isAuthEndpoint = error?.config?.url?.includes('/api/autenticacao/');
 
-    if ((status === 401 || status === 403) && !isAuthEndpoint) {
+    // 401 = sem credenciais válidas → desloga.
+    // 403 = autenticado mas proibido por regra de negócio (ex: "não pode fazer
+    // essa transição") → mantém sessão e deixa o caller mostrar a mensagem.
+    if (status === 401 && !isAuthEndpoint) {
       try {
         localStorage.removeItem("token");
       } catch {
@@ -48,7 +51,6 @@ http.interceptors.response.use(
         // ignore
       }
 
-      // Mantém a estrutura original do erro mas customiza a mensagem
       const customError = new Error("Sessão expirada") as AxiosError;
       customError.response = error.response;
       customError.config = error.config;

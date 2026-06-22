@@ -8,7 +8,7 @@ import {
 } from "../../api/requests.api";
 import { listarServicosPorArtista } from "../../api/servicos.api";
 import type { Solicitacao, StatusSolicitacao } from "../../tipos/requests";
-import type { Service } from "../../tipos/servicos";
+import type { Servico } from "../../tipos/servicos";
 import {
   sucesso as avisoSucesso,
   erro as avisoErro,
@@ -18,7 +18,7 @@ import { ConfirmacaoModal } from "../../componentes/ui/ConfirmacaoModal";
 
 type AcaoConfirmacao = {
   solicitacao: Solicitacao;
-  novoStatus: Exclude<StatusSolicitacao, "pending">;
+  novoStatus: Exclude<StatusSolicitacao, "pendente">;
   titulo: string;
   mensagem: string;
   destrutivo?: boolean;
@@ -26,21 +26,20 @@ type AcaoConfirmacao = {
 };
 
 export default function SolicitacoesArtistaPagina() {
-  const { usuario } = useAutenticacao();
-  const artistId = usuario?.sub;
+  const { artistaId } = useAutenticacao();
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
-  const [servicos, setServicos] = useState<Service[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [confirmacao, setConfirmacao] = useState<AcaoConfirmacao | null>(null);
   const [processando, setProcessando] = useState(false);
 
   async function carregar() {
-    if (!artistId) return;
+    if (!artistaId) return;
     setCarregando(true);
     try {
       const [sols, servs] = await Promise.all([
-        listarSolicitacoesPorArtista(artistId),
-        listarServicosPorArtista(artistId).catch(() => [] as Service[]),
+        listarSolicitacoesPorArtista(artistaId),
+        listarServicosPorArtista(artistaId).catch(() => [] as Servico[]),
       ]);
       setSolicitacoes(sols);
       setServicos(servs);
@@ -53,7 +52,7 @@ export default function SolicitacoesArtistaPagina() {
 
   useEffect(() => {
     carregar();
-  }, [artistId]);
+  }, [artistaId]);
 
   async function executarAcao() {
     if (!confirmacao) return;
@@ -74,19 +73,19 @@ export default function SolicitacoesArtistaPagina() {
   }
 
   const grupos = useMemo(() => {
-    const pendentes = solicitacoes.filter((s) => s.status === "pending");
-    const aceitas = solicitacoes.filter((s) => s.status === "accepted");
+    const pendentes = solicitacoes.filter((s) => s.status === "pendente");
+    const aceitas = solicitacoes.filter((s) => s.status === "aceita");
     const aguardandoConfirmacao = solicitacoes.filter(
-      (s) => s.status === "awaiting_confirmation"
+      (s) => s.status === "aguardando_confirmacao"
     );
     const finalizadas = solicitacoes.filter((s) =>
-      ["completed", "rejected", "cancelled"].includes(s.status)
+      ["concluida", "recusada", "cancelada"].includes(s.status)
     );
     return { pendentes, aceitas, aguardandoConfirmacao, finalizadas };
   }, [solicitacoes]);
 
   function acoesParaSolicitacao(s: Solicitacao) {
-    if (s.status === "pending") {
+    if (s.status === "pendente") {
       return [
         {
           label: "Aceitar",
@@ -96,7 +95,7 @@ export default function SolicitacoesArtistaPagina() {
           onPress: () =>
             setConfirmacao({
               solicitacao: s,
-              novoStatus: "accepted",
+              novoStatus: "aceita",
               titulo: "Aceitar solicitação?",
               mensagem:
                 "Ao aceitar, o cliente é notificado e a data fica reservada na sua agenda.",
@@ -110,7 +109,7 @@ export default function SolicitacoesArtistaPagina() {
           onPress: () =>
             setConfirmacao({
               solicitacao: s,
-              novoStatus: "rejected",
+              novoStatus: "recusada",
               titulo: "Recusar solicitação?",
               mensagem: "O cliente será notificado da recusa.",
               destrutivo: true,
@@ -119,7 +118,7 @@ export default function SolicitacoesArtistaPagina() {
         },
       ];
     }
-    if (s.status === "accepted") {
+    if (s.status === "aceita") {
       return [
         {
           label: "Marcar como realizado",
@@ -129,7 +128,7 @@ export default function SolicitacoesArtistaPagina() {
           onPress: () =>
             setConfirmacao({
               solicitacao: s,
-              novoStatus: "awaiting_confirmation",
+              novoStatus: "aguardando_confirmacao",
               titulo: "Marcar serviço como realizado?",
               mensagem:
                 "O cliente terá que confirmar o recebimento pra concluir. Sem ação dele, o sistema confirma automaticamente após 7 dias.",
@@ -143,7 +142,7 @@ export default function SolicitacoesArtistaPagina() {
           onPress: () =>
             setConfirmacao({
               solicitacao: s,
-              novoStatus: "cancelled",
+              novoStatus: "cancelada",
               titulo: "Cancelar agendamento aceito?",
               mensagem:
                 "O cliente será notificado e o horário voltará a ficar disponível na sua agenda.",

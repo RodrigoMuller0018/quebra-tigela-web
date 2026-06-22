@@ -7,22 +7,22 @@ import {
   FormularioHorario,
   ModalDiaAgenda,
 } from "../../componentes/agenda";
-import type { NovoScheduleEntry } from "../../tipos/schedule";
+import type { NovoItemAgenda } from "../../tipos/schedule";
 import { useAgenda } from "../../hooks/useAgenda";
 import { Dialogo } from "../../componentes/ui/Dialogo";
 
 export default function AgendaArtistaPagina() {
-  const { usuario } = useAutenticacao();
+  const { artistaId: meuArtistaId } = useAutenticacao();
   const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
   const [modalDiaAberto, setModalDiaAberto] = useState(false);
   const [diaSelectado, setDiaSelectado] = useState<Date | null>(null);
 
   const { horarios, carregando, criar, cancelar, deletar } = useAgenda({
-    artistId: usuario?.sub,
+    artistaId: meuArtistaId ?? undefined,
     autoLoad: true,
   });
 
-  async function handleCriarHorarios(novos: NovoScheduleEntry[]) {
+  async function handleCriarHorarios(novos: NovoItemAgenda[]) {
     await criar(novos);
     setModalAdicionarAberto(false);
     setDiaSelectado(null);

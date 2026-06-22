@@ -16,11 +16,13 @@ import {
   LogOut,
   Menu,
   X,
-  Palette,
   Inbox,
+  Sparkles,
+  Repeat2,
   type LucideIcon,
 } from "lucide-react";
 import { useAutenticacao } from "../contexts/Autenticacao.context";
+import { LogoQuebraTigela } from "../componentes/ui/LogoQuebraTigela";
 
 type ItemNav = {
   rota: string;
@@ -38,7 +40,16 @@ const ROTAS_AUTH = new Set([
 ]);
 
 export default function AplicacaoLayout() {
-  const { token, usuario, userType, logout } = useAutenticacao();
+  const {
+    token,
+    usuario,
+    modoAtivo,
+    temPerfilArtista,
+    artistaId,
+    alternarModo,
+    logout,
+    perfilAtualizadoEm,
+  } = useAutenticacao();
   const navigate = useNavigate();
   const location = useLocation();
   const [carregandoInicial, setCarregandoInicial] = useState(true);
@@ -58,48 +69,59 @@ export default function AplicacaoLayout() {
     navigate("/login");
   }
 
+  function handleToggleModo() {
+    alternarModo();
+    navigate(modoAtivo === "cliente" ? "/artista" : "/cliente");
+  }
+
   const estaEmAuth = ROTAS_AUTH.has(location.pathname);
   const userId = usuario?.sub;
   const mostrarShell = Boolean(token && usuario && !estaEmAuth);
 
-  // Foto de perfil do usuário/artista logado — busca pra refletir mudanças sem
-  // precisar mexer no JWT. Refetcha quando o caminho muda (após editar perfil).
-  const [fotoLogado, setFotoLogado] = useState<string | undefined>();
+  const [fotoLogado, setFotoLogado] = useState<string | null | undefined>();
   useEffect(() => {
     if (!mostrarShell || !userId) return;
     const fetchFn =
-      userType === "artist"
-        ? () => obterMeuPerfil().then((a) => a.profilePicture)
-        : () => obterUsuarioPorId(userId).then((u) => u.profilePicture);
+      modoAtivo === "artista"
+        ? () => obterMeuPerfil().then((a) => a.fotoPerfil)
+        : () => obterUsuarioPorId(userId).then((u) => u.fotoPerfil);
     fetchFn()
       .then(setFotoLogado)
       .catch(() => setFotoLogado(undefined));
-  }, [userId, userType, mostrarShell, location.pathname]);
+  }, [userId, modoAtivo, mostrarShell, location.pathname, perfilAtualizadoEm]);
 
   const itensCliente: ItemNav[] = [
     { rota: "/cliente", Icone: Home, titulo: "Início", ativo: (p) => p === "/cliente" },
     { rota: "/artistas", Icone: Users, titulo: "Artistas", ativo: (p) => p.startsWith("/artistas") },
     { rota: "/cliente/solicitacoes", Icone: Inbox, titulo: "Minhas Solicitações", ativo: (p) => p === "/cliente/solicitacoes" },
     { rota: "/cliente/perfil", Icone: User, titulo: "Meu Perfil", ativo: (p) => p === "/cliente/perfil" },
+    ...(!temPerfilArtista
+      ? [{
+          rota: "/cliente/tornar-se-artista",
+          Icone: Sparkles,
+          titulo: "Virar artista",
+          ativo: (p: string) => p === "/cliente/tornar-se-artista",
+        }]
+      : []),
   ];
 
   const itensArtista: ItemNav[] = [
     { rota: "/artista", Icone: LayoutDashboard, titulo: "Dashboard", ativo: (p) => p === "/artista" },
-    ...(userId
+    ...(artistaId
       ? [{
-          rota: `/artistas/${userId}`,
+          rota: `/artista/perfil`,
           Icone: UserCog,
           titulo: "Editar Perfil",
-          ativo: (p: string) => p === `/artistas/${userId}`,
+          ativo: (p: string) => p === `/artista/perfil`,
         }]
       : []),
     { rota: "/artista/agenda", Icone: Calendar, titulo: "Minha Agenda", ativo: (p) => p === "/artista/agenda" },
     { rota: "/artista/servicos", Icone: Briefcase, titulo: "Meus Serviços", ativo: (p) => p === "/artista/servicos" },
-    { rota: "/artista/solicitacoes", Icone: Inbox, titulo: "Solicitações", ativo: (p) => p === "/artista/solicitacoes" },
+    { rota: "/artista/solicitacoes", Icone: Inbox, titulo: "Solicitações Recebidas", ativo: (p) => p === "/artista/solicitacoes" },
     { rota: "/artistas", Icone: Search, titulo: "Explorar Artistas", ativo: (p) => p === "/artistas" },
   ];
 
-  const itens = userType === "client" ? itensCliente : userType === "artist" ? itensArtista : [];
+  const itens = modoAtivo === "artista" && temPerfilArtista ? itensArtista : itensCliente;
 
   if (carregandoInicial) {
     return (
@@ -121,14 +143,40 @@ export default function AplicacaoLayout() {
   }
 
   const nome = usuario?.email?.split("@")[0] ?? "Usuário";
-  const labelTipo = userType === "client" ? "Cliente" : "Artista";
+  const labelModo = modoAtivo === "artista" ? "Artista" : "Cliente";
+
+  const toggleModoBtn = temPerfilArtista && (
+    <button
+      type="button"
+      onClick={handleToggleModo}
+      className="group flex w-full items-center justify-between gap-2 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-secondary)] px-3 py-2.5 text-sm font-medium transition hover:border-[color:var(--accent)] hover:bg-[color:var(--accent)]/10"
+      title={`Alternar para modo ${modoAtivo === "cliente" ? "Artista" : "Cliente"}`}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className={`flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-md ${
+            modoAtivo === "artista"
+              ? "bg-gradient-brand shadow-[color:var(--accent)]/30"
+              : "bg-[color:var(--secondary)] shadow-[color:var(--secondary)]/30"
+          }`}
+        >
+          {modoAtivo === "artista" ? <Sparkles size={14} /> : <User size={14} />}
+        </span>
+        <span className="text-[color:var(--foreground)]">
+          Modo: <strong>{labelModo}</strong>
+        </span>
+      </div>
+      <Repeat2
+        size={16}
+        className="text-[color:var(--muted)] transition group-hover:text-[color:var(--accent)]"
+      />
+    </button>
+  );
 
   const menuConteudo = (
     <>
       <div className="flex items-center gap-3 px-6 py-5">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-brand text-white shadow-lg shadow-[color:var(--accent)]/30">
-          <Palette size={20} />
-        </span>
+        <LogoQuebraTigela size={40} className="rounded-xl" />
         <div className="font-display text-xl font-bold text-gradient-brand">
           Quebra Tigela
         </div>
@@ -140,11 +188,13 @@ export default function AplicacaoLayout() {
           <div className="truncate text-sm font-semibold text-[color:var(--foreground)]">
             {nome}
           </div>
-          <div className="text-xs text-[color:var(--muted)]">{labelTipo}</div>
+          <div className="text-xs text-[color:var(--muted)]">{labelModo}</div>
         </div>
       </div>
 
-      <nav className="mt-6 flex flex-1 flex-col gap-1 px-3">
+      {toggleModoBtn && <div className="mx-3 mt-3">{toggleModoBtn}</div>}
+
+      <nav className="mt-4 flex flex-1 flex-col gap-1 px-3">
         {itens.map((item) => {
           const ativo = item.ativo(location.pathname);
           const Icone = item.Icone;
@@ -181,12 +231,10 @@ export default function AplicacaoLayout() {
 
   return (
     <div className="relative min-h-dvh">
-      {/* Sidebar fixa (desktop) */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col border-r border-[color:var(--border)] bg-[color:var(--surface)] lg:flex">
         {menuConteudo}
       </aside>
 
-      {/* Topbar mobile */}
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-[color:var(--border)] bg-[color:var(--surface)]/80 px-4 backdrop-blur-lg lg:hidden">
         <div className="flex items-center gap-2">
           <Button
@@ -198,9 +246,7 @@ export default function AplicacaoLayout() {
             <Menu size={20} />
           </Button>
           <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-brand text-white">
-              <Palette size={14} />
-            </span>
+            <LogoQuebraTigela size={28} className="rounded-lg" />
             <span className="font-display font-bold text-gradient-brand">
               Quebra Tigela
             </span>
@@ -209,7 +255,6 @@ export default function AplicacaoLayout() {
         <AvatarPerfil foto={fotoLogado} nome={nome} tamanho="sm" />
       </header>
 
-      {/* Drawer mobile (custom, fixed-position) */}
       {drawerAberto && (
         <>
           <div
@@ -231,7 +276,6 @@ export default function AplicacaoLayout() {
         </>
       )}
 
-      {/* Conteúdo */}
       <main className="min-h-dvh lg:pl-72">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
           <Outlet />

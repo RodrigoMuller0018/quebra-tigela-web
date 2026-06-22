@@ -3,7 +3,7 @@
  * Gera arquivos .ics (iCalendar) que podem ser importados em qualquer calendário
  */
 
-import type { ScheduleEntry } from "../tipos/schedule";
+import type { ItemAgenda } from "../tipos/schedule";
 
 /**
  * Formata data para formato iCalendar (YYYYMMDDTHHMMSS)
@@ -12,6 +12,23 @@ function formatarDataICS(data: string, horario: string): string {
   const [ano, mes, dia] = data.split("-");
   const [hora, minuto] = horario.split(":");
   return `${ano}${mes}${dia}T${hora}${minuto}00`;
+}
+
+/** Extrai parte de data local (YYYY-MM-DD) de um instant ISO. */
+function instantParaDataLocal(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** Extrai parte de hora local (HH:mm) de um instant ISO. */
+function instantParaHoraLocal(iso: string): string {
+  const d = new Date(iso);
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
 }
 
 /**
@@ -68,21 +85,21 @@ export function gerarICS(evento: {
 }
 
 /**
- * Gera arquivo .ics a partir de ScheduleEntry
+ * Gera arquivo .ics a partir de ItemAgenda
  */
 export function gerarICSDeSchedule(
-  schedule: ScheduleEntry,
+  schedule: ItemAgenda,
   artistaNome: string,
   artistaEmail?: string
 ): string {
   return gerarICS({
     titulo: `Horário com ${artistaNome}`,
-    descricao: schedule.notes || `Serviço agendado com ${artistaNome}`,
+    descricao: schedule.observacoes || `Serviço agendado com ${artistaNome}`,
     localizacao: "A combinar",
-    dataInicio: schedule.date.split("T")[0],
-    horaInicio: schedule.startTime,
-    dataFim: schedule.date.split("T")[0],
-    horaFim: schedule.endTime,
+    dataInicio: instantParaDataLocal(schedule.inicio),
+    horaInicio: instantParaHoraLocal(schedule.inicio),
+    dataFim: instantParaDataLocal(schedule.fim),
+    horaFim: instantParaHoraLocal(schedule.fim),
     organizador: artistaEmail
       ? { nome: artistaNome, email: artistaEmail }
       : undefined,
@@ -138,19 +155,19 @@ export function gerarLinkGoogleCalendar(evento: {
 }
 
 /**
- * Gera link do Google Calendar para ScheduleEntry
+ * Gera link do Google Calendar para ItemAgenda
  */
 export function gerarLinkGoogleCalendarDeSchedule(
-  schedule: ScheduleEntry,
+  schedule: ItemAgenda,
   artistaNome: string
 ): string {
   return gerarLinkGoogleCalendar({
     titulo: `Horário com ${artistaNome}`,
-    descricao: schedule.notes || `Serviço agendado com ${artistaNome}`,
+    descricao: schedule.observacoes || `Serviço agendado com ${artistaNome}`,
     localizacao: "A combinar",
-    dataInicio: schedule.date.split("T")[0],
-    horaInicio: schedule.startTime,
-    dataFim: schedule.date.split("T")[0],
-    horaFim: schedule.endTime,
+    dataInicio: instantParaDataLocal(schedule.inicio),
+    horaInicio: instantParaHoraLocal(schedule.inicio),
+    dataFim: instantParaDataLocal(schedule.fim),
+    horaFim: instantParaHoraLocal(schedule.fim),
   });
 }

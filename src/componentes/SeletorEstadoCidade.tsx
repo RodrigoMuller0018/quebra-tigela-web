@@ -95,7 +95,7 @@ export function SeletorEstadoCidade({
         >
           Estado
           {obrigatorio && (
-            <span className="ml-1 text-[color:var(--accent)]">*</span>
+            <span className="ml-1 text-danger">*</span>
           )}
         </label>
         <div className="relative">
@@ -126,7 +126,7 @@ export function SeletorEstadoCidade({
         >
           Cidade
           {obrigatorio && (
-            <span className="ml-1 text-[color:var(--accent)]">*</span>
+            <span className="ml-1 text-danger">*</span>
           )}
         </label>
         <div className="relative">

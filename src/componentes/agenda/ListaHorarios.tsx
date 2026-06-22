@@ -1,14 +1,15 @@
 import { Button, Card, CardContent } from "@heroui/react";
 import { Clock, Trash2, Calendar, Download } from "lucide-react";
-import type { ScheduleEntry } from "../../tipos/schedule";
+import type { ItemAgenda } from "../../tipos/schedule";
 import {
   gerarLinkGoogleCalendarDeSchedule,
   baixarICS,
   gerarICSDeSchedule,
 } from "../../utilitarios/googleCalendar";
+import { formatarRangeAdaptativo } from "../../utilitarios/instants";
 
 interface Props {
-  horarios: ScheduleEntry[];
+  horarios: ItemAgenda[];
   artistaNome?: string;
   artistaEmail?: string;
   podeCancelar?: boolean;
@@ -20,15 +21,15 @@ interface Props {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  available: "Disponível",
-  booked: "Reservado",
-  cancelled: "Cancelado",
+  disponivel: "Disponível",
+  reservada: "Reservada",
+  cancelada: "Cancelada",
 };
 
 const STATUS_TONE: Record<string, string> = {
-  available: "bg-[color:var(--accent)]/15 text-[color:var(--accent)]",
-  booked: "bg-[color:var(--secondary)]/15 text-[color:var(--secondary)]",
-  cancelled: "bg-[color:var(--muted)]/15 text-[color:var(--muted)]",
+  disponivel: "bg-[color:var(--accent)]/15 text-[color:var(--accent)]",
+  reservada: "bg-[color:var(--secondary)]/15 text-[color:var(--secondary)]",
+  cancelada: "bg-[color:var(--muted)]/15 text-[color:var(--muted)]",
 };
 
 export function ListaHorarios({
@@ -58,15 +59,13 @@ export function ListaHorarios({
     }).format(new Date(dataISO));
   }
 
-  function handleCalendario(h: ScheduleEntry, tipo: "google" | "ics") {
+  function handleCalendario(h: ItemAgenda, tipo: "google" | "ics") {
     if (tipo === "google") {
       window.open(gerarLinkGoogleCalendarDeSchedule(h, artistaNome), "_blank");
     } else {
       const ics = gerarICSDeSchedule(h, artistaNome, artistaEmail);
-      baixarICS(
-        ics,
-        `agendamento-${h.date.split("T")[0]}-${h.startTime}.ics`
-      );
+      const filename = `agendamento-${h.inicio.replace(/[:.]/g, "-")}.ics`;
+      baixarICS(ics, filename);
     }
   }
 
@@ -82,12 +81,17 @@ export function ListaHorarios({
 
   const horariosPorDia = horarios.reduce(
     (acc, h) => {
-      const data = h.date.split("T")[0];
+      // Agrupa pelo dia LOCAL do inicio (eventos multi-dia agrupam no dia de início)
+      const d = new Date(h.inicio);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const data = `${y}-${m}-${day}`;
       if (!acc[data]) acc[data] = [];
       acc[data].push(h);
       return acc;
     },
-    {} as Record<string, ScheduleEntry[]>
+    {} as Record<string, ItemAgenda[]>
   );
 
   return (
@@ -116,9 +120,9 @@ export function ListaHorarios({
                         size={16}
                         className="text-[color:var(--muted)]"
                       />
-                      <span>{h.startTime || "00:00"}</span>
-                      <span className="text-[color:var(--muted)]">→</span>
-                      <span>{h.endTime || "00:00"}</span>
+                      <span>
+                        {formatarRangeAdaptativo(h.inicio, h.fim)}
+                      </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span
@@ -126,9 +130,9 @@ export function ListaHorarios({
                       >
                         {STATUS_LABELS[h.status] || h.status}
                       </span>
-                      {h.notes && (
+                      {h.observacoes && (
                         <span className="text-xs text-[color:var(--muted)]">
-                          {h.notes}
+                          {h.observacoes}
                         </span>
                       )}
                     </div>
@@ -137,7 +141,7 @@ export function ListaHorarios({
                   <div className="flex flex-wrap gap-2">
                     {modo === "artista" && (
                       <>
-                        {podeCancelar && h.status === "booked" && (
+                        {podeCancelar && h.status === "reservada" && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -146,7 +150,7 @@ export function ListaHorarios({
                             Cancelar
                           </Button>
                         )}
-                        {podeDeletar && h.status === "available" && (
+                        {podeDeletar && h.status === "disponivel" && (
                           <Button
                             variant="danger-soft"
                             size="sm"
@@ -160,7 +164,7 @@ export function ListaHorarios({
                     )}
                     {modo === "cliente" && (
                       <>
-                        {h.status === "available" && onReservar && (
+                        {h.status === "disponivel" && onReservar && (
                           <Button
                             variant="primary"
                             size="sm"
@@ -170,7 +174,7 @@ export function ListaHorarios({
                             Reservar
                           </Button>
                         )}
-                        {h.status === "booked" && (
+                        {h.status === "reservada" && (
                           <>
                             <Button
                               variant="ghost"

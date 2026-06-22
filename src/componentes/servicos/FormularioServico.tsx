@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Button } from "@heroui/react";
-import type { Service, ServiceMedia } from "../../tipos/servicos";
+import type { Servico, MidiaServico } from "../../tipos/servicos";
 import { Campo, AreaTexto, Caixa } from "../ui/Campo";
 
 interface FormularioServicoProps {
-  servicoInicial?: Service;
+  servicoInicial?: Servico;
   onSubmit: (dados: {
-    title: string;
-    description?: string;
-    media?: ServiceMedia[];
-    active: boolean;
+    titulo: string;
+    descricao?: string;
+    midia?: MidiaServico[];
+    ativo: boolean;
   }) => Promise<void>;
   onCancelar?: () => void;
   carregando?: boolean;
@@ -21,31 +21,31 @@ export function FormularioServico({
   onCancelar,
   carregando = false,
 }: FormularioServicoProps) {
-  const [title, setTitle] = useState(servicoInicial?.title || "");
-  const [description, setDescription] = useState(
-    servicoInicial?.description || ""
+  const [titulo, setTitulo] = useState(servicoInicial?.titulo || "");
+  const [descricao, setDescricao] = useState(
+    servicoInicial?.descricao || "",
   );
-  const [active, setActive] = useState(servicoInicial?.active ?? true);
+  const [ativo, setAtivo] = useState(servicoInicial?.ativo ?? true);
 
   const imagemInicial =
-    servicoInicial?.media?.find((m) => m.type === "image")?.url || "";
+    servicoInicial?.midia?.find((m) => m.tipo === "imagem")?.url || "";
   const videoInicial =
-    servicoInicial?.media?.find((m) => m.type === "video")?.url || "";
+    servicoInicial?.midia?.find((m) => m.tipo === "video")?.url || "";
 
   const [imageUrl, setImageUrl] = useState(imagemInicial);
   const [videoUrl, setVideoUrl] = useState(videoInicial);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const media: ServiceMedia[] = [];
-    if (imageUrl.trim()) media.push({ type: "image", url: imageUrl.trim() });
-    if (videoUrl.trim()) media.push({ type: "video", url: videoUrl.trim() });
+    const midia: MidiaServico[] = [];
+    if (imageUrl.trim()) midia.push({ tipo: "imagem", url: imageUrl.trim() });
+    if (videoUrl.trim()) midia.push({ tipo: "video", url: videoUrl.trim() });
 
     await onSubmit({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      media: media.length > 0 ? media : undefined,
-      active,
+      titulo: titulo.trim(),
+      descricao: descricao.trim() || undefined,
+      midia: midia.length > 0 ? midia : undefined,
+      ativo,
     });
   }
 
@@ -53,15 +53,15 @@ export function FormularioServico({
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Campo
         label="Título do serviço"
-        value={title}
-        onChange={setTitle}
+        value={titulo}
+        onChange={setTitulo}
         isRequired
         placeholder="Ex: Show acústico, Apresentação de circo..."
       />
       <AreaTexto
         label="Descrição"
-        value={description}
-        onChange={setDescription}
+        value={descricao}
+        onChange={setDescricao}
         rows={4}
         placeholder="Descreva o serviço em detalhes..."
       />
@@ -81,7 +81,7 @@ export function FormularioServico({
         placeholder="https://exemplo.com/video.mp4"
         description="Opcional"
       />
-      <Caixa isSelected={active} onChange={setActive}>
+      <Caixa isSelected={ativo} onChange={setAtivo}>
         Serviço ativo (visível para clientes)
       </Caixa>
 

@@ -7,12 +7,12 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-import type { Review } from "../../tipos/reviews";
+import type { Avaliacao } from "../../tipos/reviews";
 import {
-  excluirRespostaReview,
-  excluirReview,
-  listarReviewsPorArtista,
-  responderReview,
+  excluirRespostaAvaliacao,
+  excluirAvaliacao,
+  listarAvaliacoesPorArtista,
+  responderAvaliacao,
 } from "../../api/reviews.api";
 import { useAutenticacao } from "../../contexts/Autenticacao.context";
 import { AreaTexto } from "../ui/Campo";
@@ -23,35 +23,35 @@ import {
   erro as avisoErro,
 } from "../../utilitarios/avisos";
 import { Dialogo } from "../ui/Dialogo";
+import { dentroDaJanelaEdicao } from "../../utilitarios/reviewsJanela";
 
-interface ListaReviewsProps {
-  artistId: string;
-  /** Limite inicial; quando excedido, exibe botão "Ver todas". Default 5. */
+interface ListaAvaliacoesProps {
+  artistaId: string;
   limite?: number;
 }
 
 type Ordenacao = "recente" | "antiga" | "maior" | "menor";
 
-export function ListaReviews({ artistId, limite = 5 }: ListaReviewsProps) {
-  const { usuario, userType } = useAutenticacao();
-  const [reviews, setReviews] = useState<Review[]>([]);
+export function ListaReviews({ artistaId, limite = 5 }: ListaAvaliacoesProps) {
+  const { usuario, artistaId: meuArtistaId, modoAtivo } = useAutenticacao();
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [filtroEstrelas, setFiltroEstrelas] = useState<number | null>(null);
   const [ordenacao, setOrdenacao] = useState<Ordenacao>("recente");
   const [verTodas, setVerTodas] = useState(false);
 
-  const [editando, setEditando] = useState<Review | null>(null);
-  const [confirmarExcluir, setConfirmarExcluir] = useState<Review | null>(null);
-  const [respondendo, setRespondendo] = useState<Review | null>(null);
+  const [editando, setEditando] = useState<Avaliacao | null>(null);
+  const [confirmarExcluir, setConfirmarExcluir] = useState<Avaliacao | null>(null);
+  const [respondendo, setRespondendo] = useState<Avaliacao | null>(null);
 
   async function carregar() {
-    if (!artistId) return;
+    if (!artistaId) return;
     setCarregando(true);
     try {
-      const dados = await listarReviewsPorArtista(artistId);
-      setReviews(dados);
+      const dados = await listarAvaliacoesPorArtista(artistaId);
+      setAvaliacoes(dados);
     } catch {
-      setReviews([]);
+      setAvaliacoes([]);
     } finally {
       setCarregando(false);
     }
@@ -60,12 +60,12 @@ export function ListaReviews({ artistId, limite = 5 }: ListaReviewsProps) {
   useEffect(() => {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [artistId]);
+  }, [artistaId]);
 
   const media = useMemo(() => {
-    if (reviews.length === 0) return 0;
-    return reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
-  }, [reviews]);
+    if (avaliacoes.length === 0) return 0;
+    return avaliacoes.reduce((acc, r) => acc + r.nota, 0) / avaliacoes.length;
+  }, [avaliacoes]);
 
   const distribuicao = useMemo(() => {
     const dist: Record<1 | 2 | 3 | 4 | 5, number> = {
@@ -75,30 +75,30 @@ export function ListaReviews({ artistId, limite = 5 }: ListaReviewsProps) {
       4: 0,
       5: 0,
     };
-    for (const r of reviews) {
-      const n = Math.max(1, Math.min(5, Math.round(r.rating))) as 1 | 2 | 3 | 4 | 5;
+    for (const r of avaliacoes) {
+      const n = Math.max(1, Math.min(5, Math.round(r.nota))) as 1 | 2 | 3 | 4 | 5;
       dist[n]++;
     }
     return dist;
-  }, [reviews]);
+  }, [avaliacoes]);
 
   const filtradas = useMemo(() => {
     let r = filtroEstrelas
-      ? reviews.filter((rv) => Math.round(rv.rating) === filtroEstrelas)
-      : reviews;
+      ? avaliacoes.filter((rv) => Math.round(rv.nota) === filtroEstrelas)
+      : avaliacoes;
     r = [...r].sort((a, b) => {
       if (ordenacao === "recente") {
-        return (b.createdAt || "").localeCompare(a.createdAt || "");
+        return (b.criadaEm || "").localeCompare(a.criadaEm || "");
       }
       if (ordenacao === "antiga") {
-        return (a.createdAt || "").localeCompare(b.createdAt || "");
+        return (a.criadaEm || "").localeCompare(b.criadaEm || "");
       }
-      if (ordenacao === "maior") return b.rating - a.rating;
-      if (ordenacao === "menor") return a.rating - b.rating;
+      if (ordenacao === "maior") return b.nota - a.nota;
+      if (ordenacao === "menor") return a.nota - b.nota;
       return 0;
     });
     return r;
-  }, [reviews, filtroEstrelas, ordenacao]);
+  }, [avaliacoes, filtroEstrelas, ordenacao]);
 
   const exibidas = verTodas ? filtradas : filtradas.slice(0, limite);
 
@@ -110,7 +110,7 @@ export function ListaReviews({ artistId, limite = 5 }: ListaReviewsProps) {
     );
   }
 
-  if (reviews.length === 0) {
+  if (avaliacoes.length === 0) {
     return (
       <Card className="border-dashed border-[color:var(--border)] bg-[color:var(--surface-secondary)]">
         <CardContent className="py-6 text-center text-sm text-[color:var(--muted)]">
@@ -122,9 +122,9 @@ export function ListaReviews({ artistId, limite = 5 }: ListaReviewsProps) {
 
   return (
     <div className="flex flex-col gap-5">
-      <ResumoReviews
+      <ResumoAvaliacoes
         media={media}
-        total={reviews.length}
+        total={avaliacoes.length}
         distribuicao={distribuicao}
         filtroAtivo={filtroEstrelas}
         onFiltrar={(n) => {
@@ -159,23 +159,27 @@ export function ListaReviews({ artistId, limite = 5 }: ListaReviewsProps) {
         {exibidas.map((r) => {
           const meuId = usuario?.sub;
           const ehMinha =
-            userType === "client" && meuId === extractId(r.userId);
+            modoAtivo === "cliente" && meuId === extractId(r.usuarioId);
           const souArtistaDono =
-            userType === "artist" && meuId === r.artistId;
+            modoAtivo === "artista" && !!meuArtistaId && meuArtistaId === r.artistaId;
           return (
-            <CardReview
+            <CardAvaliacao
               key={r.id}
-              review={r}
-              podeEditar={ehMinha}
-              podeExcluir={ehMinha}
-              podeResponder={souArtistaDono && !r.artistReply}
-              podeExcluirResposta={souArtistaDono && !!r.artistReply}
+              avaliacao={r}
+              podeEditar={ehMinha && dentroDaJanelaEdicao(r.criadaEm)}
+              podeExcluir={ehMinha && dentroDaJanelaEdicao(r.criadaEm)}
+              podeResponder={souArtistaDono && !r.respostaArtista}
+              podeExcluirResposta={
+                souArtistaDono &&
+                !!r.respostaArtista &&
+                dentroDaJanelaEdicao(r.respostaArtista.respondidaEm)
+              }
               onEditar={() => setEditando(r)}
               onExcluir={() => setConfirmarExcluir(r)}
               onResponder={() => setRespondendo(r)}
               onExcluirResposta={async () => {
                 try {
-                  await excluirRespostaReview(r.id);
+                  await excluirRespostaAvaliacao(r.id);
                   avisoSucesso("Resposta removida");
                   await carregar();
                 } catch (e: any) {
@@ -201,7 +205,7 @@ export function ListaReviews({ artistId, limite = 5 }: ListaReviewsProps) {
         <AvaliarModal
           aberto
           aoFechar={() => setEditando(null)}
-          reviewInicial={editando}
+          avaliacaoInicial={editando}
           onSucesso={async () => {
             setEditando(null);
             await carregar();
@@ -219,7 +223,7 @@ export function ListaReviews({ artistId, limite = 5 }: ListaReviewsProps) {
         onConfirmar={async () => {
           if (!confirmarExcluir) return;
           try {
-            await excluirReview(confirmarExcluir.id);
+            await excluirAvaliacao(confirmarExcluir.id);
             avisoSucesso("Avaliação excluída");
             setConfirmarExcluir(null);
             await carregar();
@@ -231,7 +235,7 @@ export function ListaReviews({ artistId, limite = 5 }: ListaReviewsProps) {
 
       {respondendo && (
         <ResponderModal
-          review={respondendo}
+          avaliacao={respondendo}
           aoFechar={() => setRespondendo(null)}
           onSucesso={async () => {
             setRespondendo(null);
@@ -243,8 +247,6 @@ export function ListaReviews({ artistId, limite = 5 }: ListaReviewsProps) {
   );
 }
 
-// =========================== Sub-componentes ===========================
-
 interface ResumoProps {
   media: number;
   total: number;
@@ -253,7 +255,7 @@ interface ResumoProps {
   onFiltrar: (n: number) => void;
 }
 
-function ResumoReviews({
+function ResumoAvaliacoes({
   media,
   total,
   distribuicao,
@@ -313,8 +315,8 @@ function ResumoReviews({
   );
 }
 
-interface CardReviewProps {
-  review: Review;
+interface CardAvaliacaoProps {
+  avaliacao: Avaliacao;
   podeEditar: boolean;
   podeExcluir: boolean;
   podeResponder: boolean;
@@ -325,8 +327,8 @@ interface CardReviewProps {
   onExcluirResposta: () => void;
 }
 
-function CardReview({
-  review,
+function CardAvaliacao({
+  avaliacao,
   podeEditar,
   podeExcluir,
   podeResponder,
@@ -335,11 +337,11 @@ function CardReview({
   onExcluir,
   onResponder,
   onExcluirResposta,
-}: CardReviewProps) {
-  const nome = review.userName || "Anônimo";
+}: CardAvaliacaoProps) {
+  const nome = avaliacao.nomeUsuario || "Anônimo";
   const inicial = nome.charAt(0).toUpperCase();
-  const dataReview = review.createdAt
-    ? new Date(review.createdAt).toLocaleDateString("pt-BR")
+  const dataAvaliacao = avaliacao.criadaEm
+    ? new Date(avaliacao.criadaEm).toLocaleDateString("pt-BR")
     : "";
 
   return (
@@ -353,10 +355,10 @@ function CardReview({
             <div>
               <p className="text-sm font-semibold">{nome}</p>
               <div className="flex items-center gap-2">
-                <Estrelas valor={review.rating} tamanho={12} />
-                {dataReview && (
+                <Estrelas valor={avaliacao.nota} tamanho={12} />
+                {dataAvaliacao && (
                   <span className="text-xs text-[color:var(--muted)]">
-                    {dataReview}
+                    {dataAvaliacao}
                   </span>
                 )}
               </div>
@@ -389,11 +391,11 @@ function CardReview({
           </div>
         </div>
 
-        {review.comment && (
-          <p className="text-sm leading-relaxed">{review.comment}</p>
+        {avaliacao.comentario && (
+          <p className="text-sm leading-relaxed">{avaliacao.comentario}</p>
         )}
 
-        {review.artistReply && (
+        {avaliacao.respostaArtista && (
           <div className="rounded-xl border-l-4 border-[color:var(--accent)] bg-[color:var(--surface-secondary)] p-3">
             <div className="mb-1 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-[color:var(--accent)]">
@@ -413,9 +415,9 @@ function CardReview({
                 </Button>
               )}
             </div>
-            <p className="text-sm leading-relaxed">{review.artistReply.text}</p>
+            <p className="text-sm leading-relaxed">{avaliacao.respostaArtista.texto}</p>
             <p className="mt-1 text-xs text-[color:var(--muted)]">
-              {new Date(review.artistReply.repliedAt).toLocaleDateString("pt-BR")}
+              {new Date(avaliacao.respostaArtista.respondidaEm).toLocaleDateString("pt-BR")}
             </p>
           </div>
         )}
@@ -454,16 +456,14 @@ function Estrelas({ valor, tamanho = 16 }: { valor: number; tamanho?: number }) 
   );
 }
 
-// =========================== Modal de resposta do artista ==============
-
 interface ResponderModalProps {
-  review: Review;
+  avaliacao: Avaliacao;
   aoFechar: () => void;
   onSucesso: () => void | Promise<void>;
 }
 
-function ResponderModal({ review, aoFechar, onSucesso }: ResponderModalProps) {
-  const [texto, setTexto] = useState(review.artistReply?.text ?? "");
+function ResponderModal({ avaliacao, aoFechar, onSucesso }: ResponderModalProps) {
+  const [texto, setTexto] = useState(avaliacao.respostaArtista?.texto ?? "");
   const [enviando, setEnviando] = useState(false);
 
   async function enviar() {
@@ -473,7 +473,7 @@ function ResponderModal({ review, aoFechar, onSucesso }: ResponderModalProps) {
     }
     setEnviando(true);
     try {
-      await responderReview(review.id, texto.trim());
+      await responderAvaliacao(avaliacao.id, texto.trim());
       avisoSucesso("Resposta publicada");
       await onSucesso();
     } catch (e: any) {
@@ -493,13 +493,13 @@ function ResponderModal({ review, aoFechar, onSucesso }: ResponderModalProps) {
       <div className="flex flex-col gap-4">
         <div className="rounded-xl bg-[color:var(--surface-secondary)] p-3 text-sm">
           <div className="mb-1 flex items-center gap-2">
-            <Estrelas valor={review.rating} tamanho={12} />
+            <Estrelas valor={avaliacao.nota} tamanho={12} />
             <span className="text-xs text-[color:var(--muted)]">
-              {review.userName || "Anônimo"}
+              {avaliacao.nomeUsuario || "Anônimo"}
             </span>
           </div>
-          {review.comment && (
-            <p className="text-sm italic">"{review.comment}"</p>
+          {avaliacao.comentario && (
+            <p className="text-sm italic">"{avaliacao.comentario}"</p>
           )}
         </div>
 
@@ -529,7 +529,7 @@ function ResponderModal({ review, aoFechar, onSucesso }: ResponderModalProps) {
   );
 }
 
-function extractId(userId: Review["userId"]): string {
-  if (typeof userId === "string") return userId;
-  return String(userId?._id ?? "");
+function extractId(usuarioId: Avaliacao["usuarioId"]): string {
+  if (typeof usuarioId === "string") return usuarioId;
+  return String(usuarioId?._id ?? "");
 }

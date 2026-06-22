@@ -6,9 +6,18 @@ import {
   CardHeader,
   Spinner,
 } from "@heroui/react";
-import { CheckCircle2, MapPin, Mail, MessageSquarePlus, Star } from "lucide-react";
+import {
+  CheckCircle2,
+  ExternalLink,
+  Link as LinkIcon,
+  Mail,
+  MapPin,
+  MessageSquarePlus,
+  Star,
+} from "lucide-react";
+import { detectarPlataforma } from "../../utilitarios/socialPlatforms";
 import type { Artista } from "../../tipos/artistas";
-import type { Service } from "../../tipos/servicos";
+import type { Servico } from "../../tipos/servicos";
 import { AgendaCliente } from "../agenda";
 import { ListaServicos } from "../servicos";
 import { listarServicosPorArtista } from "../../api/servicos.api";
@@ -22,35 +31,40 @@ interface Props {
 }
 
 export function PerfilPublicoArtista({ artista }: Props) {
-  const { usuario, userType } = useAutenticacao();
-  const [servicos, setServicos] = useState<Service[]>([]);
+  const { usuario, modoAtivo } = useAutenticacao();
+  const [servicos, setServicos] = useState<Servico[]>([]);
   const [carregandoServicos, setCarregandoServicos] = useState(false);
   const [solicitarAberto, setSolicitarAberto] = useState(false);
 
-  const dados = (artista as any)?.artist || artista;
-  const nome = dados?.name || dados?.nome || "Nome não informado";
+  // Backend pode mandar o artista solto OU encapsulado em { artist: ... } no /perfil.
+  const dados: any = (artista as any)?.artist || artista;
+  const nome = dados?.nome || "Nome não informado";
   const email = dados?.email || "Email não disponível";
-  const bio = dados?.bio || dados?.biografia || null;
-  const verificado = dados?.verified || dados?.verificado || false;
-  const cidade = dados?.city || dados?.cidade || null;
-  const estado = dados?.state || dados?.estado || null;
-  const tiposArte =
-    dados?.artTypes || dados?.tipos_arte || dados?.specialties || [];
+  const bio = dados?.bio || null;
+  const verificado = !!dados?.verificado;
+  const cidade = dados?.cidade || null;
+  const estado = dados?.estado || null;
+  const tiposArte: string[] = Array.isArray(dados?.tiposArte) ? dados.tiposArte : [];
   const artistaId = dados?.id || dados?._id;
+  const artisticName: string | null = dados?.nomeArtistico || null;
+  const portfolio: string | null = dados?.portfolio || null;
+  const socialLinks: string[] = Array.isArray(dados?.redesSociais)
+    ? dados.redesSociais.filter((u: string) => !!u)
+    : [];
 
-  // Rating vem em 2 formatos: /profile devolve { rating: { avg, count } },
-  // /search devolve campos flat ratingAvg/ratingCount no próprio artista.
-  const ratingObj = (artista as any)?.rating;
+  // Rating vem em 2 formatos: /perfil devolve { avaliacao: { media, total } } e
+  // /buscar devolve campos flat notaMedia/totalAvaliacoes no próprio artista.
+  const avaliacaoObj = (artista as any)?.avaliacao;
   const ratingAvg: number | null =
-    ratingObj?.avg ?? (dados as any)?.ratingAvg ?? null;
+    avaliacaoObj?.media ?? dados?.notaMedia ?? null;
   const ratingCount: number =
-    ratingObj?.count ?? (dados as any)?.ratingCount ?? 0;
+    avaliacaoObj?.total ?? dados?.totalAvaliacoes ?? 0;
 
   useEffect(() => {
     if (!artistaId) return;
     setCarregandoServicos(true);
     listarServicosPorArtista(artistaId)
-      .then((dados) => setServicos(dados.filter((s) => s.active)))
+      .then((dados) => setServicos(dados.filter((s) => s.ativo)))
       .catch(() => setServicos([]))
       .finally(() => setCarregandoServicos(false));
   }, [artistaId]);
@@ -60,7 +74,7 @@ export function PerfilPublicoArtista({ artista }: Props) {
       ? `${cidade}, ${estado}`
       : cidade || estado || "Localização não informada";
 
-  const fotoPerfil = dados?.profilePicture;
+  const fotoPerfil = dados?.fotoPerfil;
 
   return (
     <div className="flex flex-col gap-6">
@@ -85,6 +99,11 @@ export function PerfilPublicoArtista({ artista }: Props) {
                   </span>
                 )}
               </div>
+              {artisticName && (
+                <p className="text-sm italic text-white/85">
+                  ({artisticName})
+                </p>
+              )}
               {ratingCount > 0 && ratingAvg !== null && (
                 <p className="mt-1 flex items-center gap-1.5 text-white/95">
                   <Star
@@ -151,6 +170,44 @@ export function PerfilPublicoArtista({ artista }: Props) {
         </CardContent>
       </Card>
 
+      {/* Links e redes sociais */}
+      {(portfolio || socialLinks.length > 0) && (
+        <Card className="border border-[color:var(--border)] bg-[color:var(--surface)]">
+          <CardHeader>
+            <h2 className="font-display text-xl font-bold">Links e redes</h2>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {portfolio && (
+              <a
+                href={portfolio}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full bg-gradient-brand px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+              >
+                <LinkIcon size={14} />
+                Portfólio
+              </a>
+            )}
+            {socialLinks.map((url, i) => {
+              const { label } = detectarPlataforma(url);
+              return (
+                <a
+                  key={i}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={url}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border)] bg-[color:var(--surface-secondary)] px-3 py-1.5 text-xs font-medium transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+                >
+                  <ExternalLink size={12} />
+                  {label}
+                </a>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Serviços */}
       <Card className="border border-[color:var(--border)] bg-[color:var(--surface)]">
         <CardHeader>
@@ -196,13 +253,16 @@ export function PerfilPublicoArtista({ artista }: Props) {
             <h2 className="font-display text-xl font-bold">Avaliações</h2>
           </CardHeader>
           <CardContent>
-            <ListaReviews artistId={artistaId} limite={5} />
+            <ListaReviews artistaId={artistaId} limite={5} />
           </CardContent>
         </Card>
       )}
 
-      {/* CTA — solicitar serviço (apenas pra clientes logados) */}
-      {userType === "client" && usuario?.sub && artistaId && (
+      {/* CTA — solicitar serviço (apenas pra clientes logados, e nunca em auto-perfil) */}
+      {modoAtivo === "cliente" &&
+        usuario?.sub &&
+        artistaId &&
+        dados?.usuarioId !== usuario.sub && (
         <Card className="overflow-hidden border-0 bg-gradient-warm text-[color:var(--foreground)] shadow-xl">
           <CardContent className="flex flex-col items-start gap-3 py-6">
             <h2 className="font-display text-xl font-bold">
@@ -228,8 +288,8 @@ export function PerfilPublicoArtista({ artista }: Props) {
         <SolicitarServicoModal
           aberto={solicitarAberto}
           aoFechar={setSolicitarAberto}
-          artistId={artistaId}
-          artistNome={nome}
+          artistaId={artistaId}
+          artistaNome={nome}
         />
       )}
     </div>

@@ -1,68 +1,67 @@
 import { http } from "./http";
-import type { Review, NovaReview, AtualizaReview } from "../tipos/reviews";
+import type { Avaliacao, NovaAvaliacao, AtualizaAvaliacao } from "../tipos/reviews";
 
-function normalizar(r: any): Review {
-  // Backend faz populate de userId com { _id, name }. Extrai pro userName flat.
-  const populated =
-    r.userId && typeof r.userId === "object" && r.userId.name
-      ? r.userId
+function normalizar(r: any): Avaliacao {
+  // Backend faz populate de usuarioId com { _id, nome }. Extrai pro nomeUsuario flat.
+  const populado =
+    r.usuarioId && typeof r.usuarioId === "object" && r.usuarioId.nome
+      ? r.usuarioId
       : null;
-  const userIdStr = populated
-    ? String(populated._id)
-    : typeof r.userId === "string"
-      ? r.userId
-      : String(r.userId?._id ?? r.userId);
+  const usuarioIdStr = populado
+    ? String(populado._id)
+    : typeof r.usuarioId === "string"
+      ? r.usuarioId
+      : String(r.usuarioId?._id ?? r.usuarioId);
 
   return {
     ...r,
     id: String(r.id || r._id),
-    requestId: String(r.requestId),
-    artistId: String(r.artistId),
-    userId: userIdStr,
-    userName: populated?.name ?? r.userName,
+    solicitacaoId: String(r.solicitacaoId),
+    artistaId: String(r.artistaId),
+    usuarioId: usuarioIdStr,
+    nomeUsuario: populado?.nome ?? r.nomeUsuario,
   };
 }
 
-export async function criarReview(dados: NovaReview): Promise<Review> {
-  const res = await http.post("/api/reviews", dados);
+export async function criarAvaliacao(dados: NovaAvaliacao): Promise<Avaliacao> {
+  const res = await http.post("/api/avaliacoes", dados);
   return normalizar(res.data);
 }
 
-export async function listarReviewsPorArtista(
-  artistId: string,
-): Promise<Review[]> {
-  const res = await http.get(`/api/reviews/artist/${artistId}`);
+export async function listarAvaliacoesPorArtista(
+  artistaId: string,
+): Promise<Avaliacao[]> {
+  const res = await http.get(`/api/avaliacoes/artista/${artistaId}`);
   return res.data.map(normalizar);
 }
 
-/** Lista todas as reviews que o cliente logado já fez. */
-export async function listarMinhasReviews(): Promise<Review[]> {
-  const res = await http.get("/api/reviews/mine");
+export async function listarMinhasAvaliacoes(): Promise<Avaliacao[]> {
+  const res = await http.get("/api/avaliacoes/minhas");
   return res.data.map(normalizar);
 }
 
-export async function atualizarReview(
+export async function atualizarAvaliacao(
   id: string,
-  dados: AtualizaReview,
-): Promise<Review> {
-  const res = await http.patch(`/api/reviews/${id}`, dados);
+  dados: AtualizaAvaliacao,
+): Promise<Avaliacao> {
+  const res = await http.patch(`/api/avaliacoes/${id}`, dados);
   return normalizar(res.data);
 }
 
-export async function excluirReview(id: string): Promise<{ deleted: boolean }> {
-  const res = await http.delete(`/api/reviews/${id}`);
+export async function excluirAvaliacao(id: string): Promise<{ removida: boolean }> {
+  const res = await http.delete(`/api/avaliacoes/${id}`);
   return res.data;
 }
 
-export async function responderReview(
+export async function responderAvaliacao(
   id: string,
-  text: string,
-): Promise<Review> {
-  const res = await http.post(`/api/reviews/${id}/reply`, { text });
+  texto: string,
+): Promise<Avaliacao> {
+  const res = await http.post(`/api/avaliacoes/${id}/resposta`, { texto });
   return normalizar(res.data);
 }
 
-export async function excluirRespostaReview(id: string): Promise<Review> {
-  const res = await http.delete(`/api/reviews/${id}/reply`);
+export async function excluirRespostaAvaliacao(id: string): Promise<Avaliacao> {
+  const res = await http.delete(`/api/avaliacoes/${id}/resposta`);
   return normalizar(res.data);
 }

@@ -1,5 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useRef, useState, useCallback } from "react";
+import {
+  useParams,
+  useNavigate,
+  useSearchParams,
+  useLocation,
+} from "react-router-dom";
 import {
   Button,
   Card,
@@ -19,11 +24,12 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  obterArtistaPorId,
+  obterArtistaPorHandle,
+  registrarVisualizacaoArtista,
   obterMeuPerfil,
   atualizarArtista,
-  excluirArtista,
 } from "../../api/artistas.api";
+import { atualizarUsuario } from "../../api/usuarios.api";
 import { useAutenticacao } from "../../contexts/Autenticacao.context";
 import { ConfirmacaoModal } from "../../componentes/ui/ConfirmacaoModal";
 import type { Artista } from "../../tipos/artistas";
@@ -32,19 +38,25 @@ import {
   erro as avisoErro,
   sucesso as avisoSucesso,
 } from "../../utilitarios/avisos";
-import { obterIdDoToken, obterRoleDoToken } from "../../utilitarios/jwt";
+import { obterIdDoToken } from "../../utilitarios/jwt";
+import {
+  pausarPerfilArtista,
+  reativarPerfilArtista,
+} from "../../api/artistas.api";
 import { PerfilPublicoArtista } from "../../componentes/artistas/PerfilPublicoArtista";
 import { VerificacaoIdentidade } from "../../componentes/verificacao";
 import { useEhDispositivoMovel } from "../../utilitarios/dispositivo";
 import { Campo, AreaTexto } from "../../componentes/ui/Campo";
 import { Dialogo } from "../../componentes/ui/Dialogo";
 import { UploadFotoPerfil } from "../../componentes/ui/UploadFotoPerfil";
+import { SeletorTiposArte } from "../../componentes/ui/SeletorTiposArte";
 
 export default function DetalheArtistaPagina() {
-  const { id } = useParams();
+  const { handle } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { logout } = useAutenticacao();
+  const { temPerfilArtista, login, token, marcarPerfilAtualizado } = useAutenticacao();
   const [artista, setArtista] = useState<Artista | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [carregando, setCarregando] = useState(false);
@@ -53,49 +65,95 @@ export default function DetalheArtistaPagina() {
   const [excluindo, setExcluindo] = useState(false);
   const ehDispositivoMovel = useEhDispositivoMovel();
 
+  // Rota /artista/perfil é edição do próprio (sem handle na URL).
+  // Rota /artistas/@:handle é visualização pública.
+  const ehRotaPropria = location.pathname === "/artista/perfil";
   const modoPreview = searchParams.get("preview") === "true";
   const usuarioLogadoId = obterIdDoToken();
-  const userRole = obterRoleDoToken();
   const ehProprioArtista =
-    !modoPreview && usuarioLogadoId && id && usuarioLogadoId === id;
+    !modoPreview && temPerfilArtista && ehRotaPropria;
+
+  // Alias pro Artista._id depois que carrega — usado por update/pausar/reativar
+  // que ainda dependem do ID interno (rotas /api/artistas/:id/*).
+  const id = artista?.id;
+  const [naoEncontrado, setNaoEncontrado] = useState(false);
+
+  // Dedup pra StrictMode (effects rodam 2x em dev) e re-mounts no mesmo handle.
+  const visualizacaoRegistrada = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!ehRotaPropria && !handle) return;
+    setNaoEncontrado(false);
     (async () => {
       setCarregando(true);
       try {
         const data = ehProprioArtista
           ? await obterMeuPerfil()
-          : await obterArtistaPorId(id);
+          : await obterArtistaPorHandle(handle!);
         setArtista(data);
+        // Só conta visualização no modo público (handle na URL, não preview do dono).
+        if (
+          handle &&
+          !ehProprioArtista &&
+          !modoPreview &&
+          visualizacaoRegistrada.current !== handle
+        ) {
+          visualizacaoRegistrada.current = handle;
+          registrarVisualizacaoArtista(handle).catch(() => {
+            // Falha silenciosa — métrica não deve quebrar a navegação.
+          });
+        }
       } catch (e: any) {
-        avisoErro(e?.message ?? "Erro ao buscar artista");
+        // 404 vira UI dedicada; outros erros viram toast como antes.
+        const status = e?.response?.status;
+        if (status === 404) {
+          setNaoEncontrado(true);
+        } else {
+          avisoErro(e?.message ?? "Erro ao buscar artista");
+        }
       } finally {
         setCarregando(false);
       }
     })();
-  }, [id, ehProprioArtista]);
+  }, [handle, ehProprioArtista, ehRotaPropria]);
 
   const handleEstado = useCallback((uf: string) => {
-    setArtista((prev) => (prev ? { ...prev, state: uf } : null));
+    setArtista((prev) => (prev ? { ...prev, estado: uf } : null));
   }, []);
   const handleCidade = useCallback((c: string) => {
-    setArtista((prev) => (prev ? { ...prev, city: c } : null));
+    setArtista((prev) => (prev ? { ...prev, cidade: c } : null));
   }, []);
 
   async function handleSalvar() {
-    if (!id || !artista) return;
+    if (!artista?.id) return;
     setSalvando(true);
     try {
-      await atualizarArtista(id, {
-        name: artista.name,
-        bio: artista.bio,
-        city: artista.city,
-        state: artista.state,
-        artTypes: artista.artTypes,
-        profilePicture: artista.profilePicture,
-      });
+      // Composition pattern: nome, cidade, estado, fotoPerfil moram no Usuario;
+      // bio, tiposArte, telefone, etc moram no Artista. Atualiza os 2 em paralelo.
+      const promessas: Promise<unknown>[] = [];
+      if (artista.usuarioId) {
+        promessas.push(
+          atualizarUsuario(artista.usuarioId, {
+            nome: artista.nome,
+            cidade: artista.cidade,
+            estado: artista.estado,
+            fotoPerfil: artista.fotoPerfil ?? null,
+          }),
+        );
+      }
+      promessas.push(
+        atualizarArtista(artista.id, {
+          bio: artista.bio,
+          tiposArte: artista.tiposArte,
+          nomeArtistico: artista.nomeArtistico,
+          dataNascimento: artista.dataNascimento,
+          portfolio: artista.portfolio,
+          redesSociais: artista.redesSociais,
+        }),
+      );
+      await Promise.all(promessas);
       avisoSucesso("Perfil atualizado com sucesso!");
+      marcarPerfilAtualizado();
       navigate("/artista");
     } catch (e: any) {
       avisoErro(e?.message ?? "Erro ao atualizar perfil");
@@ -104,22 +162,41 @@ export default function DetalheArtistaPagina() {
     }
   }
 
-  async function handleExcluirConta() {
+  async function handlePausarPerfil() {
     if (!id) return;
     setExcluindo(true);
     try {
-      await excluirArtista(id);
-      avisoSucesso("Conta de artista excluída.");
-      logout();
-      navigate("/login");
+      await pausarPerfilArtista(id);
+      avisoSucesso(
+        "Perfil de artista pausado. Você pode reativar a qualquer momento.",
+      );
+      // Atualiza token pra refletir hasArtistProfile=false (continuamos cliente)
+      if (token) login(token);
+      navigate("/cliente");
     } catch (e: any) {
-      avisoErro(e?.message ?? "Erro ao excluir conta");
+      avisoErro(e?.message ?? "Erro ao pausar perfil");
+    } finally {
+      setExcluindo(false);
+    }
+  }
+
+  async function handleReativarPerfil() {
+    if (!id) return;
+    setExcluindo(true);
+    try {
+      await reativarPerfilArtista(id);
+      avisoSucesso("Perfil de artista reativado!");
+      if (token) login(token);
+      setArtista((a) => (a ? { ...a, ativo: true } : a));
+    } catch (e: any) {
+      avisoErro(e?.message ?? "Erro ao reativar perfil");
+    } finally {
       setExcluindo(false);
     }
   }
 
   async function handleVerificacaoSucesso() {
-    if (artista) setArtista({ ...artista, verified: true });
+    if (artista) setArtista({ ...artista, verificado: true });
     setMostrarVerificacao(false);
     avisoSucesso(
       "Identidade verificada com sucesso! Agora você pode receber solicitações."
@@ -142,17 +219,57 @@ export default function DetalheArtistaPagina() {
     );
   }
 
+  if (naoEncontrado) {
+    return (
+      <Card className="mx-auto max-w-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+        <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-brand text-white shadow-lg shadow-[color:var(--accent)]/30">
+            <AlertCircle size={28} />
+          </span>
+          <div className="flex flex-col gap-1">
+            <h2 className="font-display text-2xl font-bold">
+              Artista não encontrado
+            </h2>
+            <p className="max-w-md text-sm text-[color:var(--muted)]">
+              O handle{" "}
+              {handle && (
+                <span className="font-mono font-semibold text-[color:var(--foreground)]">
+                  {handle}
+                </span>
+              )}{" "}
+              não corresponde a nenhum artista ativo. Talvez tenha sido digitado
+              errado ou o perfil foi pausado.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2 pt-2">
+            <Button
+              variant="primary"
+              onPress={() => navigate("/artistas")}
+              className="bg-gradient-brand font-semibold text-white shadow-lg shadow-[color:var(--accent)]/30"
+            >
+              Explorar artistas
+            </Button>
+            <Button variant="ghost" onPress={() => navigate(-1)}>
+              Voltar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!artista) {
     return (
-      <div className="py-16 text-center">
-        <p className="text-[color:var(--muted)]">Artista não encontrado</p>
+      <div className="flex justify-center py-16">
+        <Spinner size="lg" color="accent" />
       </div>
     );
   }
 
-  const voltarPara = userRole === "artist" ? "/artista" : "/artistas";
-  const textoVoltar =
-    userRole === "artist" ? "Voltar para Dashboard" : "Voltar para Artistas";
+  const voltarPara = temPerfilArtista ? "/artista" : "/artistas";
+  const textoVoltar = temPerfilArtista
+    ? "Voltar para Dashboard"
+    : "Voltar para Artistas";
 
   // Visualização pública (cliente vendo artista, ou artista em modo preview)
   if (!ehProprioArtista) {
@@ -166,7 +283,7 @@ export default function DetalheArtistaPagina() {
           {modoPreview && usuarioLogadoId === id && (
             <Button
               variant="primary"
-              onPress={() => navigate(`/artistas/${id}`)}
+              onPress={() => navigate("/artista/perfil")}
               className="bg-gradient-brand text-white shadow-lg shadow-[color:var(--accent)]/30"
             >
               <Pencil size={16} className="mr-2" />
@@ -190,7 +307,7 @@ export default function DetalheArtistaPagina() {
       </div>
 
       {/* Banner verificação (mobile + não verificado) */}
-      {ehDispositivoMovel && !artista.verified && (
+      {ehDispositivoMovel && !artista.verificado && (
         <Card className="overflow-hidden border-0 bg-gradient-brand text-white shadow-2xl shadow-[color:var(--accent)]/30">
           <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur">
@@ -224,7 +341,7 @@ export default function DetalheArtistaPagina() {
             <h2 className="font-display text-2xl font-bold text-gradient-brand">
               Editar meu perfil
             </h2>
-            {artista.verified ? (
+            {artista.verificado ? (
               <Chip className="inline-flex items-center gap-1 bg-[color:var(--success)]/15 text-[color:var(--success)]">
                 <CheckCircle2 size={14} />
                 Verificado
@@ -239,19 +356,44 @@ export default function DetalheArtistaPagina() {
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
           <UploadFotoPerfil
-            fotoAtual={artista.profilePicture}
-            nome={artista.name || "Artista"}
+            fotoAtual={artista.fotoPerfil}
+            nome={artista.nome || "Artista"}
             onChange={(foto) =>
-              setArtista({ ...artista, profilePicture: foto })
+              setArtista({ ...artista, fotoPerfil: foto })
             }
             desabilitado={salvando}
           />
           <Campo
-            label="Nome artístico"
-            value={artista.name}
-            onChange={(v) => setArtista({ ...artista, name: v })}
+            label="Nome completo"
+            value={artista.nome}
+            onChange={(v) => setArtista({ ...artista, nome: v })}
             isRequired
           />
+          <Campo
+            label="Nome artístico"
+            value={artista.nomeArtistico || ""}
+            onChange={(v) => setArtista({ ...artista, nomeArtistico: v })}
+            placeholder="Como você é conhecido(a) no palco/cena"
+            description="Opcional"
+          />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="birthDate" className="text-sm font-medium">
+              Data de nascimento
+            </label>
+            <input
+              id="birthDate"
+              type="date"
+              value={artista.dataNascimento || ""}
+              max={new Date().toISOString().split("T")[0]}
+              onChange={(e) =>
+                setArtista({ ...artista, dataNascimento: e.target.value || undefined })
+              }
+              className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-3 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30"
+            />
+            <span className="text-xs text-[color:var(--muted)]">
+              Opcional — só fica visível pra você
+            </span>
+          </div>
           <AreaTexto
             label="Biografia"
             value={artista.bio || ""}
@@ -259,28 +401,31 @@ export default function DetalheArtistaPagina() {
             placeholder="Conte um pouco sobre você e seu trabalho..."
             rows={4}
           />
-          <Campo
-            label="Tipos de arte"
-            value={artista.artTypes.join(", ")}
-            onChange={(v) =>
-              setArtista({
-                ...artista,
-                artTypes: v
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean),
-              })
-            }
-            placeholder="Ex: Pintura, Escultura, Fotografia"
-            description="Separe por vírgulas"
+          <SeletorTiposArte
+            value={artista.tiposArte}
+            onChange={(next) => setArtista({ ...artista, tiposArte: next })}
             isRequired
+            ajuda="Escolha pelo menos 1 e no máximo 10 — busca por palavra-chave ou navega pelas categorias"
           />
           <SeletorEstadoCidade
-            estadoSelecionado={artista.state || ""}
-            cidadeSelecionada={artista.city || ""}
+            estadoSelecionado={artista.estado || ""}
+            cidadeSelecionada={artista.cidade || ""}
             onEstadoChange={handleEstado}
             onCidadeChange={handleCidade}
             idPrefix="artista-detalhe"
+          />
+          <Campo
+            label="Portfólio (URL)"
+            value={artista.portfolio || ""}
+            onChange={(v) =>
+              setArtista({ ...artista, portfolio: v || undefined })
+            }
+            placeholder="https://meuportfolio.com"
+            description="Link pro seu site, Behance, drive, etc. — aparece no perfil público"
+          />
+          <RedesSociaisInput
+            value={artista.redesSociais ?? []}
+            onChange={(next) => setArtista({ ...artista, redesSociais: next })}
           />
 
           <div className="flex flex-wrap gap-2 pt-2">
@@ -296,7 +441,7 @@ export default function DetalheArtistaPagina() {
             <Button variant="ghost" onPress={() => navigate(voltarPara)}>
               Cancelar
             </Button>
-            {!artista.verified && !ehDispositivoMovel && (
+            {!artista.verificado && !ehDispositivoMovel && (
               <Button
                 variant="outline"
                 onPress={() => setMostrarVerificacao(true)}
@@ -316,35 +461,59 @@ export default function DetalheArtistaPagina() {
           </h2>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-[color:var(--muted)]">
-            Excluir sua conta remove seu perfil, serviços, agenda e
-            avaliações permanentemente.
-          </p>
-          <Button
-            variant="danger-soft"
-            onPress={() => setConfirmarExcluir(true)}
-          >
-            <Trash2 size={16} className="mr-2" />
-            Excluir conta
-          </Button>
+          {artista.ativo === false ? (
+            <>
+              <p className="text-sm text-[color:var(--muted)]">
+                Seu perfil de artista está <strong>pausado</strong>. Reative pra
+                voltar a aparecer em buscas e receber solicitações.
+              </p>
+              <Button
+                variant="primary"
+                onPress={handleReativarPerfil}
+                isDisabled={excluindo}
+              >
+                {excluindo ? "Reativando..." : "Reativar perfil"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-[color:var(--muted)]">
+                Pausar seu perfil de artista esconde você das buscas e impede
+                novas solicitações. Histórico e dados ficam preservados pra você
+                reativar quando quiser.
+              </p>
+              <Button
+                variant="danger-soft"
+                onPress={() => setConfirmarExcluir(true)}
+                isDisabled={excluindo}
+              >
+                <Trash2 size={16} className="mr-2" />
+                Pausar perfil
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
 
       <ConfirmacaoModal
         aberto={confirmarExcluir}
         aoFechar={(open) => !open && setConfirmarExcluir(false)}
-        titulo="Excluir conta de artista?"
+        titulo="Pausar perfil de artista?"
         mensagem={
           <>
-            Esta ação é <strong>irreversível</strong>. Seu perfil, serviços,
-            agenda e avaliações serão removidos permanentemente.
+            Você vai sair das buscas e não receberá novas solicitações.
+            <br />
+            <br />
+            <strong>Seus dados ficam preservados</strong> — solicitações em
+            andamento, avaliações e histórico continuam intactos. Você pode
+            reativar a qualquer momento.
           </>
         }
-        textoConfirmar="Sim, excluir conta"
+        textoConfirmar="Sim, pausar perfil"
         textoCancelar="Cancelar"
         variante="destrutivo"
         carregando={excluindo}
-        onConfirmar={handleExcluirConta}
+        onConfirmar={handlePausarPerfil}
       />
 
       <Dialogo
@@ -361,6 +530,62 @@ export default function DetalheArtistaPagina() {
           />
         )}
       </Dialogo>
+    </div>
+  );
+}
+
+// ============================== Redes Sociais ===============================
+
+interface RedesSociaisInputProps {
+  value: string[];
+  onChange: (next: string[]) => void;
+}
+
+function RedesSociaisInput({ value, onChange }: RedesSociaisInputProps) {
+  function atualizar(idx: number, novoValor: string) {
+    const copia = [...value];
+    copia[idx] = novoValor;
+    onChange(copia);
+  }
+  function remover(idx: number) {
+    onChange(value.filter((_, i) => i !== idx));
+  }
+  function adicionar() {
+    onChange([...value, ""]);
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-medium">Redes sociais</label>
+      <span className="text-xs text-[color:var(--muted)]">
+        Adicione links pras suas redes (Instagram, YouTube, TikTok, Spotify, etc.). Aparecem como ícones no perfil público.
+      </span>
+      {value.map((url, idx) => (
+        <div key={idx} className="flex items-center gap-2">
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => atualizar(idx, e.target.value)}
+            placeholder="https://instagram.com/seu-perfil"
+            className="flex-1 rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-2.5 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30"
+          />
+          <button
+            type="button"
+            onClick={() => remover(idx)}
+            aria-label="Remover"
+            className="rounded-lg p-2 text-[color:var(--muted)] transition hover:bg-[color:var(--danger)]/10 hover:text-[color:var(--danger)]"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={adicionar}
+        className="self-start rounded-lg border border-dashed border-[color:var(--border)] px-3 py-1.5 text-xs text-[color:var(--muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+      >
+        + Adicionar rede social
+      </button>
     </div>
   );
 }

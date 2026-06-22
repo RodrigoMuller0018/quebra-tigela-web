@@ -69,29 +69,29 @@ export const NOMES_DIAS_SEMANA_ABREVIADOS = [
  * Labels de status de agendamento
  */
 export const STATUS_LABELS: Record<string, string> = {
-  available: "Disponível",
-  pending: "Aguardando aceite",
-  booked: "Reservado",
-  completed: "Concluído",
-  cancelled: "Cancelado",
+  disponivel: "Disponível",
+  pendente: "Aguardando aceite",
+  reservada: "Reservada",
+  concluida: "Concluída",
+  cancelada: "Cancelada",
 } as const;
 
 /**
  * Classes CSS para cada status
  */
 export const STATUS_CSS_CLASSES: Record<string, string> = {
-  available: "status-disponivel",
-  booked: "status-reservado",
-  cancelled: "status-cancelado",
+  disponivel: "status-disponivel",
+  reservada: "status-reservado",
+  cancelada: "status-cancelado",
 } as const;
 
 /**
  * Classes de badge Bootstrap para cada status
  */
 export const STATUS_BADGE_CLASSES: Record<string, string> = {
-  available: "badge bg-success",
-  booked: "badge bg-warning",
-  cancelled: "badge bg-secondary",
+  disponivel: "badge bg-success",
+  reservada: "badge bg-warning",
+  cancelada: "badge bg-secondary",
 } as const;
 
 /**

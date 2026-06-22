@@ -18,7 +18,7 @@ import { useAutenticacao } from "../../contexts/Autenticacao.context";
 const TAMANHO_PAGINA = 12;
 
 export default function ListaArtistasPagina() {
-  const { role, usuario } = useAutenticacao();
+  const { papel, usuario } = useAutenticacao();
   const [artistas, setArtistas] = useState<Artista[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [filtro, setFiltro] = useState("");
@@ -57,7 +57,7 @@ export default function ListaArtistasPagina() {
     if (!t) return artistas;
     return artistas.filter(
       (a) =>
-        a.name.toLowerCase().includes(t) || a.email.toLowerCase().includes(t)
+        a.nome.toLowerCase().includes(t) || a.email.toLowerCase().includes(t)
     );
   }, [artistas, filtro]);
 
@@ -66,7 +66,7 @@ export default function ListaArtistasPagina() {
   const itens = artistasFiltrados.slice(inicio, inicio + TAMANHO_PAGINA);
 
   const podeExcluir = (id: string) =>
-    role === "admin" || usuario?.sub === id;
+    papel === "admin" || usuario?.sub === id;
 
   return (
     <div className="flex flex-col gap-6">
@@ -128,27 +128,27 @@ export default function ListaArtistasPagina() {
                 <CardContent className="flex flex-col gap-3">
                   <div className="flex items-start gap-3">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-brand font-display text-lg font-black text-white">
-                      {a.name?.[0]?.toUpperCase() ?? "QT"}
+                      {a.nome?.[0]?.toUpperCase() ?? "QT"}
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate font-display text-base font-bold">
-                        {a.name}
+                        {a.nome}
                       </h3>
                       <p className="truncate text-xs text-[color:var(--muted)]">
                         {a.email}
                       </p>
-                      {a.city && a.state && (
+                      {a.cidade && a.estado && (
                         <p className="flex items-center gap-1 text-xs text-[color:var(--muted)]">
                           <MapPin size={12} />
-                          {a.city}, {a.state}
+                          {a.cidade}, {a.estado}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  {a.artTypes.length > 0 && (
+                  {a.tiposArte.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {a.artTypes.slice(0, 3).map((t, i) => (
+                      {a.tiposArte.slice(0, 3).map((t: string, i: number) => (
                         <span
                           key={i}
                           className="rounded-full bg-[color:var(--accent)]/15 px-2.5 py-0.5 text-xs text-[color:var(--accent)]"
@@ -160,7 +160,7 @@ export default function ListaArtistasPagina() {
                   )}
 
                   <div className="mt-auto flex gap-2 pt-2">
-                    <Link to={`/artistas/${a.id}`} className="flex-1">
+                    <Link to={`/artistas/@${a.handle}`} className="flex-1">
                       <Button
                         variant="primary"
                         size="sm"

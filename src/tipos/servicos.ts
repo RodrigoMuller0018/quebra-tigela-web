@@ -1,27 +1,27 @@
-export interface ServiceMedia {
-  type: "image" | "video";
+export interface MidiaServico {
+  tipo: "imagem" | "video";
   url: string;
 }
 
-export interface Service {
+export interface Servico {
   _id: string;
-  artistId: string;
-  title: string;
-  description?: string;
-  media?: ServiceMedia[];
-  active: boolean;
+  artistaId: string;
+  titulo: string;
+  descricao?: string;
+  midia?: MidiaServico[];
+  ativo: boolean;
 }
 
-export interface NovoService {
-  title: string;
-  description?: string;
-  media?: ServiceMedia[];
-  active?: boolean;
+export interface NovoServico {
+  titulo: string;
+  descricao?: string;
+  midia?: MidiaServico[];
+  ativo?: boolean;
 }
 
-export interface AtualizarService {
-  title?: string;
-  description?: string;
-  media?: ServiceMedia[];
-  active?: boolean;
+export interface AtualizarServico {
+  titulo?: string;
+  descricao?: string;
+  midia?: MidiaServico[];
+  ativo?: boolean;
 }

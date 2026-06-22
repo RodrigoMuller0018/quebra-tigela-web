@@ -1,33 +1,32 @@
 export interface RespostaArtista {
-  text: string;
-  repliedAt: string;
+  texto: string;
+  respondidaEm: string;
 }
 
-export interface Review {
+export interface Avaliacao {
   id: string;
   _id?: string;
-  /** ID da solicitação avaliada (1 review por request) */
-  requestId: string;
-  artistId: string;
-  /** ID do usuário OU objeto populado `{ _id, name }` quando vem do backend */
-  userId: string | { _id: string; name?: string };
-  /** Nome do avaliador — extraído do populate de userId quando disponível */
-  userName?: string;
-  rating: number;
-  comment?: string;
-  artistReply?: RespostaArtista;
-  createdAt?: string;
-  updatedAt?: string;
+  /** ID da solicitação avaliada (1 avaliação por solicitação) */
+  solicitacaoId: string;
+  artistaId: string;
+  /** ID do usuário OU objeto populado `{ _id, nome }` quando vem do backend */
+  usuarioId: string | { _id: string; nome?: string };
+  /** Nome do avaliador — extraído do populate de usuarioId quando disponível */
+  nomeUsuario?: string;
+  nota: number;
+  comentario?: string;
+  respostaArtista?: RespostaArtista;
+  criadaEm?: string;
+  atualizadaEm?: string;
 }
 
-export interface NovaReview {
-  /** A solicitação que está sendo avaliada — backend deriva artistId dela */
-  requestId: string;
-  rating: number;
-  comment?: string;
+export interface NovaAvaliacao {
+  solicitacaoId: string;
+  nota: number;
+  comentario?: string;
 }
 
-export interface AtualizaReview {
-  rating?: number;
-  comment?: string;
+export interface AtualizaAvaliacao {
+  nota?: number;
+  comentario?: string;
 }

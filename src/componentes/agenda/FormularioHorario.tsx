@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@heroui/react";
-import type { NovoScheduleEntry } from "../../tipos/schedule";
+import type { NovoItemAgenda } from "../../tipos/schedule";
 import { Caixa } from "../ui/Campo";
+import { composeInstant, formatarRangeAdaptativo } from "../../utilitarios/instants";
 
 interface Props {
   diaInicial?: Date;
-  onSubmit: (horarios: NovoScheduleEntry[]) => Promise<void>;
+  onSubmit: (horarios: NovoItemAgenda[]) => Promise<void>;
   onCancelar?: () => void;
 }
 
@@ -14,39 +15,68 @@ const SELECT_CLASS =
 const INPUT_CLASS =
   "w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-3 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30";
 
+function dateToInput(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function FormularioHorario({
   diaInicial,
   onSubmit,
   onCancelar,
 }: Props) {
   const agora = new Date();
-  const dataMinima = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+  const dataMinima = dateToInput(agora);
   const hoje = diaInicial && diaInicial >= agora ? diaInicial : agora;
-  const dataInicial = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+  const dataInicial = dateToInput(hoje);
 
-  const [data, setData] = useState(dataInicial);
+  const [dataInicio, setDataInicio] = useState(dataInicial);
+  const [dataFim, setDataFim] = useState(dataInicial);
   const [horaInicio, setHoraInicio] = useState("09:00");
   const [horaFim, setHoraFim] = useState("10:00");
+  const [multiDia, setMultiDia] = useState(false);
   const [intervalo, setIntervalo] = useState(60);
   const [modoLote, setModoLote] = useState(false);
   const [notas, setNotas] = useState("");
   const [salvando, setSalvando] = useState(false);
 
-  function gerarHorariosEmLote(): NovoScheduleEntry[] {
-    const horarios: NovoScheduleEntry[] = [];
+  // Quando desliga multi-dia, sincroniza dataFim com dataInicio
+  function handleToggleMultiDia(checked: boolean) {
+    setMultiDia(checked);
+    if (!checked) setDataFim(dataInicio);
+  }
+  function handleDataInicioChange(novaData: string) {
+    setDataInicio(novaData);
+    if (!multiDia) setDataFim(novaData);
+  }
+
+  function gerarUm(): NovoItemAgenda {
+    return {
+      inicio: composeInstant(dataInicio, horaInicio),
+      fim: composeInstant(multiDia ? dataFim : dataInicio, horaFim),
+      status: "disponivel",
+      observacoes: notas || undefined,
+    };
+  }
+
+  function gerarHorariosEmLote(): NovoItemAgenda[] {
+    // Modo lote só faz sentido com mesmo dia
+    const horarios: NovoItemAgenda[] = [];
     const [hi, mi] = horaInicio.split(":").map(Number);
     const [hf, mf] = horaFim.split(":").map(Number);
     let atual = hi * 60 + mi;
     const final = hf * 60 + mf;
     while (atual + intervalo <= final) {
-      const inicio = `${String(Math.floor(atual / 60)).padStart(2, "0")}:${String(atual % 60).padStart(2, "0")}`;
-      const fim = `${String(Math.floor((atual + intervalo) / 60)).padStart(2, "0")}:${String((atual + intervalo) % 60).padStart(2, "0")}`;
+      const inicioHHmm = `${String(Math.floor(atual / 60)).padStart(2, "0")}:${String(atual % 60).padStart(2, "0")}`;
+      const fimMinutos = atual + intervalo;
+      const fimHHmm = `${String(Math.floor(fimMinutos / 60)).padStart(2, "0")}:${String(fimMinutos % 60).padStart(2, "0")}`;
       horarios.push({
-        date: data,
-        startTime: inicio,
-        endTime: fim,
-        status: "available",
-        notes: notas || undefined,
+        inicio: composeInstant(dataInicio, inicioHHmm),
+        fim: composeInstant(dataInicio, fimHHmm),
+        status: "disponivel",
+        observacoes: notas || undefined,
       });
       atual += intervalo;
     }
@@ -60,15 +90,7 @@ export function FormularioHorario({
       if (modoLote) {
         await onSubmit(gerarHorariosEmLote());
       } else {
-        await onSubmit([
-          {
-            date: data,
-            startTime: horaInicio,
-            endTime: horaFim,
-            status: "available",
-            notes: notas || undefined,
-          },
-        ]);
+        await onSubmit([gerarUm()]);
       }
       setHoraInicio("09:00");
       setHoraFim("10:00");
@@ -78,20 +100,38 @@ export function FormularioHorario({
     }
   }
 
-  const horariosGerados = modoLote ? gerarHorariosEmLote() : [];
+  const horariosGerados = useMemo(
+    () => (modoLote ? gerarHorariosEmLote() : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [modoLote, dataInicio, horaInicio, horaFim, intervalo],
+  );
+
+  const previewSingle = !modoLote
+    ? (() => {
+        try {
+          return formatarRangeAdaptativo(
+            composeInstant(dataInicio, horaInicio),
+            composeInstant(multiDia ? dataFim : dataInicio, horaFim),
+          );
+        } catch {
+          return "";
+        }
+      })()
+    : "";
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <label htmlFor="data-h" className="text-sm font-medium">
-          Data <span className="text-[color:var(--accent)]">*</span>
+          Data {multiDia ? "de início" : ""}{" "}
+          <span className="text-danger">*</span>
         </label>
         <input
           id="data-h"
           type="date"
           className={INPUT_CLASS}
-          value={data}
-          onChange={(e) => setData(e.target.value)}
+          value={dataInicio}
+          onChange={(e) => handleDataInicioChange(e.target.value)}
           required
           min={dataMinima}
         />
@@ -100,7 +140,7 @@ export function FormularioHorario({
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="hi" className="text-sm font-medium">
-            Hora início *
+            Hora início <span className="text-danger">*</span>
           </label>
           <input
             id="hi"
@@ -113,7 +153,7 @@ export function FormularioHorario({
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="hf" className="text-sm font-medium">
-            Hora fim *
+            Hora fim <span className="text-danger">*</span>
           </label>
           <input
             id="hf"
@@ -126,8 +166,37 @@ export function FormularioHorario({
         </div>
       </div>
 
+      {!modoLote && (
+        <Caixa isSelected={multiDia} onChange={handleToggleMultiDia}>
+          Termina em outro dia (ex: show das 22h até 02h da madrugada)
+        </Caixa>
+      )}
+
+      {multiDia && !modoLote && (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="df" className="text-sm font-medium">
+            Data de fim <span className="text-danger">*</span>
+          </label>
+          <input
+            id="df"
+            type="date"
+            className={INPUT_CLASS}
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+            required
+            min={dataInicio}
+          />
+        </div>
+      )}
+
+      {!modoLote && previewSingle && (
+        <p className="text-xs text-[color:var(--muted)]">
+          Preview: <span className="font-medium">{previewSingle}</span>
+        </p>
+      )}
+
       <Caixa isSelected={modoLote} onChange={setModoLote}>
-        Criar múltiplos horários (modo lote)
+        Criar múltiplos horários (modo lote — mesmo dia)
       </Caixa>
 
       {modoLote && (
@@ -165,7 +234,7 @@ export function FormularioHorario({
                     key={i}
                     className="rounded-full bg-[color:var(--accent)]/10 px-2 py-1 text-xs text-[color:var(--accent)]"
                   >
-                    {h.startTime}–{h.endTime}
+                    {formatarRangeAdaptativo(h.inicio, h.fim)}
                   </span>
                 ))}
               </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Card, CardContent, CardHeader, Spinner } from "@heroui/react";
-import { Save, Trash2 } from "lucide-react";
+import { Save, PowerOff } from "lucide-react";
 import { useAutenticacao } from "../../contexts/Autenticacao.context";
 import { SeletorEstadoCidade } from "../../componentes/SeletorEstadoCidade";
 import {
@@ -14,21 +14,21 @@ import { UploadFotoPerfil } from "../../componentes/ui/UploadFotoPerfil";
 import {
   obterUsuarioPorId,
   atualizarUsuario,
-  excluirUsuario,
+  desativarConta,
 } from "../../api/usuarios.api";
 
 interface DadosPerfil {
-  name: string;
+  nome: string;
   email: string;
-  city: string;
-  state: string;
-  profilePicture?: string;
+  cidade: string;
+  estado: string;
+  fotoPerfil?: string | null;
 }
 
-const INICIAL: DadosPerfil = { name: "", email: "", city: "", state: "" };
+const INICIAL: DadosPerfil = { nome: "", email: "", cidade: "", estado: "" };
 
 export default function PerfilCliente() {
-  const { usuario, logout } = useAutenticacao();
+  const { usuario, logout, marcarPerfilAtualizado } = useAutenticacao();
   const navigate = useNavigate();
   const [dados, setDados] = useState<DadosPerfil>(INICIAL);
   const [carregando, setCarregando] = useState(true);
@@ -42,11 +42,11 @@ export default function PerfilCliente() {
     obterUsuarioPorId(usuario.sub)
       .then((u) =>
         setDados({
-          name: u.name || "",
+          nome: u.nome || "",
           email: u.email || "",
-          city: u.city || "",
-          state: u.state || "",
-          profilePicture: u.profilePicture,
+          cidade: u.cidade || "",
+          estado: u.estado || "",
+          fotoPerfil: u.fotoPerfil,
         })
       )
       .catch((e) => avisoErro(e?.message ?? "Erro ao carregar perfil"))
@@ -54,10 +54,10 @@ export default function PerfilCliente() {
   }, [usuario?.sub]);
 
   const handleEstado = useCallback((e: string) => {
-    setDados((p) => ({ ...p, state: e }));
+    setDados((p) => ({ ...p, estado: e }));
   }, []);
   const handleCidade = useCallback((c: string) => {
-    setDados((p) => ({ ...p, city: c }));
+    setDados((p) => ({ ...p, cidade: c }));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -66,13 +66,14 @@ export default function PerfilCliente() {
     setSalvando(true);
     try {
       await atualizarUsuario(usuario.sub, {
-        name: dados.name,
+        nome: dados.nome,
         email: dados.email,
-        city: dados.city || undefined,
-        state: dados.state || undefined,
-        profilePicture: dados.profilePicture,
+        cidade: dados.cidade || undefined,
+        estado: dados.estado || undefined,
+        fotoPerfil: dados.fotoPerfil ?? null,
       });
       avisoSucesso("Perfil atualizado com sucesso!");
+      marcarPerfilAtualizado();
     } catch (err: any) {
       avisoErro(err?.message ?? "Erro ao atualizar perfil");
     } finally {
@@ -80,16 +81,18 @@ export default function PerfilCliente() {
     }
   }
 
-  async function handleExcluirConta() {
+  async function handleDesativarConta() {
     if (!usuario?.sub) return;
     setExcluindo(true);
     try {
-      await excluirUsuario(usuario.sub);
-      avisoSucesso("Conta excluída.");
+      await desativarConta(usuario.sub);
+      avisoSucesso(
+        "Conta desativada. Pra voltar, basta fazer login com seu e-mail e senha.",
+      );
       logout();
       navigate("/login");
     } catch (e: any) {
-      avisoErro(e?.message ?? "Erro ao excluir conta");
+      avisoErro(e?.message ?? "Erro ao desativar conta");
       setExcluindo(false);
     }
   }
@@ -122,10 +125,10 @@ export default function PerfilCliente() {
         <CardContent>
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <UploadFotoPerfil
-              fotoAtual={dados.profilePicture}
-              nome={dados.name || "Você"}
+              fotoAtual={dados.fotoPerfil}
+              nome={dados.nome || "Você"}
               onChange={(foto) =>
-                setDados((p) => ({ ...p, profilePicture: foto }))
+                setDados((p) => ({ ...p, fotoPerfil: foto }))
               }
               desabilitado={salvando}
             />
@@ -133,8 +136,8 @@ export default function PerfilCliente() {
               <Campo
                 label="Nome completo"
                 type="text"
-                value={dados.name}
-                onChange={(v) => setDados({ ...dados, name: v })}
+                value={dados.nome}
+                onChange={(v) => setDados({ ...dados, nome: v })}
                 isRequired
               />
               <Campo
@@ -147,8 +150,8 @@ export default function PerfilCliente() {
             </div>
             <SeletorEstadoCidade
               idPrefix="cliente-perfil"
-              estadoSelecionado={dados.state}
-              cidadeSelecionada={dados.city}
+              estadoSelecionado={dados.estado}
+              cidadeSelecionada={dados.cidade}
               onEstadoChange={handleEstado}
               onCidadeChange={handleCidade}
             />
@@ -183,14 +186,16 @@ export default function PerfilCliente() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-[color:var(--muted)]">
-            Excluir sua conta remove todos os seus dados permanentemente.
+            Desativar sua conta esconde você das buscas e bloqueia novas
+            interações. Seus dados ficam preservados — basta fazer login pra
+            reativar tudo automaticamente.
           </p>
           <Button
             variant="danger-soft"
             onPress={() => setConfirmarExcluir(true)}
           >
-            <Trash2 size={16} className="mr-2" />
-            Excluir minha conta
+            <PowerOff size={16} className="mr-2" />
+            Desativar minha conta
           </Button>
         </CardContent>
       </Card>
@@ -198,18 +203,23 @@ export default function PerfilCliente() {
       <ConfirmacaoModal
         aberto={confirmarExcluir}
         aoFechar={(open) => !open && setConfirmarExcluir(false)}
-        titulo="Excluir conta?"
+        titulo="Desativar conta?"
         mensagem={
           <>
-            Esta ação é <strong>irreversível</strong>. Sua conta e todos os seus
-            dados serão removidos permanentemente.
+            Você vai sair das buscas e seu perfil de artista (se existir) também
+            será pausado.
+            <br />
+            <br />
+            <strong>Seus dados ficam preservados</strong> — solicitações,
+            avaliações e histórico continuam intactos. Pra voltar, basta fazer
+            login com seu e-mail e senha de novo.
           </>
         }
-        textoConfirmar="Sim, excluir conta"
+        textoConfirmar="Sim, desativar"
         textoCancelar="Cancelar"
         variante="destrutivo"
         carregando={excluindo}
-        onConfirmar={handleExcluirConta}
+        onConfirmar={handleDesativarConta}
       />
     </div>
   );

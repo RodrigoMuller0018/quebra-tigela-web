@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { listarArtistas } from "../../api/artistas.api";
 import { AvatarPerfil } from "../../componentes/ui/AvatarPerfil";
+import { SeletorTiposArte } from "../../componentes/ui/SeletorTiposArte";
 import {
   listarEstados,
   listarCidadesPorEstado,
@@ -44,9 +45,9 @@ export default function HomeClientePagina() {
   async function carregar() {
     setCarregando(true);
     try {
-      const filtros: { state?: string; city?: string } = {};
-      if (estado) filtros.state = estado;
-      if (cidade) filtros.city = cidade;
+      const filtros: { estado?: string; cidade?: string } = {};
+      if (estado) filtros.estado = estado;
+      if (cidade) filtros.cidade = cidade;
       const data = await listarArtistas(filtros);
       setArtistas(data);
     } catch (e: any) {
@@ -91,19 +92,13 @@ export default function HomeClientePagina() {
     })();
   }, [estado]);
 
-  const tiposDisponiveis = useMemo(() => {
-    const t = new Set<string>();
-    artistas.forEach((a) => a.artTypes.forEach((tipo) => t.add(tipo)));
-    return Array.from(t).sort();
-  }, [artistas]);
-
   const artistasFiltrados = useMemo(() => {
     return artistas.filter((a) => {
       const q = buscaDebounced.toLowerCase();
-      const matchBusca = !buscaDebounced || a.name.toLowerCase().includes(q);
+      const matchBusca = !buscaDebounced || a.nome.toLowerCase().includes(q);
       const matchTipos =
         tiposSelecionados.length === 0 ||
-        tiposSelecionados.some((t) => a.artTypes.includes(t));
+        tiposSelecionados.some((t) => a.tiposArte.includes(t));
       return matchBusca && matchTipos;
     });
   }, [artistas, buscaDebounced, tiposSelecionados]);
@@ -307,34 +302,14 @@ export default function HomeClientePagina() {
                 </div>
               </FiltroSecao>
 
-              {/* Tipos de arte (chips toggleáveis, multi) */}
+              {/* Tipos de arte (lista controlada com busca + categorias) */}
               <FiltroSecao titulo="Tipos de arte">
-                {tiposDisponiveis.length === 0 ? (
-                  <p className="text-sm text-[color:var(--muted)]">
-                    Nenhum tipo disponível
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {tiposDisponiveis.map((tipo) => {
-                      const ativo = tiposSelecionados.includes(tipo);
-                      return (
-                        <button
-                          key={tipo}
-                          type="button"
-                          onClick={() => toggleTipo(tipo)}
-                          className={
-                            "rounded-full px-3 py-1.5 text-sm font-medium transition " +
-                            (ativo
-                              ? "bg-gradient-brand text-white shadow-md shadow-[color:var(--accent)]/30"
-                              : "bg-[color:var(--surface-secondary)] text-[color:var(--foreground)] hover:bg-[color:var(--accent)]/10 hover:text-[color:var(--accent)]")
-                          }
-                        >
-                          {tipo}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                <SeletorTiposArte
+                  value={tiposSelecionados}
+                  onChange={setTiposSelecionados}
+                  label=""
+                  ajuda="Filtra artistas com algum desses tipos"
+                />
               </FiltroSecao>
             </div>
 
@@ -417,8 +392,8 @@ function ArtistaCard({ artista }: { artista: Artista }) {
         <div className="absolute inset-0 bg-gradient-mesh opacity-60" />
         <div className="absolute -bottom-8 left-5 overflow-hidden rounded-2xl border-4 border-[color:var(--surface)] shadow-xl">
           <AvatarPerfil
-            foto={artista.profilePicture}
-            nome={artista.name}
+            foto={artista.fotoPerfil}
+            nome={artista.nome}
             tamanho="lg"
             className="!rounded-2xl"
           />
@@ -427,33 +402,33 @@ function ArtistaCard({ artista }: { artista: Artista }) {
       <CardContent className="flex flex-col gap-3 pt-12">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-display text-lg font-bold">{artista.name}</h3>
-            {artista.ratingCount != null && artista.ratingCount > 0 &&
-              artista.ratingAvg != null && (
+            <h3 className="font-display text-lg font-bold">{artista.nome}</h3>
+            {artista.totalAvaliacoes != null && artista.totalAvaliacoes > 0 &&
+              artista.notaMedia != null && (
                 <span
                   className="flex shrink-0 items-center gap-0.5 text-sm font-bold"
-                  title={`${artista.ratingCount} ${artista.ratingCount === 1 ? "avaliação" : "avaliações"}`}
+                  title={`${artista.totalAvaliacoes} ${artista.totalAvaliacoes === 1 ? "avaliação" : "avaliações"}`}
                 >
                   <Star
                     size={14}
                     className="fill-[color:var(--warning)] text-[color:var(--warning)]"
                   />
-                  {artista.ratingAvg.toFixed(1)}
+                  {artista.notaMedia.toFixed(1)}
                   <span className="text-xs font-normal text-[color:var(--muted)]">
-                    ({artista.ratingCount})
+                    ({artista.totalAvaliacoes})
                   </span>
                 </span>
               )}
           </div>
           <p className="flex items-center gap-1 text-sm text-[color:var(--muted)]">
             <MapPin size={14} />
-            {artista.city}
-            {artista.state && ` — ${artista.state}`}
+            {artista.cidade}
+            {artista.estado && ` — ${artista.estado}`}
           </p>
         </div>
-        {artista.artTypes.length > 0 && (
+        {artista.tiposArte.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {artista.artTypes.slice(0, 3).map((t, i) => (
+            {artista.tiposArte.slice(0, 3).map((t: string, i: number) => (
               <span
                 key={i}
                 className="rounded-full bg-[color:var(--accent)]/10 px-2.5 py-0.5 text-xs text-[color:var(--accent)]"
@@ -461,14 +436,14 @@ function ArtistaCard({ artista }: { artista: Artista }) {
                 {t}
               </span>
             ))}
-            {artista.artTypes.length > 3 && (
+            {artista.tiposArte.length > 3 && (
               <span className="text-xs text-[color:var(--muted)]">
-                +{artista.artTypes.length - 3}
+                +{artista.tiposArte.length - 3}
               </span>
             )}
           </div>
         )}
-        <Link to={`/artistas/${artista.id}`} className="mt-auto">
+        <Link to={`/artistas/@${artista.handle}`} className="mt-auto">
           <Button
             variant="primary"
             fullWidth

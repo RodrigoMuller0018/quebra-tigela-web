@@ -1,60 +1,44 @@
 /**
- * Tipos para Sistema de Agendamento
+ * Tipos para Sistema de Agenda
  */
 
-export type ScheduleStatus =
-  | 'available'
-  | 'pending'
-  | 'booked'
-  | 'completed'
-  | 'cancelled';
+export type StatusAgenda =
+  | 'disponivel'
+  | 'pendente'
+  | 'reservada'
+  | 'concluida'
+  | 'cancelada';
 
-export interface ScheduleEntry {
+export interface ItemAgenda {
   _id?: string;
   id?: string;
-  artistId: string;
-  clientId?: string;
-  date: string; // ISO 8601 date string
-  startTime: string; // HH:mm format
-  endTime: string; // HH:mm format
-  status: ScheduleStatus;
-  notes?: string;
-  serviceId?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  artistaId: string;
+  clienteId?: string;
+  /** ISO 8601 com timezone (ex: 2026-06-21T22:00:00-03:00). Suporta eventos multi-dia. */
+  inicio: string;
+  /** ISO 8601 com timezone. Estritamente > inicio. */
+  fim: string;
+  status: StatusAgenda;
+  observacoes?: string;
+  servicoId?: string;
+  criadoEm?: string;
+  atualizadoEm?: string;
 }
 
-export interface NovoScheduleEntry {
-  date: string;
-  startTime: string;
-  endTime: string;
-  status?: ScheduleStatus;
-  notes?: string;
-  serviceId?: string;
+export interface NovoItemAgenda {
+  inicio: string;
+  fim: string;
+  status?: StatusAgenda;
+  observacoes?: string;
+  servicoId?: string;
 }
 
-export interface FiltrosSchedule {
-  artistId?: string;
-  clientId?: string;
-  status?: ScheduleStatus;
-  dateFrom?: string;
-  dateTo?: string;
-}
-
-/**
- * Tipo para agrupar horários por dia no calendário
- */
-export interface DiaAgenda {
-  data: string; // YYYY-MM-DD
-  horarios: ScheduleEntry[];
-}
-
-/**
- * Tipo para slot de horário disponível para seleção
- */
-export interface SlotHorario {
-  inicio: string; // HH:mm
-  fim: string; // HH:mm
-  disponivel: boolean;
-  scheduleId?: string;
+export interface FiltrosAgenda {
+  artistaId?: string;
+  clienteId?: string;
+  status?: StatusAgenda;
+  /** ISO 8601 — filtra slots com inicio >= esse valor */
+  de?: string;
+  /** ISO 8601 — filtra slots com inicio <= esse valor */
+  ate?: string;
 }

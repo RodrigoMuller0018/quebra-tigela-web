@@ -1,25 +1,61 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
-import { decodificarToken, type TokenPayload } from "../utilitarios/jwt";
+import { decodificarToken, type PayloadToken } from "../utilitarios/jwt";
 
-type UserType = "client" | "artist";
+export type ModoAtivo = "cliente" | "artista";
 
 type AuthContextType = {
   token: string | null;
-  usuario: TokenPayload | null;
-  userType: UserType | null;
-  role: "client" | "artist" | "admin" | null;
-  login: (token: string, userType: UserType) => void;
+  usuario: PayloadToken | null;
+  papel: "cliente" | "admin" | null;
+  /** Tem perfil de artista linkado (independente do modo ativo) */
+  temPerfilArtista: boolean;
+  /** Artista._id se temPerfilArtista=true */
+  artistaId: string | null;
+  /** Modo atual da UI ('cliente' ou 'artista') */
+  modoAtivo: ModoAtivo;
+  alternarModo: () => void;
+  setModoAtivo: (modo: ModoAtivo) => void;
+  login: (token: string) => void;
   logout: () => void;
+  /**
+   * Contador incrementado quando o usuário atualiza dados do próprio perfil
+   * (ex: salva foto, nome, cidade). Componentes que cacheiam dados do usuário
+   * em outras telas (ex: avatar na sidebar) usam isso como dep do useEffect
+   * pra refetch sem precisar de navegação.
+   */
+  perfilAtualizadoEm: number;
+  marcarPerfilAtualizado: () => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
   token: null,
   usuario: null,
-  userType: null,
-  role: null,
+  papel: null,
+  temPerfilArtista: false,
+  artistaId: null,
+  modoAtivo: "cliente",
+  alternarModo: () => {},
+  setModoAtivo: () => {},
   login: () => {},
   logout: () => {},
+  perfilAtualizadoEm: 0,
+  marcarPerfilAtualizado: () => {},
 });
+
+const STORAGE_MODE_KEY = "modoAtivo";
+
+function lerModoSalvo(temArtista: boolean): ModoAtivo {
+  try {
+    const salvo = localStorage.getItem(STORAGE_MODE_KEY);
+    if (salvo === "cliente" || salvo === "artista") {
+      if (salvo === "artista" && !temArtista) return "cliente";
+      return salvo;
+    }
+  } catch {
+    // ignore
+  }
+  return temArtista ? "artista" : "cliente";
+}
 
 export function AutenticacaoProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => {
@@ -30,65 +66,92 @@ export function AutenticacaoProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  const [userType, setUserType] = useState<UserType | null>(() => {
+  const [usuario, setUsuario] = useState<PayloadToken | null>(() => {
     try {
-      return localStorage.getItem("userType") as UserType;
+      const tokenGuardado = localStorage.getItem("token");
+      return tokenGuardado ? decodificarToken(tokenGuardado) : null;
     } catch {
       return null;
     }
   });
 
-  const [usuario, setUsuario] = useState<TokenPayload | null>(() => {
-    try {
-      const storedToken = localStorage.getItem("token");
-      return storedToken ? decodificarToken(storedToken) : null;
-    } catch {
-      return null;
-    }
-  });
+  const papel = usuario?.papel === "admin" ? "admin" : usuario ? "cliente" : null;
+  const temPerfilArtista = !!usuario?.temPerfilArtista;
+  const artistaId = usuario?.artistaId ?? null;
 
-  const [role, setRole] = useState<"client" | "artist" | "admin" | null>(() => {
-    try {
-      const storedToken = localStorage.getItem("token");
-      const payload = storedToken ? decodificarToken(storedToken) : null;
-      return payload?.role || null;
-    } catch {
-      return null;
-    }
-  });
+  const [modoAtivo, setModoAtivoState] = useState<ModoAtivo>(() =>
+    lerModoSalvo(!!usuario?.temPerfilArtista),
+  );
 
-  function login(newToken: string, newUserType: UserType) {
+  const [perfilAtualizadoEm, setPerfilAtualizadoEm] = useState(0);
+  function marcarPerfilAtualizado() {
+    setPerfilAtualizadoEm(Date.now());
+  }
+
+  function setModoAtivo(modo: ModoAtivo) {
+    if (modo === "artista" && !temPerfilArtista) return;
     try {
-      localStorage.setItem("token", newToken);
-      localStorage.setItem("userType", newUserType);
+      localStorage.setItem(STORAGE_MODE_KEY, modo);
+    } catch {
+      // ignore
+    }
+    setModoAtivoState(modo);
+  }
+
+  function alternarModo() {
+    if (!temPerfilArtista) return;
+    setModoAtivo(modoAtivo === "cliente" ? "artista" : "cliente");
+  }
+
+  function login(novoToken: string) {
+    try {
+      localStorage.setItem("token", novoToken);
     } catch {
       // ignore
     }
 
-    const payload = decodificarToken(newToken);
+    const payload = decodificarToken(novoToken);
+    const novoTemArtista = !!payload?.temPerfilArtista;
+    const novoModo = lerModoSalvo(novoTemArtista);
 
-    setToken(newToken);
-    setUserType(newUserType);
+    setToken(novoToken);
     setUsuario(payload);
-    setRole(payload?.role || null);
+    setModoAtivoState(novoModo);
+    try {
+      localStorage.setItem(STORAGE_MODE_KEY, novoModo);
+    } catch {
+      // ignore
+    }
   }
 
   function logout() {
     try {
       localStorage.removeItem("token");
-      localStorage.removeItem("userType");
+      localStorage.removeItem(STORAGE_MODE_KEY);
     } catch {
       // ignore
     }
     setToken(null);
-    setUserType(null);
     setUsuario(null);
-    setRole(null);
+    setModoAtivoState("cliente");
   }
 
   return (
     <AuthContext.Provider
-      value={{ token, usuario, userType, role, login, logout }}
+      value={{
+        token,
+        usuario,
+        papel,
+        temPerfilArtista,
+        artistaId,
+        modoAtivo,
+        alternarModo,
+        setModoAtivo,
+        login,
+        logout,
+        perfilAtualizadoEm,
+        marcarPerfilAtualizado,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -6,11 +6,11 @@ import { erro as avisoErro } from "../../utilitarios/avisos";
 
 interface UploadFotoPerfilProps {
   /** Foto atual (data URL ou URL). Mostrada como preview. */
-  fotoAtual?: string;
+  fotoAtual?: string | null;
   /** Nome — usado como fallback de iniciais quando não há foto */
   nome: string;
-  /** Disparado quando uma nova foto é selecionada e processada (data URL base64) */
-  onChange: (novaFoto: string | undefined) => void;
+  /** Disparado quando uma nova foto é selecionada/removida. null sinaliza remoção (vai pro backend pra zerar o campo). */
+  onChange: (novaFoto: string | null) => void;
   /** Dimensão alvo (quadrada). Default 512. */
   tamanhoAlvo?: number;
   /** Qualidade JPEG (0–1). Default 0.85. */
@@ -141,7 +141,7 @@ export function UploadFotoPerfil({
             <Button
               size="sm"
               variant="ghost"
-              onPress={() => onChange(undefined)}
+              onPress={() => onChange(null)}
               isDisabled={desabilitado || processando}
               className="text-[color:var(--danger)]"
             >

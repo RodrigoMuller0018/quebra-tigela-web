@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@heroui/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { ScheduleEntry } from "../../tipos/schedule";
+import type { ItemAgenda } from "../../tipos/schedule";
 import {
   NOMES_MESES_CAPITALIZADOS,
   NOMES_DIAS_SEMANA_ABREVIADOS,
@@ -9,15 +9,14 @@ import {
 import {
   ehMesmoDia,
   dateParaString,
-  extrairData,
 } from "../../utilitarios/dataUtils";
 
 interface Props {
-  horarios: ScheduleEntry[];
+  horarios: ItemAgenda[];
   mesAno?: Date;
   diaSelecionado?: Date | null;
   onDiaClick?: (dia: Date) => void;
-  onHorarioClick?: (horario: ScheduleEntry) => void;
+  onHorarioClick?: (horario: ItemAgenda) => void;
 }
 
 export function CalendarioAgenda({
@@ -43,16 +42,21 @@ export function CalendarioAgenda({
   }, [dataAtual]);
 
   const horariosPorDia = useMemo(() => {
-    const mapa = new Map<string, ScheduleEntry[]>();
+    const mapa = new Map<string, ItemAgenda[]>();
     horarios.forEach((h) => {
-      const chave = extrairData(h.date);
+      // Evento aparece no dia LOCAL do startInstant (multi-dia: dia de início)
+      const d = new Date(h.inicio);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const chave = `${y}-${m}-${day}`;
       if (!mapa.has(chave)) mapa.set(chave, []);
       mapa.get(chave)!.push(h);
     });
     return mapa;
   }, [horarios]);
 
-  function obterHorariosDoDia(dia: Date | null): ScheduleEntry[] {
+  function obterHorariosDoDia(dia: Date | null): ItemAgenda[] {
     if (!dia) return [];
     return horariosPorDia.get(dateParaString(dia)) || [];
   }
@@ -101,11 +105,11 @@ export function CalendarioAgenda({
         {diasDoMes.map((dia, index) => {
           const horariosNoDia = obterHorariosDoDia(dia);
           const temHorarios = horariosNoDia.length > 0;
-          const disponivel = horariosNoDia.some((h) => h.status === "available");
-          const reservado = horariosNoDia.some((h) => h.status === "booked");
-          const pendente = horariosNoDia.some((h) => h.status === "pending");
+          const disponivel = horariosNoDia.some((h) => h.status === "disponivel");
+          const reservado = horariosNoDia.some((h) => h.status === "reservada");
+          const pendente = horariosNoDia.some((h) => h.status === "pendente");
           const apenasCancelados =
-            temHorarios && horariosNoDia.every((h) => h.status === "cancelled");
+            temHorarios && horariosNoDia.every((h) => h.status === "cancelada");
           const hoje = ehHoje(dia);
           const selecionado =
             dia && diaSelecionado ? ehMesmoDia(dia, diaSelecionado) : false;

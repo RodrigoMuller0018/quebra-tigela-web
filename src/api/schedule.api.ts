@@ -1,32 +1,29 @@
 import { http } from "./http";
-import type { ScheduleEntry, NovoScheduleEntry, FiltrosSchedule } from "../tipos/schedule";
+import type { ItemAgenda, NovoItemAgenda, FiltrosAgenda } from "../tipos/schedule";
 
-function normalizar(item: any): ScheduleEntry {
+function normalizar(item: any): ItemAgenda {
   return {
     ...item,
     id: String(item.id || item._id),
-    artistId: String(item.artistId),
-    clientId: item.clientId ? String(item.clientId) : undefined,
+    artistaId: String(item.artistaId),
+    clienteId: item.clienteId ? String(item.clienteId) : undefined,
   };
 }
 
-/**
- * Listar horários com filtros
- */
-export async function listarHorarios(filtros?: FiltrosSchedule): Promise<ScheduleEntry[]> {
-  let url = "/api/schedule";
+export async function listarHorarios(filtros?: FiltrosAgenda): Promise<ItemAgenda[]> {
+  let url = "/api/agenda";
   const params = new URLSearchParams();
 
-  if (filtros?.artistId) {
-    url = `/api/schedule/artist/${filtros.artistId}`;
-    if (filtros.dateFrom) params.append("from", filtros.dateFrom);
-    if (filtros.dateTo) params.append("to", filtros.dateTo);
+  if (filtros?.artistaId) {
+    url = `/api/agenda/artista/${filtros.artistaId}`;
+    if (filtros.de) params.append("de", filtros.de);
+    if (filtros.ate) params.append("ate", filtros.ate);
     if (filtros.status) params.append("status", filtros.status);
   } else {
-    if (filtros?.clientId) params.append("clientId", filtros.clientId);
+    if (filtros?.clienteId) params.append("clienteId", filtros.clienteId);
     if (filtros?.status) params.append("status", filtros.status);
-    if (filtros?.dateFrom) params.append("dateFrom", filtros.dateFrom);
-    if (filtros?.dateTo) params.append("dateTo", filtros.dateTo);
+    if (filtros?.de) params.append("de", filtros.de);
+    if (filtros?.ate) params.append("ate", filtros.ate);
   }
 
   const queryString = params.toString();
@@ -36,98 +33,70 @@ export async function listarHorarios(filtros?: FiltrosSchedule): Promise<Schedul
   return res.data.map(normalizar);
 }
 
-/**
- * Obter horário específico por ID
- */
-export async function obterHorarioPorId(id: string): Promise<ScheduleEntry> {
-  const res = await http.get(`/api/schedule/${id}`);
+export async function obterHorarioPorId(id: string): Promise<ItemAgenda> {
+  const res = await http.get(`/api/agenda/${id}`);
   return normalizar(res.data);
 }
 
-/**
- * Criar novo horário (artista adiciona disponibilidade)
- */
-export async function criarHorario(dados: NovoScheduleEntry & { artistId: string }): Promise<ScheduleEntry> {
-  const res = await http.post("/api/schedule", dados);
+export async function criarHorario(
+  dados: NovoItemAgenda & { artistaId: string },
+): Promise<ItemAgenda> {
+  const res = await http.post("/api/agenda", dados);
   return normalizar(res.data);
 }
 
-/**
- * Criar múltiplos horários de uma vez
- */
 export async function criarHorariosEmLote(
-  horarios: Array<NovoScheduleEntry & { artistId: string }>
-): Promise<ScheduleEntry[]> {
-  const res = await http.post("/api/schedule/batch", { schedules: horarios });
+  itens: Array<NovoItemAgenda & { artistaId: string }>,
+): Promise<ItemAgenda[]> {
+  const res = await http.post("/api/agenda/lote", { itens });
   return res.data.map(normalizar);
 }
 
-/**
- * Atualizar horário (alterar status, notas, etc)
- */
 export async function atualizarHorario(
   id: string,
-  dados: Partial<NovoScheduleEntry>
-): Promise<ScheduleEntry> {
-  const res = await http.patch(`/api/schedule/${id}`, dados);
+  dados: Partial<NovoItemAgenda>,
+): Promise<ItemAgenda> {
+  const res = await http.patch(`/api/agenda/${id}`, dados);
   return normalizar(res.data);
 }
 
-/**
- * Reservar horário (cliente faz booking)
- */
 export async function reservarHorario(
   id: string,
-  dados?: { notes?: string; serviceId?: string }
-): Promise<ScheduleEntry> {
-  const res = await http.post(`/api/schedule/${id}/book`, dados || {});
+  dados?: { observacoes?: string; servicoId?: string },
+): Promise<ItemAgenda> {
+  const res = await http.post(`/api/agenda/${id}/reservar`, dados || {});
   return normalizar(res.data);
 }
 
-/**
- * Cancelar horário
- */
-export async function cancelarHorario(id: string): Promise<ScheduleEntry> {
-  const res = await http.post(`/api/schedule/${id}/cancel`);
+export async function cancelarHorario(id: string): Promise<ItemAgenda> {
+  const res = await http.post(`/api/agenda/${id}/cancelar`);
   return normalizar(res.data);
 }
 
-/**
- * Deletar horário (apenas se não estiver reservado)
- */
-export async function deletarHorario(id: string): Promise<{ deleted: boolean }> {
-  const res = await http.delete(`/api/schedule/${id}`);
+export async function deletarHorario(id: string): Promise<{ removido: boolean }> {
+  const res = await http.delete(`/api/agenda/${id}`);
   return res.data;
 }
 
-/**
- * Obter horários disponíveis de um artista (apenas status: available)
- */
 export async function obterHorariosDisponiveis(
-  artistId: string,
-  dateFrom?: string,
-  dateTo?: string
-): Promise<ScheduleEntry[]> {
+  artistaId: string,
+  de?: string,
+  ate?: string,
+): Promise<ItemAgenda[]> {
   return listarHorarios({
-    artistId,
-    status: "available",
-    dateFrom,
-    dateTo,
+    artistaId,
+    status: "disponivel",
+    de,
+    ate,
   });
 }
 
-/**
- * Obter horários futuros de um artista (apenas datas >= hoje)
- */
-export async function obterHorariosFuturos(artistId: string): Promise<ScheduleEntry[]> {
-  const res = await http.get(`/api/schedule/artist/${artistId}/future`);
+export async function obterHorariosFuturos(artistaId: string): Promise<ItemAgenda[]> {
+  const res = await http.get(`/api/agenda/artista/${artistaId}/futuros`);
   return res.data.map(normalizar);
 }
 
-/**
- * Obter minhas reservas (como cliente)
- */
-export async function obterMinhasReservas(): Promise<ScheduleEntry[]> {
-  const res = await http.get("/api/schedule/my-bookings");
+export async function obterMinhasReservas(): Promise<ItemAgenda[]> {
+  const res = await http.get("/api/agenda/minhas-reservas");
   return res.data.map(normalizar);
 }

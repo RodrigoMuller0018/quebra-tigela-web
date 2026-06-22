@@ -13,7 +13,7 @@ import {
   listarMeusServicos,
   atualizarServico,
 } from "../../api/servicos.api";
-import type { Service, ServiceMedia } from "../../tipos/servicos";
+import type { Servico, MidiaServico } from "../../tipos/servicos";
 import { FormularioServico, ListaServicos } from "../../componentes/servicos";
 import {
   sucesso as avisoSucesso,
@@ -21,22 +21,21 @@ import {
 } from "../../utilitarios/avisos";
 
 export default function ServicosArtistaPagina() {
-  const { usuario } = useAutenticacao();
-  const artistId = usuario?.sub;
+  const { artistaId } = useAutenticacao();
 
-  const [servicos, setServicos] = useState<Service[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [servicoEditando, setServicoEditando] = useState<Service | null>(null);
+  const [servicoEditando, setServicoEditando] = useState<Servico | null>(null);
 
   useEffect(() => {
-    if (artistId) carregarServicos();
+    if (artistaId) carregarServicos();
     else setCarregando(false);
-  }, [artistId]);
+  }, [artistaId]);
 
   async function carregarServicos() {
-    if (!artistId) return;
+    if (!artistaId) return;
     setCarregando(true);
     try {
       const dados = await listarMeusServicos();
@@ -49,12 +48,12 @@ export default function ServicosArtistaPagina() {
   }
 
   async function handleCriar(dados: {
-    title: string;
-    description?: string;
-    media?: ServiceMedia[];
-    active: boolean;
+    titulo: string;
+    descricao?: string;
+    midia?: MidiaServico[];
+    ativo: boolean;
   }) {
-    if (!artistId) return;
+    if (!artistaId) return;
     setSalvando(true);
     try {
       await criarServico(dados);
@@ -69,10 +68,10 @@ export default function ServicosArtistaPagina() {
   }
 
   async function handleAtualizar(dados: {
-    title: string;
-    description?: string;
-    media?: ServiceMedia[];
-    active: boolean;
+    titulo: string;
+    descricao?: string;
+    midia?: MidiaServico[];
+    ativo: boolean;
   }) {
     if (!servicoEditando) return;
     setSalvando(true);
@@ -89,7 +88,7 @@ export default function ServicosArtistaPagina() {
     }
   }
 
-  function handleEditar(s: Service) {
+  function handleEditar(s: Servico) {
     setServicoEditando(s);
     setMostrarFormulario(true);
   }
@@ -104,7 +103,7 @@ export default function ServicosArtistaPagina() {
     setServicoEditando(null);
   }
 
-  if (!artistId) {
+  if (!artistaId) {
     return (
       <Card className="border border-[color:var(--border)] bg-[color:var(--surface)]">
         <CardContent className="py-10 text-center">

@@ -1,13 +1,13 @@
 import { Button, Card, CardContent } from "@heroui/react";
 import { Pencil } from "lucide-react";
-import type { Service } from "../../tipos/servicos";
+import type { Servico } from "../../tipos/servicos";
 
 interface ListaServicosProps {
-  servicos: Service[];
+  servicos: Servico[];
   modo?: "artista" | "publico";
-  onEditar?: (servico: Service) => void;
+  onEditar?: (servico: Servico) => void;
   onDeletar?: (id: string) => void;
-  onAlternarStatus?: (id: string, active: boolean) => void;
+  onAlternarStatus?: (id: string, ativo: boolean) => void;
 }
 
 export function ListaServicos({
@@ -34,17 +34,17 @@ export function ListaServicos({
           key={servico._id}
           className="overflow-hidden border border-[color:var(--border)] bg-[color:var(--surface)] transition hover:-translate-y-0.5 hover:border-[color:var(--accent)]"
         >
-          {servico.media && servico.media.length > 0 && (
+          {servico.midia && servico.midia.length > 0 && (
             <div className="relative h-44 overflow-hidden bg-[color:var(--surface-secondary)]">
-              {servico.media[0].type === "image" ? (
+              {servico.midia[0].tipo === "imagem" ? (
                 <img
-                  src={servico.media[0].url}
-                  alt={servico.title}
+                  src={servico.midia[0].url}
+                  alt={servico.titulo}
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <video
-                  src={servico.media[0].url}
+                  src={servico.midia[0].url}
                   controls
                   className="h-full w-full object-cover"
                 />
@@ -54,24 +54,24 @@ export function ListaServicos({
           <CardContent className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-display text-base font-bold leading-tight">
-                {servico.title}
+                {servico.titulo}
               </h3>
               {modo === "artista" && (
                 <span
                   className={
                     "rounded-full px-2.5 py-0.5 text-xs font-medium " +
-                    (servico.active
+                    (servico.ativo
                       ? "bg-[color:var(--success)]/15 text-[color:var(--success)]"
                       : "bg-[color:var(--muted)]/15 text-[color:var(--muted)]")
                   }
                 >
-                  {servico.active ? "Ativo" : "Inativo"}
+                  {servico.ativo ? "Ativo" : "Inativo"}
                 </span>
               )}
             </div>
-            {servico.description && (
+            {servico.descricao && (
               <p className="line-clamp-3 text-sm text-[color:var(--muted)]">
-                {servico.description}
+                {servico.descricao}
               </p>
             )}
             {modo === "artista" && onEditar && (

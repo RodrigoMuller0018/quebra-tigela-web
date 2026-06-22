@@ -20,6 +20,10 @@ import {
 import { Sparkles } from "lucide-react";
 import { SeletorEstadoCidade } from "../../componentes/SeletorEstadoCidade";
 import { Campo, CampoSenha, AreaTexto } from "../../componentes/ui/Campo";
+import { SeletorTiposArte } from "../../componentes/ui/SeletorTiposArte";
+import { CampoTelefone } from "../../componentes/ui/CampoTelefone";
+import { CampoHandle } from "../../componentes/ui/CampoHandle";
+import { ehTelefoneValidoBR } from "../../utilitarios/telefone";
 
 type TipoConta = "cliente" | "artista";
 
@@ -33,8 +37,10 @@ interface FormularioCliente {
 }
 
 interface FormularioArtista extends FormularioCliente {
-  artTypes: string;
+  artTypes: string[];
   bio: string;
+  telefone: string;
+  handle: string;
 }
 
 const INICIAL_CLIENTE: FormularioCliente = {
@@ -48,8 +54,10 @@ const INICIAL_CLIENTE: FormularioCliente = {
 
 const INICIAL_ARTISTA: FormularioArtista = {
   ...INICIAL_CLIENTE,
-  artTypes: "",
+  artTypes: [],
   bio: "",
+  telefone: "",
+  handle: "",
 };
 
 export default function RegistroPagina() {
@@ -60,6 +68,7 @@ export default function RegistroPagina() {
     useState<FormularioCliente>(INICIAL_CLIENTE);
   const [formArtista, setFormArtista] =
     useState<FormularioArtista>(INICIAL_ARTISTA);
+  const [handleArtistaDisponivel, setHandleArtistaDisponivel] = useState(false);
 
   const ehArtista = tipo === "artista";
 
@@ -71,11 +80,15 @@ export default function RegistroPagina() {
     if (form.password.length < 6) return "Senha deve ter pelo menos 6 caracteres";
     if (form.password !== form.confirmPassword) return "As senhas não conferem";
     if (ehArtista) {
-      const tipos = formArtista.artTypes
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      if (tipos.length === 0) return "Tipos de arte são obrigatórios";
+      if (formArtista.artTypes.length === 0) {
+        return "Selecione pelo menos 1 tipo de arte";
+      }
+      if (!ehTelefoneValidoBR(formArtista.telefone)) {
+        return "Informe um celular válido (DDD + 9 + 8 dígitos)";
+      }
+      if (!handleArtistaDisponivel) {
+        return "Escolha um handle válido e disponível";
+      }
     }
     return null;
   }
@@ -90,28 +103,26 @@ export default function RegistroPagina() {
     setSalvando(true);
     try {
       if (ehArtista) {
-        const artTypesArray = formArtista.artTypes
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
         const dados: NovoArtista = {
-          name: formArtista.name,
+          nome: formArtista.name,
           email: formArtista.email,
-          password: formArtista.password,
-          artTypes: artTypesArray,
+          senha: formArtista.password,
+          tiposArte: formArtista.artTypes,
+          telefone: formArtista.telefone,
+          handle: formArtista.handle,
           bio: formArtista.bio || undefined,
-          city: formArtista.city || undefined,
-          state: formArtista.state || undefined,
+          cidade: formArtista.city || undefined,
+          estado: formArtista.state || undefined,
         };
         await cadastrarArtista(dados);
         avisoSucesso("Conta de artista criada com sucesso!");
       } else {
         const dados: NovoUsuario = {
-          name: formCliente.name,
+          nome: formCliente.name,
           email: formCliente.email,
-          password: formCliente.password,
-          city: formCliente.city || undefined,
-          state: formCliente.state || undefined,
+          senha: formCliente.password,
+          cidade: formCliente.city || undefined,
+          estado: formCliente.state || undefined,
         };
         await cadastrarUsuario(dados);
         avisoSucesso("Conta de cliente criada com sucesso!");
@@ -238,12 +249,23 @@ export default function RegistroPagina() {
                   autoComplete="new-password"
                 />
               </div>
-              <Campo
-                label="Tipos de arte"
+              <SeletorTiposArte
                 value={formArtista.artTypes}
-                onChange={(v) => setCampoArtista("artTypes", v)}
+                onChange={(next) => setCampoArtista("artTypes", next)}
                 isRequired
-                description="Separe por vírgulas. Ex: Pintura, Escultura, Fotografia"
+                ajuda="Selecione pelo menos 1 e no máximo 10 — busca por nome ou navega pelas categorias"
+              />
+              <CampoHandle
+                value={formArtista.handle}
+                onChange={(v) => setCampoArtista("handle", v)}
+                baseSugestao={formArtista.name}
+                onDisponibilidadeChange={setHandleArtistaDisponivel}
+                isRequired
+              />
+              <CampoTelefone
+                value={formArtista.telefone}
+                onChange={(v) => setCampoArtista("telefone", v)}
+                isRequired
               />
               <AreaTexto
                 label="Bio"

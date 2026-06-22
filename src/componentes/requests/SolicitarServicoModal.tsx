@@ -5,8 +5,8 @@ import { Dialogo } from "../ui/Dialogo";
 import { Campo, AreaTexto } from "../ui/Campo";
 import { listarServicosPorArtista } from "../../api/servicos.api";
 import { criarSolicitacao } from "../../api/requests.api";
-import type { Service } from "../../tipos/servicos";
-import type { ScheduleEntry } from "../../tipos/schedule";
+import type { Servico } from "../../tipos/servicos";
+import type { ItemAgenda } from "../../tipos/schedule";
 import {
   sucesso as avisoSucesso,
   erro as avisoErro,
@@ -15,15 +15,12 @@ import {
 interface SolicitarServicoModalProps {
   aberto: boolean;
   aoFechar: (aberto: boolean) => void;
-  artistId: string;
-  artistNome?: string;
-  /** Pré-selecionar um serviço específico (caso clique a partir do card de serviço) */
-  serviceIdInicial?: string;
-  /**
-   * Se passado, a modal entra em modo "reserva de slot":
-   * data/hora ficam read-only com os valores do slot, e scheduleId é enviado ao backend.
-   */
-  slot?: ScheduleEntry | null;
+  artistaId: string;
+  artistaNome?: string;
+  /** Pré-selecionar um serviço específico */
+  servicoIdInicial?: string;
+  /** Se passado, entra em modo "reserva de slot" */
+  slot?: ItemAgenda | null;
   onSucesso?: () => void;
 }
 
@@ -32,30 +29,46 @@ const SELECT_CLASS =
 const INPUT_CLASS =
   "w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--field-background,var(--surface))] px-4 py-3 text-sm text-[color:var(--foreground)] shadow-sm transition focus:border-[color:var(--accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/30 disabled:opacity-60";
 
-function dataParaInput(iso: string): string {
-  // ISO ou YYYY-MM-DD → YYYY-MM-DD
-  return iso.includes("T") ? iso.split("T")[0] : iso;
+function instantToDate(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function instantToTime(iso: string): string {
+  const d = new Date(iso);
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+function composeInstant(dateLocal: string, timeLocal: string): string {
+  return new Date(`${dateLocal}T${timeLocal}:00`).toISOString();
 }
 
 export function SolicitarServicoModal({
   aberto,
   aoFechar,
-  artistId,
-  artistNome,
-  serviceIdInicial,
+  artistaId,
+  artistaNome,
+  servicoIdInicial,
   slot,
   onSucesso,
 }: SolicitarServicoModalProps) {
   const modoReserva = !!slot;
 
-  const [servicos, setServicos] = useState<Service[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([]);
   const [carregandoServicos, setCarregandoServicos] = useState(false);
-  const [serviceId, setServiceId] = useState(serviceIdInicial ?? "");
-  const [eventDate, setEventDate] = useState("");
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("10:00");
-  const [location, setLocation] = useState("");
-  const [details, setDetails] = useState("");
+  const [servicoId, setServicoId] = useState(servicoIdInicial ?? "");
+  const [dataInicio, setDataInicio] = useState("");
+  const [horaInicio, setHoraInicio] = useState("09:00");
+  const [dataFim, setDataFim] = useState("");
+  const [horaFim, setHoraFim] = useState("10:00");
+  const [multiDia, setMultiDia] = useState(false);
+  const [local, setLocal] = useState("");
+  const [detalhes, setDetalhes] = useState("");
   const [enviando, setEnviando] = useState(false);
 
   const dataMinima = useMemo(
@@ -63,51 +76,72 @@ export function SolicitarServicoModal({
     [],
   );
 
-  // Quando abre em modo reserva, pré-preenche e trava data/horas
   useEffect(() => {
     if (aberto && slot) {
-      setEventDate(dataParaInput(slot.date));
-      setStartTime(slot.startTime);
-      setEndTime(slot.endTime);
+      const sd = instantToDate(slot.inicio);
+      const ed = instantToDate(slot.fim);
+      setDataInicio(sd);
+      setDataFim(ed);
+      setHoraInicio(instantToTime(slot.inicio));
+      setHoraFim(instantToTime(slot.fim));
+      setMultiDia(sd !== ed);
     }
   }, [aberto, slot]);
 
+  function handleDataInicioChange(v: string) {
+    setDataInicio(v);
+    if (!multiDia) setDataFim(v);
+  }
+  function handleToggleMultiDia(v: boolean) {
+    setMultiDia(v);
+    if (!v) setDataFim(dataInicio);
+  }
+
   useEffect(() => {
-    if (!aberto || !artistId) return;
+    if (!aberto || !artistaId) return;
     setCarregandoServicos(true);
-    listarServicosPorArtista(artistId)
-      .then((dados) => setServicos(dados.filter((s) => s.active)))
+    listarServicosPorArtista(artistaId)
+      .then((dados) => setServicos(dados.filter((s) => s.ativo)))
       .catch(() => setServicos([]))
       .finally(() => setCarregandoServicos(false));
-  }, [aberto, artistId]);
+  }, [aberto, artistaId]);
 
   function reset() {
-    setServiceId(serviceIdInicial ?? "");
-    setEventDate("");
-    setStartTime("09:00");
-    setEndTime("10:00");
-    setLocation("");
-    setDetails("");
+    setServicoId(servicoIdInicial ?? "");
+    setDataInicio("");
+    setDataFim("");
+    setHoraInicio("09:00");
+    setHoraFim("10:00");
+    setMultiDia(false);
+    setLocal("");
+    setDetalhes("");
   }
 
   async function handleEnviar() {
-    if (!serviceId) {
+    if (!servicoId) {
       avisoErro("Selecione um serviço");
       return;
     }
-    if (!eventDate) {
+    if (!dataInicio) {
       avisoErro("Informe a data do evento");
       return;
     }
-    if (!startTime || !endTime) {
+    const dataFinal = multiDia ? dataFim : dataInicio;
+    if (!dataFinal) {
+      avisoErro("Informe a data de fim");
+      return;
+    }
+    if (!horaInicio || !horaFim) {
       avisoErro("Informe horário de início e fim");
       return;
     }
-    if (startTime >= endTime) {
-      avisoErro("Hora de fim deve ser maior que hora de início");
+    const inicio = composeInstant(dataInicio, horaInicio);
+    const fim = composeInstant(dataFinal, horaFim);
+    if (new Date(inicio) >= new Date(fim)) {
+      avisoErro("Fim deve ser estritamente depois do início");
       return;
     }
-    if (!location.trim()) {
+    if (!local.trim()) {
       avisoErro("Informe o local do evento");
       return;
     }
@@ -115,14 +149,13 @@ export function SolicitarServicoModal({
     setEnviando(true);
     try {
       await criarSolicitacao({
-        artistId,
-        serviceId,
-        scheduleId: slot ? slot._id || slot.id : undefined,
-        eventDate,
-        startTime,
-        endTime,
-        location: location.trim(),
-        details: details.trim() || undefined,
+        artistaId,
+        servicoId,
+        agendaId: slot ? slot._id || slot.id : undefined,
+        inicio,
+        fim,
+        local: local.trim(),
+        detalhes: detalhes.trim() || undefined,
       });
       avisoSucesso(
         modoReserva
@@ -142,11 +175,11 @@ export function SolicitarServicoModal({
   }
 
   const titulo = modoReserva
-    ? artistNome
-      ? `Reservar horário com ${artistNome}`
+    ? artistaNome
+      ? `Reservar horário com ${artistaNome}`
       : "Reservar horário"
-    : artistNome
-      ? `Solicitar serviço de ${artistNome}`
+    : artistaNome
+      ? `Solicitar serviço de ${artistaNome}`
       : "Solicitar serviço";
 
   return (
@@ -162,13 +195,13 @@ export function SolicitarServicoModal({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="solicitar-servico" className="text-sm font-medium">
-            Serviço <span className="text-[color:var(--accent)]">*</span>
+            Serviço <span className="text-danger">*</span>
           </label>
           <div className="relative">
             <select
               id="solicitar-servico"
-              value={serviceId}
-              onChange={(e) => setServiceId(e.target.value)}
+              value={servicoId}
+              onChange={(e) => setServicoId(e.target.value)}
               disabled={carregandoServicos || servicos.length === 0}
               className={SELECT_CLASS}
             >
@@ -181,7 +214,7 @@ export function SolicitarServicoModal({
               </option>
               {servicos.map((s) => (
                 <option key={s._id} value={s._id}>
-                  {s.title}
+                  {s.titulo}
                 </option>
               ))}
             </select>
@@ -194,14 +227,15 @@ export function SolicitarServicoModal({
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="solicitar-data" className="text-sm font-medium">
-            Data <span className="text-[color:var(--accent)]">*</span>
+            Data {multiDia ? "de início" : ""}{" "}
+            <span className="text-danger">*</span>
           </label>
           <input
             id="solicitar-data"
             type="date"
             min={dataMinima}
-            value={eventDate}
-            onChange={(e) => setEventDate(e.target.value)}
+            value={dataInicio}
+            onChange={(e) => handleDataInicioChange(e.target.value)}
             disabled={modoReserva}
             className={INPUT_CLASS}
           />
@@ -215,44 +249,72 @@ export function SolicitarServicoModal({
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="solicitar-hi" className="text-sm font-medium">
-              Hora início <span className="text-[color:var(--accent)]">*</span>
+              Hora início <span className="text-danger">*</span>
             </label>
             <input
               id="solicitar-hi"
               type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              value={horaInicio}
+              onChange={(e) => setHoraInicio(e.target.value)}
               disabled={modoReserva}
               className={INPUT_CLASS}
             />
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="solicitar-hf" className="text-sm font-medium">
-              Hora fim <span className="text-[color:var(--accent)]">*</span>
+              Hora fim <span className="text-danger">*</span>
             </label>
             <input
               id="solicitar-hf"
               type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
+              value={horaFim}
+              onChange={(e) => setHoraFim(e.target.value)}
               disabled={modoReserva}
               className={INPUT_CLASS}
             />
           </div>
         </div>
 
+        {!modoReserva && (
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={multiDia}
+              onChange={(e) => handleToggleMultiDia(e.target.checked)}
+            />
+            Termina em outro dia (ex: show das 22h até 02h da madrugada)
+          </label>
+        )}
+
+        {multiDia && (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="solicitar-data-fim" className="text-sm font-medium">
+              Data de fim <span className="text-danger">*</span>
+            </label>
+            <input
+              id="solicitar-data-fim"
+              type="date"
+              min={dataInicio || dataMinima}
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
+              disabled={modoReserva}
+              className={INPUT_CLASS}
+            />
+          </div>
+        )}
+
         <Campo
           label="Local do evento"
-          value={location}
-          onChange={setLocation}
+          value={local}
+          onChange={setLocal}
           isRequired
           placeholder="Ex: Av. Paulista, 1000 — São Paulo"
         />
 
         <AreaTexto
           label="Detalhes do pedido"
-          value={details}
-          onChange={setDetails}
+          value={detalhes}
+          onChange={setDetalhes}
           rows={4}
           placeholder="Conte mais sobre o evento, expectativas, equipamento necessário..."
         />

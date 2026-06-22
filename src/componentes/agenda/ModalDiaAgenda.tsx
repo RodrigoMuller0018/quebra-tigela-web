@@ -1,20 +1,25 @@
 import { useMemo } from "react";
 import { Button, Card, CardContent } from "@heroui/react";
 import { Clock, Plus, Trash2, X as XIcon } from "lucide-react";
-import type { ScheduleEntry } from "../../tipos/schedule";
+import type { ItemAgenda } from "../../tipos/schedule";
 import {
   NOMES_MESES,
   NOMES_DIAS_SEMANA,
   STATUS_LABELS,
 } from "../../constantes/agenda";
-import { dateParaString, extrairData } from "../../utilitarios/dataUtils";
+import { dateParaString } from "../../utilitarios/dataUtils";
+import {
+  ehMesmoDiaLocal,
+  formatarHoraLocal,
+  formatarInstant,
+} from "../../utilitarios/instants";
 import { Dialogo } from "../ui/Dialogo";
 
 interface Props {
   aberto: boolean;
   aoFechar: () => void;
   dia: Date | null;
-  horarios: ScheduleEntry[];
+  horarios: ItemAgenda[];
   podeCancelar?: boolean;
   podeDeletar?: boolean;
   onCancelar?: (id: string) => void;
@@ -24,10 +29,10 @@ interface Props {
 }
 
 const STATUS_TONE: Record<string, string> = {
-  available: "bg-[color:var(--accent)]/15 text-[color:var(--accent)]",
-  pending: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]",
-  booked: "bg-[color:var(--secondary)]/15 text-[color:var(--secondary)]",
-  cancelled: "bg-[color:var(--muted)]/15 text-[color:var(--muted)]",
+  disponivel: "bg-[color:var(--accent)]/15 text-[color:var(--accent)]",
+  pendente: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]",
+  reservada: "bg-[color:var(--secondary)]/15 text-[color:var(--secondary)]",
+  cancelada: "bg-[color:var(--muted)]/15 text-[color:var(--muted)]",
 };
 
 export function ModalDiaAgenda({
@@ -45,7 +50,13 @@ export function ModalDiaAgenda({
   const horariosDoDia = useMemo(() => {
     if (!dia) return [];
     const chave = dateParaString(dia);
-    return horarios.filter((h) => extrairData(h.date) === chave);
+    return horarios.filter((h) => {
+      const start = new Date(h.inicio);
+      const y = start.getFullYear();
+      const m = String(start.getMonth() + 1).padStart(2, "0");
+      const d = String(start.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}` === chave;
+    });
   }, [dia, horarios]);
 
   if (!dia) return null;
@@ -99,14 +110,26 @@ export function ModalDiaAgenda({
               >
                 <CardContent className="flex items-start justify-between gap-3">
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <Clock
-                        size={16}
-                        className="text-[color:var(--muted)]"
-                      />
-                      <span>{h.startTime}</span>
-                      <span className="text-[color:var(--muted)]">→</span>
-                      <span>{h.endTime}</span>
+                    <div className="flex flex-col gap-1 font-semibold">
+                      <div className="flex items-center gap-2">
+                        <Clock
+                          size={16}
+                          className="text-[color:var(--muted)]"
+                        />
+                        {ehMesmoDiaLocal(h.inicio, h.fim) ? (
+                          <>
+                            <span>{formatarHoraLocal(h.inicio)}</span>
+                            <span className="text-[color:var(--muted)]">→</span>
+                            <span>{formatarHoraLocal(h.fim)}</span>
+                          </>
+                        ) : (
+                          <span className="text-sm">
+                            {formatarInstant(h.inicio)}{" "}
+                            <span className="text-[color:var(--muted)]">→</span>{" "}
+                            {formatarInstant(h.fim)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <span
                       className={`w-fit rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_TONE[h.status] || ""}`}
@@ -114,12 +137,12 @@ export function ModalDiaAgenda({
                       {STATUS_LABELS[h.status] || h.status}
                     </span>
                     <p className="text-xs text-[color:var(--muted)]">
-                      {h.notes || "Sem observações"}
+                      {h.observacoes || "Sem observações"}
                     </p>
                   </div>
                   {modo === "artista" && (
                     <div className="flex shrink-0 gap-1">
-                      {podeCancelar && h.status === "booked" && onCancelar && (
+                      {podeCancelar && h.status === "reservada" && onCancelar && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -130,7 +153,7 @@ export function ModalDiaAgenda({
                           <XIcon size={14} />
                         </Button>
                       )}
-                      {podeDeletar && h.status === "available" && onDeletar && (
+                      {podeDeletar && h.status === "disponivel" && onDeletar && (
                         <Button
                           variant="danger-soft"
                           size="sm"

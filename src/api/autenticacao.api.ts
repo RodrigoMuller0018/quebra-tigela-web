@@ -1,94 +1,46 @@
 import { http } from "./http";
+import { decodificarToken } from "../utilitarios/jwt";
 
-export async function autenticar(email: string, senha: string) {
-  console.log("🔍 LOGIN DEBUG - Iniciando tentativa dupla de login");
+interface RespostaAuth {
+  token: string;
+  payload: ReturnType<typeof decodificarToken>;
+  temPerfilArtista: boolean;
+}
 
-  // Tentativa 1: Login como cliente
-  try {
-    console.log("🔍 LOGIN DEBUG - Tentativa 1: Cliente");
-    const { data } = await http.post("/api/auth/login", {
-      email,
-      password: senha,
-      accountType: "client"
-    });
+function processarTokenResponse(data: any): RespostaAuth {
+  const token: string | undefined =
+    data?.access_token ?? data?.jwt ?? data?.token;
 
-    console.log("✅ LOGIN DEBUG - Sucesso como CLIENTE:", data);
-
-    const token: string | undefined =
-      data?.access_token ?? data?.jwt ?? data?.token;
-
-    if (token) {
-      localStorage.setItem("token", token);
-      console.log("✅ LOGIN DEBUG - Token cliente salvo:", token.substring(0, 20) + "...");
-      return {
-        token,
-        userData: data,
-        userType: "client" as const
-      };
-    }
-
-    throw new Error("Token não encontrado na resposta do login");
-  } catch (clientError: any) {
-    console.log("❌ LOGIN DEBUG - Tentativa cliente falhou:", {
-      status: clientError?.response?.status,
-      message: clientError?.response?.data?.message || clientError?.message
-    });
-
-    // Se não foi erro 401, não tenta como artista
-    const clientStatus = clientError?.response?.status;
-    console.log("🔍 LOGIN DEBUG - Status do erro cliente:", { clientStatus, hasResponse: !!clientError?.response });
-
-    if (clientStatus !== 401) {
-      console.error("❌ LOGIN DEBUG - Erro não-401, abortando:", clientError?.message);
-      throw new Error(clientError?.response?.data?.message || clientError?.message || "Erro no login");
-    }
-
-    // Tentativa 2: Login como artista
-    try {
-      console.log("🔍 LOGIN DEBUG - Tentativa 2: Artista");
-      const { data } = await http.post("/api/auth/login", {
-        email,
-        password: senha,
-        accountType: "artist"
-      });
-
-      console.log("✅ LOGIN DEBUG - Sucesso como ARTISTA:", data);
-
-      const token: string | undefined =
-        data?.access_token ?? data?.jwt ?? data?.token;
-
-      if (token) {
-        localStorage.setItem("token", token);
-        console.log("✅ LOGIN DEBUG - Token artista salvo:", token.substring(0, 20) + "...");
-        return {
-          token,
-          userData: data,
-          userType: "artist" as const
-        };
-      }
-
-      throw new Error("Token não encontrado na resposta do login");
-    } catch (artistError: any) {
-      console.error("❌ LOGIN DEBUG - Tentativa artista falhou:", {
-        status: artistError?.response?.status,
-        message: artistError?.response?.data?.message || artistError?.message
-      });
-
-      // Ambas tentativas falharam
-      console.error("❌ LOGIN DEBUG - Ambas tentativas falharam");
-
-      // Se ambas deram 401, são credenciais inválidas
-      const artistStatus = artistError?.response?.status;
-      console.log("🔍 LOGIN DEBUG - Status do erro artista:", { artistStatus, hasResponse: !!artistError?.response });
-
-      if (artistStatus === 401) {
-        throw new Error("Credenciais inválidas");
-      }
-
-      // Outros erros
-      throw new Error(artistError?.response?.data?.message || artistError?.message || "Erro no login");
-    }
+  if (!token) {
+    throw new Error("Token não encontrado na resposta do servidor");
   }
+
+  localStorage.setItem("token", token);
+  const payload = decodificarToken(token);
+
+  return {
+    token,
+    payload,
+    temPerfilArtista: !!payload?.temPerfilArtista,
+  };
+}
+
+/**
+ * Login unificado. Se a conta estiver desativada, o backend devolve 409 com
+ * `{ contaDesativada: true }` no body — o caller deve capturar e oferecer reativação.
+ */
+export async function autenticar(email: string, senha: string) {
+  const { data } = await http.post("/api/autenticacao/login", { email, senha });
+  return processarTokenResponse(data);
+}
+
+/**
+ * Reativa a conta desativada com as mesmas credenciais e já devolve o token.
+ * Chamado depois do usuário confirmar no diálogo de reativação.
+ */
+export async function reativarConta(email: string, senha: string) {
+  const { data } = await http.post("/api/autenticacao/reativar", { email, senha });
+  return processarTokenResponse(data);
 }
 
 export function sair() {

@@ -2,14 +2,17 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, Spinner } from "@heroui/react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { CalendarioAgenda } from "./";
-import type { ScheduleEntry } from "../../tipos/schedule";
+import type { ItemAgenda } from "../../tipos/schedule";
 import { obterHorariosDisponiveis } from "../../api/schedule.api";
 import { erro as avisoErro } from "../../utilitarios/avisos";
 import {
   dateParaString,
-  extrairData,
   ehMesmoDia,
 } from "../../utilitarios/dataUtils";
+import {
+  formatarHoraLocal,
+  formatarRangeAdaptativo,
+} from "../../utilitarios/instants";
 import {
   NOMES_MESES,
   NOMES_DIAS_SEMANA,
@@ -23,11 +26,11 @@ interface Props {
 }
 
 export function AgendaCliente({ artistaId, artistaNome }: Props) {
-  const [horarios, setHorarios] = useState<ScheduleEntry[]>([]);
+  const [horarios, setHorarios] = useState<ItemAgenda[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [diaSelecionado, setDiaSelecionado] = useState<Date | null>(null);
   const [modalReserva, setModalReserva] = useState(false);
-  const [slotSelecionado, setSlotSelecionado] = useState<ScheduleEntry | null>(
+  const [slotSelecionado, setSlotSelecionado] = useState<ItemAgenda | null>(
     null,
   );
 
@@ -54,11 +57,20 @@ export function AgendaCliente({ artistaId, artistaNome }: Props) {
     if (artistaId) carregarHorarios();
   }, [artistaId]);
 
+  // Helper: dia local do inicio (slot multi-dia aparece no dia de início)
+  function diaLocalDoSlot(iso: string): string {
+    const d = new Date(iso);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
   // Auto-seleciona o primeiro dia que tem slot disponível
   useEffect(() => {
     if (diaSelecionado || horarios.length === 0) return;
     const primeiroDia = [...horarios]
-      .map((h) => extrairData(h.date))
+      .map((h) => diaLocalDoSlot(h.inicio))
       .sort()[0];
     if (primeiroDia) {
       const [y, m, d] = primeiroDia.split("-").map(Number);
@@ -70,11 +82,11 @@ export function AgendaCliente({ artistaId, artistaNome }: Props) {
     if (!diaSelecionado) return [];
     const chave = dateParaString(diaSelecionado);
     return horarios
-      .filter((h) => extrairData(h.date) === chave)
-      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+      .filter((h) => diaLocalDoSlot(h.inicio) === chave)
+      .sort((a, b) => a.inicio.localeCompare(b.inicio));
   }, [diaSelecionado, horarios]);
 
-  function abrirReserva(slot: ScheduleEntry) {
+  function abrirReserva(slot: ItemAgenda) {
     setSlotSelecionado(slot);
     setModalReserva(true);
   }
@@ -151,8 +163,8 @@ export function AgendaCliente({ artistaId, artistaNome }: Props) {
           setModalReserva(open);
           if (!open) setSlotSelecionado(null);
         }}
-        artistId={artistaId}
-        artistNome={artistaNome}
+        artistaId={artistaId}
+        artistaNome={artistaNome}
         slot={slotSelecionado}
         onSucesso={() => {
           setSlotSelecionado(null);
@@ -165,8 +177,8 @@ export function AgendaCliente({ artistaId, artistaNome }: Props) {
 
 interface CardSlotsDoDiaProps {
   dia: Date;
-  slots: ScheduleEntry[];
-  onReservar: (slot: ScheduleEntry) => void;
+  slots: ItemAgenda[];
+  onReservar: (slot: ItemAgenda) => void;
 }
 
 type Periodo = "manha" | "tarde" | "noite";
@@ -177,9 +189,10 @@ const PERIODO_LABEL: Record<Periodo, string> = {
   noite: "Noite",
 };
 
-function classificarPeriodo(startTime: string): Periodo {
-  if (startTime < "12:00") return "manha";
-  if (startTime < "18:00") return "tarde";
+function classificarPeriodo(inicio: string): Periodo {
+  const h = new Date(inicio).getHours();
+  if (h < 12) return "manha";
+  if (h < 18) return "tarde";
   return "noite";
 }
 
@@ -187,15 +200,15 @@ function CardSlotsDoDia({ dia, slots, onReservar }: CardSlotsDoDiaProps) {
   const hojeMesmoDia = ehMesmoDia(dia, new Date());
   const titulo = `${dia.getDate()} de ${NOMES_MESES[dia.getMonth()]}`;
   const subtitulo = hojeMesmoDia ? "Hoje" : NOMES_DIAS_SEMANA[dia.getDay()];
-  const disponiveis = slots.filter((s) => s.status === "available");
+  const disponiveis = slots.filter((s) => s.status === "disponivel");
 
-  const porPeriodo: Record<Periodo, ScheduleEntry[]> = {
+  const porPeriodo: Record<Periodo, ItemAgenda[]> = {
     manha: [],
     tarde: [],
     noite: [],
   };
   for (const s of disponiveis) {
-    porPeriodo[classificarPeriodo(s.startTime)].push(s);
+    porPeriodo[classificarPeriodo(s.inicio)].push(s);
   }
 
   const ordemPeriodos: Periodo[] = ["manha", "tarde", "noite"];
@@ -234,10 +247,13 @@ function CardSlotsDoDia({ dia, slots, onReservar }: CardSlotsDoDiaProps) {
                         key={s._id || s.id}
                         type="button"
                         onClick={() => onReservar(s)}
-                        title={`${s.startTime} → ${s.endTime}`}
+                        title={formatarRangeAdaptativo(
+                          s.inicio,
+                          s.fim,
+                        )}
                         className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-secondary)] py-2.5 text-sm font-semibold transition hover:border-[color:var(--accent)] hover:bg-[color:var(--accent)]/10 hover:text-[color:var(--accent)] active:scale-95"
                       >
-                        {s.startTime}
+                        {formatarHoraLocal(s.inicio)}
                       </button>
                     ))}
                   </div>

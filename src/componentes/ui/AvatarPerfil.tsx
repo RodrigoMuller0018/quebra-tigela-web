@@ -1,8 +1,8 @@
 type Tamanho = "sm" | "md" | "lg" | "xl" | "2xl";
 
 interface AvatarPerfilProps {
-  /** Data URL base64 ou URL pública. Se undefined, mostra iniciais. */
-  foto?: string;
+  /** Data URL base64 ou URL pública. Se ausente/null, mostra iniciais. */
+  foto?: string | null;
   /** Nome usado pra gerar iniciais quando não há foto */
   nome: string;
   tamanho?: Tamanho;

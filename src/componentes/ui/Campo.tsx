@@ -34,7 +34,6 @@ export function Campo({
     <TextField className={className ?? "flex flex-col gap-1.5"} {...rest}>
       <Label className="text-sm font-medium text-[color:var(--foreground)]">
         {label}
-        {rest.isRequired && <span className="ml-1 text-[color:var(--accent)]">*</span>}
       </Label>
       <Input placeholder={placeholder} autoComplete={autoComplete} className={inputClassName} />
       {description && (
@@ -95,7 +94,7 @@ export function CampoSenha({
       >
         {label}
         {isRequired && (
-          <span className="ml-1 text-[color:var(--accent)]">*</span>
+          <span className="ml-1 text-danger">*</span>
         )}
       </label>
       <div
@@ -167,7 +166,6 @@ export function AreaTexto({
     >
       <Label className="text-sm font-medium text-[color:var(--foreground)]">
         {label}
-        {isRequired && <span className="ml-1 text-[color:var(--accent)]">*</span>}
       </Label>
       <TextArea
         placeholder={placeholder}

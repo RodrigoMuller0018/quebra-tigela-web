@@ -27,18 +27,20 @@ import { obterMeuPerfil } from "../../api/artistas.api";
 import { obterHorariosFuturos } from "../../api/schedule.api";
 import { listarSolicitacoesPorArtista } from "../../api/requests.api";
 import type { Artista } from "../../tipos/artistas";
-import type { ScheduleEntry } from "../../tipos/schedule";
+import type { ItemAgenda } from "../../tipos/schedule";
 import type { Solicitacao } from "../../tipos/requests";
 import { erro as avisoErro } from "../../utilitarios/avisos";
+import { formatarRangeAdaptativo } from "../../utilitarios/instants";
 import { ListaReviews } from "../../componentes/reviews";
+import { AvatarPerfil } from "../../componentes/ui/AvatarPerfil";
 
 export default function HomeArtistaPagina() {
-  const { usuario } = useAutenticacao();
+  const { usuario, artistaId } = useAutenticacao();
   const navigate = useNavigate();
   const [artista, setArtista] = useState<Artista | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [perfilIncompleto, setPerfilIncompleto] = useState(false);
-  const [proximosHorarios, setProximosHorarios] = useState<ScheduleEntry[]>([]);
+  const [proximosHorarios, setProximosHorarios] = useState<ItemAgenda[]>([]);
   const [solicitacoesPendentes, setSolicitacoesPendentes] = useState<
     Solicitacao[]
   >([]);
@@ -70,18 +72,18 @@ export default function HomeArtistaPagina() {
 
   // Carregar próximos horários e solicitações pendentes
   useEffect(() => {
-    if (!usuario?.sub) return;
-    obterHorariosFuturos(usuario.sub)
+    if (!artistaId) return;
+    obterHorariosFuturos(artistaId)
       .then((dados) => setProximosHorarios(dados.slice(0, 5)))
       .catch(() => setProximosHorarios([]));
-    listarSolicitacoesPorArtista(usuario.sub)
+    listarSolicitacoesPorArtista(artistaId)
       .then((dados) =>
         setSolicitacoesPendentes(
-          dados.filter((s) => s.status === "pending")
+          dados.filter((s) => s.status === "pendente")
         )
       )
       .catch(() => setSolicitacoesPendentes([]));
-  }, [usuario]);
+  }, [artistaId]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -93,7 +95,7 @@ export default function HomeArtistaPagina() {
             Dashboard
           </span>
           <h1 className="mt-3 font-display text-4xl font-bold">
-            Olá, {artista?.name?.split(" ")[0] ?? "artista"}!
+            Olá, {artista?.nome?.split(" ")[0] ?? "artista"}!
           </h1>
           <p className="mt-2 max-w-xl text-white/90">
             Acompanhe sua atividade e gerencie seu perfil em um só lugar.
@@ -122,7 +124,7 @@ export default function HomeArtistaPagina() {
             <div className="mt-2 flex flex-wrap gap-2">
               <Button
                 variant="primary"
-                onPress={() => navigate(`/artistas/${usuario?.sub}`)}
+                onPress={() => navigate("/artista/perfil")}
                 className="bg-gradient-brand text-white shadow-lg shadow-[color:var(--accent)]/30"
               >
                 Completar perfil
@@ -139,7 +141,7 @@ export default function HomeArtistaPagina() {
           <Card className="border border-[color:var(--border)] bg-[color:var(--surface)] lg:col-span-2">
             <CardHeader className="flex items-center justify-between">
               <h2 className="font-display text-xl font-bold">Meu perfil</h2>
-              {artista.verified ? (
+              {artista.verificado ? (
                 <Chip className="inline-flex items-center gap-1 bg-[color:var(--success)]/15 text-[color:var(--success)]">
                   <CheckCircle2 size={14} />
                   Verificado
@@ -153,12 +155,15 @@ export default function HomeArtistaPagina() {
             </CardHeader>
             <CardContent className="flex flex-col gap-5">
               <div className="flex items-start gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-brand font-display text-2xl font-black text-white shadow-lg">
-                  {artista.name?.[0]?.toUpperCase() ?? "QT"}
-                </div>
+                <AvatarPerfil
+                  foto={artista.fotoPerfil}
+                  nome={artista.nome || "Artista"}
+                  tamanho="lg"
+                  className="!rounded-2xl shadow-lg"
+                />
                 <div className="flex-1">
                   <h3 className="font-display text-2xl font-bold">
-                    {artista.name}
+                    {artista.nome}
                   </h3>
                   <p className="flex items-center gap-1.5 text-sm text-[color:var(--muted)]">
                     <Mail size={14} />
@@ -166,8 +171,8 @@ export default function HomeArtistaPagina() {
                   </p>
                   <p className="flex items-center gap-1.5 text-sm text-[color:var(--muted)]">
                     <MapPin size={14} />
-                    {artista.city && artista.state
-                      ? `${artista.city} — ${artista.state}`
+                    {artista.cidade && artista.estado
+                      ? `${artista.cidade} — ${artista.estado}`
                       : "Localização não informada"}
                   </p>
                 </div>
@@ -187,7 +192,7 @@ export default function HomeArtistaPagina() {
                   Especialidades
                 </h4>
                 <div className="flex flex-wrap gap-1.5">
-                  {artista.artTypes.map((t, i) => (
+                  {artista.tiposArte?.map((t: string, i: number) => (
                     <Chip
                       key={i}
                       className="bg-[color:var(--accent)]/15 text-[color:var(--accent)]"
@@ -201,21 +206,17 @@ export default function HomeArtistaPagina() {
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button
                   variant="primary"
-                  onPress={() =>
-                    navigate(`/artistas/${artista.id || usuario?.sub}`)
-                  }
+                  onPress={() => navigate("/artista/perfil")}
                   className="bg-gradient-brand text-white shadow-lg shadow-[color:var(--accent)]/30"
                 >
                   <Pencil size={16} className="mr-2" />
                   Editar perfil
                 </Button>
-                {artista.verified && (
+                {artista.verificado && (
                   <Button
                     variant="outline"
                     onPress={() =>
-                      navigate(
-                        `/artistas/${artista.id || usuario?.sub}?preview=true`
-                      )
+                      navigate(`/artistas/@${artista.handle}`)
                     }
                   >
                     <Eye size={16} className="mr-2" />
@@ -258,28 +259,20 @@ export default function HomeArtistaPagina() {
                           className="text-[color:var(--muted)]"
                         />
                         <span className="font-medium">
-                          {new Intl.DateTimeFormat("pt-BR", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            timeZone: "UTC",
-                          }).format(new Date(h.date))}
+                          {formatarRangeAdaptativo(
+                            h.inicio,
+                            h.fim,
+                          )}
                         </span>
-                        {h.startTime && (
-                          <span className="text-[color:var(--muted)]">
-                            {h.startTime}
-                            {h.endTime && ` → ${h.endTime}`}
-                          </span>
-                        )}
                       </div>
                       <Chip
                         className={
-                          h.status === "booked"
+                          h.status === "reservada"
                             ? "bg-[color:var(--secondary)]/15 text-xs text-[color:var(--secondary)]"
                             : "bg-[color:var(--accent)]/15 text-xs text-[color:var(--accent)]"
                         }
                       >
-                        {h.status === "booked" ? "Reservado" : "Disponível"}
+                        {h.status === "reservada" ? "Reservado" : "Disponível"}
                       </Chip>
                     </div>
                   ))}
@@ -289,7 +282,7 @@ export default function HomeArtistaPagina() {
           </Card>
 
           {/* Minhas avaliações */}
-          {usuario?.sub && (
+          {artistaId && (
             <Card className="border border-[color:var(--border)] bg-[color:var(--surface)] lg:col-span-2">
               <CardHeader>
                 <h2 className="font-display text-lg font-bold">
@@ -297,7 +290,7 @@ export default function HomeArtistaPagina() {
                 </h2>
               </CardHeader>
               <CardContent>
-                <ListaReviews artistId={usuario.sub} limite={3} />
+                <ListaReviews artistaId={artistaId} limite={3} />
               </CardContent>
             </Card>
           )}
@@ -309,13 +302,10 @@ export default function HomeArtistaPagina() {
                 <h2 className="font-display text-lg font-bold">Estatísticas</h2>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  <Stat label="Visualizações" valor="—" />
-                  <Stat label="Contatos" valor="—" />
-                </div>
-                <p className="mt-3 text-xs text-[color:var(--muted)]">
-                  Dados em breve
-                </p>
+                <Stat
+                  label="Visualizações"
+                  valor={String(artista.visualizacoes ?? 0)}
+                />
               </CardContent>
             </Card>
 
